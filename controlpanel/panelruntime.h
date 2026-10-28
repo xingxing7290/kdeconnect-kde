@@ -15,12 +15,17 @@ public:
     PanelStore *store() const;
     QJsonObject state() const;
     bool selectPage(const QString &pageId);
+    void setForegroundApplication(const QString &application);
 
 Q_SIGNALS:
     void stateChanged();
 
 private:
+    QString followedPage(const QJsonObject &config) const;
     PanelStore *m_store;
     QString m_activePageId;
+    QString m_foregroundApplication;
+    QString m_manualPageId;
+    QString m_mode;
 };
 }

@@ -1,6 +1,6 @@
 # 控制面板协议 v1
 
-此协议随个人 fork 发布，传输复用 KDE Connect 的已配对连接。配置、动作、结果和页状态已接入两端插件，并完成真实手机/Windows 文件按钮联调；资源、天气和智能跟随仍按 PLAN 继续实现。
+此协议随个人 fork 发布，传输复用 KDE Connect 的已配对连接。配置、动作、结果和页状态已接入两端插件，并完成真实手机/Windows 文件按钮联调；Windows 智能跟随已接入现有 state 包，验证边界见 MILESTONE-03.zh-CN.md。资源和天气仍按 PLAN 继续实现。
 
 ## 配置
 
@@ -10,6 +10,7 @@
 - mode 为 single/pages/follow。homePageId、activePageId 必须引用 pages 中的页面。
 - pages 为 1..10 项；每页 slots **必须为 18 项**，空位用 null，不压缩。所有页面 ID 唯一，所有非空按钮 ID 全局唯一。ID 匹配 [A-Za-z0-9][A-Za-z0-9._-]{0,63}。
 - 页面 name 与按钮 name 为 1..120 字符；application 可空，最长 260 字符，以不区分大小写的可执行文件名匹配。
+- 电脑公共投影的 application 只保留小写程序文件名，不传完整目录。state 的 foregroundApplication 为空或最长 260 字符的程序文件名，Android 拒绝目录分隔符和控制字符。跟随只改变 state，不改变配置 revision；手动选择保持到下一次稳定程序变化，详细优先级见 FOLLOW.zh-CN.md。
 - 按钮 kind 为 program/website/file/folder/shortcut/system/command。icon 为空或 64 位小写十六进制 SHA-256。
 - appearance 的 background 为 #RRGGBB；showLabels/showVolume 为布尔；swipeDirection 为 horizontal/vertical。
 - idle 的 enabled 为布尔；timeoutMs 为 1000..86400000 的整数毫秒；dialId 为 digital/analog/weather/info/car；city 最长 120，message 最长 240 字符。以上范围为本 fork 的明确设计限制，不声称参考软件相同。

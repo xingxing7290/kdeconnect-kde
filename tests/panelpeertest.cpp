@@ -233,6 +233,36 @@ private Q_SLOTS:
         QCOMPARE(lastResult(packets).value(QStringLiteral("error")).toString(), QStringLiteral("config_unavailable"));
         QCOMPARE(calls, 0);
     }
+    void followedPageIsBroadcastToAllControllersWithoutPrivatePaths()
+    {
+        QTemporaryDir directory;
+        PanelStore store(directory.path());
+        initialize(store);
+        auto config = store.document().privateConfig();
+        config.insert(QStringLiteral("mode"), QStringLiteral("follow"));
+        auto pages = config.value(QStringLiteral("pages")).toArray();
+        auto editor = pages[1].toObject();
+        editor.insert(QStringLiteral("application"), QStringLiteral("notepad++.exe"));
+        pages[1] = editor;
+        config.insert(QStringLiteral("pages"), pages);
+        QVERIFY(store.save(config, store.document().revision()));
+        PanelRuntime runtime(&store);
+        const auto execute = [](const QJsonObject &) {
+            return QString();
+        };
+        PanelPeer first(&runtime, execute);
+        PanelPeer second(&runtime, execute);
+        QSignalSpy firstPackets(&first, &PanelPeer::packetReady);
+        QSignalSpy secondPackets(&second, &PanelPeer::packetReady);
+        runtime.setForegroundApplication(QStringLiteral("C:\\Apps\\Notepad++.exe"));
+        QCOMPARE(firstPackets.size(), 1);
+        QCOMPARE(secondPackets.size(), 1);
+        const auto state = secondPackets.last()[1].toJsonObject();
+        QCOMPARE(state.value(QStringLiteral("activePageId")).toString(), QStringLiteral("editor"));
+        QCOMPARE(state.value(QStringLiteral("foregroundApplication")).toString(), QStringLiteral("notepad++.exe"));
+        QVERIFY(!QJsonDocument(state).toJson().contains("Apps"));
+        QCOMPARE(state.value(QStringLiteral("revision")).toInteger(), store.document().revision());
+    }
 };
 
 QTEST_GUILESS_MAIN(PanelPeerTest)

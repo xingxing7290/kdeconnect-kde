@@ -10,6 +10,8 @@
 - [控制面板协议](docs/control-panel/PROTOCOL.zh-CN.md)
 - [构建与测试记录](docs/control-panel/BUILD_STATUS.zh-CN.md)
 - [双端初版与真实联调记录](docs/control-panel/MILESTONE-02.zh-CN.md)
+- [智能跟随阶段记录](docs/control-panel/MILESTONE-03.zh-CN.md)
+- [Windows 智能跟随使用说明](docs/control-panel/FOLLOW.zh-CN.md)
 - [配套 Android 端](https://github.com/xingxing7290/kdeconnect-android)
 
 原 KDE Connect 功能与上游说明保留如下。本项目修改发布到个人 fork，不向 KDE 上游自动提交 MR。

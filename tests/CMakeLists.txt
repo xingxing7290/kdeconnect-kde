@@ -3,6 +3,13 @@ find_package(Qt6 ${QT_MIN_VERSION} REQUIRED COMPONENTS Test)
 ecm_add_test(paneldocumenttest.cpp LINK_LIBRARIES kdeconnectpanel Qt::Test)
 ecm_add_test(panelstoretest.cpp LINK_LIBRARIES kdeconnectpanel Qt::Test)
 ecm_add_test(panelpeertest.cpp LINK_LIBRARIES kdeconnectpanel Qt::Test)
+ecm_add_test(panelforegroundtest.cpp LINK_LIBRARIES kdeconnectpanel Qt::Test)
+ecm_add_test(panelruntimetest.cpp LINK_LIBRARIES kdeconnectpanel Qt::Test)
+if(WIN32)
+    # Requires a desktop session and foreground activation permission; run manually.
+    add_executable(panelforegroundintegration panelforegroundintegration.cpp)
+    target_link_libraries(panelforegroundintegration PRIVATE kdeconnectpanel Qt::Gui)
+endif()
 ecm_add_test(panelactionstest.cpp LINK_LIBRARIES kdeconnectpanelactions Qt::Test)
 ecm_add_test(paneleditortest.cpp LINK_LIBRARIES kdeconnectpanelactions Qt::Test)
 

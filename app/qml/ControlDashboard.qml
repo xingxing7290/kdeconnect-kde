@@ -192,9 +192,14 @@ Item {
                 Layout.fillWidth: true; spacing: 14
                 C.Label { text: qsTr("页面模式") }
                 C.ComboBox { model: [qsTr("默认单页"), qsTr("多页面"), qsTr("智能跟随")]; currentIndex: ["single", "pages", "follow"].indexOf(config.mode); onActivated: editor.setMode(["single", "pages", "follow"][currentIndex]) }
+                C.Button { text: qsTr("识别当前程序"); visible: config.mode === "follow"; onClicked: foregroundDialog.open() }
                 C.CheckBox { text: qsTr("音量控制"); checked: config.appearance.showVolume; onClicked: editor.setAppearance("showVolume", checked) }
                 C.CheckBox { text: qsTr("显示名称"); checked: config.appearance.showLabels; onClicked: editor.setAppearance("showLabels", checked) }
                 Item { Layout.fillWidth: true }
+            }
+            C.Label {
+                visible: config.mode === "follow"; Layout.fillWidth: true; elide: Text.ElideMiddle; color: "#69778b"; font.pixelSize: 11
+                text: editor.foregroundSupported ? qsTr("当前程序：%1；手动切页保持到下次程序切换。").arg(editor.foregroundApplication || qsTr("请切到要识别的软件")) : qsTr("当前平台暂不支持前台识别，请使用 Windows 版本。")
             }
             RowLayout {
                 C.Label { text: qsTr("背景色") }
@@ -233,7 +238,22 @@ Item {
             width: parent.width
             C.TextField { id: pageName; placeholderText: qsTr("页面名称"); maximumLength: 120; Layout.fillWidth: true }
             C.TextField { id: applicationField; placeholderText: qsTr("绑定的程序名，例如 notepad.exe"); maximumLength: 260; Layout.fillWidth: true }
+            C.Button { text: qsTr("使用当前识别的程序"); visible: config.mode === "follow"; enabled: !!editor.foregroundApplication; onClicked: applicationField.text = editor.foregroundApplication }
             C.Button { text: qsTr("保存"); highlighted: true; onClicked: if (editor.renamePage(editor.currentPageId, pageName.text, applicationField.text)) pageDialog.close() }
+        }
+    }
+    C.Dialog {
+        id: foregroundDialog; parent: C.Overlay.overlay; anchors.centerIn: parent; width: 480; modal: true; title: qsTr("识别当前操作的程序")
+        standardButtons: C.Dialog.Close
+        ColumnLayout {
+            width: parent.width; spacing: 14
+            C.Label { text: qsTr("保持此窗口打开，点击要绑定的软件，等待片刻后返回。识别只使用程序名，不读取窗口标题或文档内容。"); wrapMode: Text.WordWrap; Layout.fillWidth: true }
+            C.TextField { text: editor.foregroundApplication; readOnly: true; selectByMouse: true; placeholderText: qsTr("等待前台程序"); Layout.fillWidth: true }
+            RowLayout {
+                C.Button { text: qsTr("复制程序名称"); enabled: !!editor.foregroundApplication; onClicked: editor.copyForegroundApplication() }
+                C.Button { text: qsTr("绑定到当前页"); highlighted: true; enabled: !!editor.foregroundApplication; onClicked: if (editor.renamePage(editor.currentPageId, page.name, editor.foregroundApplication)) foregroundDialog.close() }
+            }
+            C.Label { text: qsTr("未知程序回到首页；同名绑定按页面顺序取第一项。KDE 自身和短暂焦点变化不会打断当前页。"); wrapMode: Text.WordWrap; Layout.fillWidth: true; color: "#69778b"; font.pixelSize: 12 }
         }
     }
     Connections {

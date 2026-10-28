@@ -3,7 +3,9 @@
  */
 #include "paneleditor.h"
 #include "panelactions.h"
+#include <QClipboard>
 #include <QFileInfo>
+#include <QGuiApplication>
 #include <QJsonArray>
 #include <QUrl>
 #include <QUuid>
@@ -19,6 +21,7 @@ PanelEditor::PanelEditor(const QString &directory, QObject *parent)
     });
     connect(&m_store, &PanelStore::changed, this, [this] {
         const auto root = m_store.document().privateConfig();
+        m_foreground.setEnabled(root.value(QStringLiteral("mode")).toString() == QLatin1String("follow"));
         if (pageIndex(root.value(QStringLiteral("pages")).toArray()) < 0) {
             m_currentPageId = root.value(QStringLiteral("homePageId")).toString();
         }
@@ -26,6 +29,7 @@ PanelEditor::PanelEditor(const QString &directory, QObject *parent)
         Q_EMIT errorChanged();
         Q_EMIT changed();
     });
+    connect(&m_foreground, &PanelForeground::applicationChanged, this, &PanelEditor::foregroundChanged);
     m_store.load();
     if (m_currentPageId.isEmpty())
         m_currentPageId = m_store.document().privateConfig().value(QStringLiteral("homePageId")).toString();
@@ -46,6 +50,24 @@ QString PanelEditor::error() const
 QStringList PanelEditor::keyNames() const
 {
     return PanelActions::keyNames();
+}
+
+QString PanelEditor::foregroundApplication() const
+{
+    return m_foreground.application();
+}
+
+bool PanelEditor::foregroundSupported() const
+{
+    return PanelForeground::supported();
+}
+
+bool PanelEditor::copyForegroundApplication()
+{
+    if (m_foreground.application().isEmpty() || !qobject_cast<QGuiApplication *>(QCoreApplication::instance()))
+        return false;
+    QGuiApplication::clipboard()->setText(m_foreground.application());
+    return true;
 }
 
 int PanelEditor::pageIndex(const QJsonArray &pages) const
@@ -135,13 +157,16 @@ bool PanelEditor::deletePage(const QString &pageId)
 
 bool PanelEditor::renamePage(const QString &pageId, const QString &name, const QString &application)
 {
+    const auto applicationName = ForegroundFilter::applicationName(application);
+    if (!application.trimmed().isEmpty() && applicationName.isEmpty())
+        return fail(QStringLiteral("invalid_application"));
     auto config = m_store.document().privateConfig();
     auto pages = config.value(QStringLiteral("pages")).toArray();
     for (int index = 0; index < pages.size(); ++index) {
         auto page = pages[index].toObject();
         if (page.value(QStringLiteral("id")).toString() == pageId) {
             page.insert(QStringLiteral("name"), name.trimmed());
-            page.insert(QStringLiteral("application"), application.trimmed());
+            page.insert(QStringLiteral("application"), applicationName);
             pages[index] = page;
             config.insert(QStringLiteral("pages"), pages);
             return save(config);

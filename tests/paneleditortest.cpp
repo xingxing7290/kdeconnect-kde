@@ -25,6 +25,19 @@ private:
         return editor.currentPage().value(QStringLiteral("slots")).toList();
     }
 private Q_SLOTS:
+    void applicationBindingIsNormalizedWithoutChangingPageDisplayName()
+    {
+        QTemporaryDir directory;
+        PanelEditor editor(directory.path());
+        QVERIFY(editor.renamePage(editor.currentPageId(), QStringLiteral("My editor"), QStringLiteral(" C:\\Apps\\NOTEPAD++.EXE ")));
+        QCOMPARE(editor.currentPage().value(QStringLiteral("name")).toString(), QStringLiteral("My editor"));
+        QCOMPARE(editor.currentPage().value(QStringLiteral("application")).toString(), QStringLiteral("notepad++.exe"));
+        const auto saved = editor.config();
+        QVERIFY(!editor.renamePage(editor.currentPageId(), QStringLiteral("Bad"), QStringLiteral("bad\n.exe")));
+        QCOMPARE(editor.config(), saved);
+        QVERIFY(editor.renamePage(editor.currentPageId(), QStringLiteral("My editor"), QString()));
+        QVERIFY(editor.currentPage().value(QStringLiteral("application")).toString().isEmpty());
+    }
     void pageLimitAndDeletionKeepAllReferencesValid()
     {
         QTemporaryDir directory;

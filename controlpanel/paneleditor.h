@@ -2,6 +2,7 @@
  * SPDX-License-Identifier: GPL-2.0-only OR GPL-3.0-only OR LicenseRef-KDE-Accepted-GPL
  */
 #pragma once
+#include "panelforeground.h"
 #include "panelstore.h"
 #include <QUrl>
 #include <QVariantList>
@@ -17,6 +18,8 @@ class PanelEditor : public QObject
     Q_PROPERTY(QString currentPageId READ currentPageId NOTIFY changed)
     Q_PROPERTY(QString error READ error NOTIFY errorChanged)
     Q_PROPERTY(QStringList keyNames READ keyNames CONSTANT)
+    Q_PROPERTY(QString foregroundApplication READ foregroundApplication NOTIFY foregroundChanged)
+    Q_PROPERTY(bool foregroundSupported READ foregroundSupported CONSTANT)
 public:
     explicit PanelEditor(const QString &directory = {}, QObject *parent = nullptr);
     QVariantMap config() const;
@@ -24,6 +27,9 @@ public:
     QString currentPageId() const;
     QString error() const;
     QStringList keyNames() const;
+    QString foregroundApplication() const;
+    bool foregroundSupported() const;
+    Q_INVOKABLE bool copyForegroundApplication();
     Q_INVOKABLE bool selectPage(const QString &pageId);
     Q_INVOKABLE bool addPage();
     Q_INVOKABLE bool deletePage(const QString &pageId);
@@ -42,12 +48,14 @@ public:
 Q_SIGNALS:
     void changed();
     void errorChanged();
+    void foregroundChanged();
 
 private:
     bool save(const QJsonObject &config);
     bool fail(const QString &error);
     int pageIndex(const QJsonArray &pages) const;
     PanelStore m_store;
+    PanelForeground m_foreground;
     QString m_currentPageId;
     QString m_error;
 };

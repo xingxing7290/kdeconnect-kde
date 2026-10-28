@@ -2,6 +2,7 @@
  * SPDX-License-Identifier: GPL-2.0-only OR GPL-3.0-only OR LicenseRef-KDE-Accepted-GPL
  */
 #include "paneldocument.h"
+#include "panelforeground.h"
 
 #include <QJsonArray>
 #include <QJsonDocument>
@@ -255,6 +256,8 @@ QJsonObject PanelDocument::publicConfig() const
     for (const QJsonValue &pageValue : m_config.value(QStringLiteral("pages")).toArray()) {
         const QJsonObject source = pageValue.toObject();
         QJsonObject page = project(source, {QStringLiteral("id"), QStringLiteral("name"), QStringLiteral("application")});
+        if (page.contains(QStringLiteral("application")))
+            page.insert(QStringLiteral("application"), ForegroundFilter::applicationName(page.value(QStringLiteral("application")).toString()));
         QJsonArray buttonSlots;
         for (const QJsonValue &slot : source.value(QStringLiteral("slots")).toArray()) {
             buttonSlots.append(

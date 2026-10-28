@@ -111,6 +111,20 @@ private Q_SLOTS:
         QVERIFY(document.has_value());
         QCOMPARE(document->revision(), PanelDocument::MaxRevision);
     }
+    void publicApplicationBindingNeverContainsPrivateDirectory()
+    {
+        auto config = fixture();
+        auto pages = config.value(QStringLiteral("pages")).toArray();
+        auto page = pages[1].toObject();
+        page.insert(QStringLiteral("application"), QStringLiteral("C:\\Private Apps\\Notepad.EXE"));
+        pages[1] = page;
+        config.insert(QStringLiteral("pages"), pages);
+        const auto document = PanelDocument::fromJson(QJsonDocument(config).toJson());
+        QVERIFY(document);
+        const auto publicPages = document->publicConfig().value(QStringLiteral("pages")).toArray();
+        QCOMPARE(publicPages[1].toObject().value(QStringLiteral("application")).toString(), QStringLiteral("notepad.exe"));
+        QVERIFY(!QJsonDocument(document->publicConfig()).toJson().contains("Private Apps"));
+    }
 
     void deeplyNestedUnknownFieldsAreRejected()
     {

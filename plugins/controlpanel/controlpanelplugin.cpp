@@ -7,6 +7,7 @@
 #include <QJsonDocument>
 #include <QPointer>
 #include <panelactions.h>
+#include <panelforeground.h>
 
 K_PLUGIN_CLASS_WITH_JSON(ControlPanelPlugin, "kdeconnect_controlpanel.json")
 
@@ -19,6 +20,16 @@ ControlPanel::PanelRuntime *runtime()
         auto *store = new ControlPanel::PanelStore({}, QCoreApplication::instance());
         store->load();
         shared = new ControlPanel::PanelRuntime(store, store);
+        auto *foreground = new ControlPanel::PanelForeground(shared);
+        QObject::connect(foreground, &ControlPanel::PanelForeground::applicationChanged, shared, [foreground] {
+            shared->setForegroundApplication(foreground->application());
+        });
+        const auto updateMonitor = [store, foreground] {
+            foreground->setEnabled(store->isUsable() && store->document().privateConfig().value(QStringLiteral("mode")).toString() == QLatin1String("follow"));
+        };
+        QObject::connect(store, &ControlPanel::PanelStore::changed, foreground, updateMonitor);
+        QObject::connect(store, &ControlPanel::PanelStore::errorOccurred, foreground, updateMonitor);
+        updateMonitor();
     }
     return shared;
 }

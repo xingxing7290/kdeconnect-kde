@@ -11,6 +11,11 @@
 // ----------------------------------------------------------------------------
 
 #pragma once
+#include <Windows.h>
+#include <mmdeviceapi.h>
+#include <propkeydef.h>
+#include <propsys.h>
+
 #include "mmreg.h"
 
 interface DECLSPEC_UUID("f8679f50-850a-41cf-9c72-430f290290c8") IPolicyConfig;

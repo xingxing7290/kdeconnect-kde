@@ -55,6 +55,7 @@ ecm_target_qml_sources(kdeconnect-app SOURCES
 
 target_link_libraries(kdeconnect-app PRIVATE
     kdeconnectpanelactions
+    kdeconnectvolume
     KF6::BreezeIcons
     Qt::Quick
     Qt::QuickControls2

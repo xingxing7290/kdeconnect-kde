@@ -18,7 +18,7 @@ if(WIN32)
     target_link_libraries(kdeconnect_systemvolume
         kdeconnectcore
         Qt::Core
-        ole32
+        kdeconnectvolume
     )
 elseif(APPLE)
     target_link_libraries(kdeconnect_systemvolume

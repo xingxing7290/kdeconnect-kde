@@ -27,6 +27,7 @@
 #include <KLocalizedString>
 #include <KWindowSystem>
 #include <paneleditor.h>
+#include <volumecontroller.h>
 
 #if defined(Q_OS_MAC)
 #include "macosforegroundapp.h"
@@ -134,6 +135,7 @@ int main(int argc, char *argv[])
     ControlPanel::PanelEditor panelEditor;
     QQmlApplicationEngine engine;
     engine.rootContext()->setContextProperty(QStringLiteral("panelEditor"), &panelEditor);
+    engine.rootContext()->setContextProperty(QStringLiteral("localVolume"), SystemVolume::VolumeController::instance());
     KLocalization::setupLocalizedContext(&engine);
     engine.loadFromModule("org.kde.kdeconnect.app", "Main");
 

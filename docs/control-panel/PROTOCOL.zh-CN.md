@@ -1,6 +1,6 @@
 # 控制面板协议 v1
 
-此协议随个人 fork 发布，传输复用 KDE Connect 的已配对连接。配置、动作、结果和页状态已接入两端插件，并完成真实手机/Windows 文件按钮联调；Windows 智能跟随已接入现有 state 包，验证边界见 MILESTONE-03.zh-CN.md。资源和天气仍按 PLAN 继续实现。
+此协议随个人 fork 发布，传输复用 KDE Connect 的已配对连接。配置、动作、结果和页状态已接入双端，Windows 跟随使用现有 state 包；音量复用既有 System Volume 包。阶段证据及边界见 MILESTONE-03.zh-CN.md、MILESTONE-04.zh-CN.md。资源和天气仍按 PLAN 继续实现。
 
 ## 配置
 
@@ -50,3 +50,9 @@ sessionId、requestId 使用小写 UUID。Android 每次重新建立插件会话
 - command：key 引用该设备既有 Run Command 插件中的已配置命令；输出和停止继续使用原插件。
 
 动作 success 表示已提交给操作系统或既有命令插件，不表示目标程序已经退出或完成其业务任务。Windows 快捷键和系统动作通过平台 API 执行；其他平台返回明确的不支持错误。
+
+## 音量复用包
+
+音量继续使用 kdeconnect.systemvolume 和 kdeconnect.systemvolume.request，不混入面板 action/sessionId/revision。Windows sinkList 的 name 为稳定端点 ID，description 为友好名称，volume 为整数 0..100，maxVolume=100，muted/enabled 为布尔。没有默认输出时不自动选列表首项。
+
+请求为 requestSinks=true，或 name 加 volume、muted、enabled。Windows 写入前完整校验字段与类型，拒绝越界和已消失目标。仅在配对且可达时接受和发布；原生状态按变化发送，包括空列表以清理旧设备。手机拖动以 80 毫秒节流并发送最终值，使用手势初始设备 ID。默认切换角色及原协议没有逐次结果确认的边界见 VOLUME.zh-CN.md。

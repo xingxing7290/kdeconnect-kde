@@ -1,4 +1,7 @@
 find_package(Qt6 ${QT_MIN_VERSION} REQUIRED COMPONENTS Test)
+ecm_add_test(volumecontrollertest.cpp LINK_LIBRARIES kdeconnectvolume Qt::Test)
+ecm_add_test(volumeuitest.cpp LINK_LIBRARIES kdeconnectvolume kdeconnectpanelactions Qt::Quick Qt::QuickControls2 Qt::Test)
+set_property(TEST volumeuitest APPEND PROPERTY ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
 
 ecm_add_test(paneldocumenttest.cpp LINK_LIBRARIES kdeconnectpanel Qt::Test)
 ecm_add_test(panelstoretest.cpp LINK_LIBRARIES kdeconnectpanel Qt::Test)
@@ -6,6 +9,8 @@ ecm_add_test(panelpeertest.cpp LINK_LIBRARIES kdeconnectpanel Qt::Test)
 ecm_add_test(panelforegroundtest.cpp LINK_LIBRARIES kdeconnectpanel Qt::Test)
 ecm_add_test(panelruntimetest.cpp LINK_LIBRARIES kdeconnectpanel Qt::Test)
 if(WIN32)
+    add_executable(volumeintegration volumeintegration.cpp)
+    target_link_libraries(volumeintegration PRIVATE kdeconnectvolume)
     # Requires a desktop session and foreground activation permission; run manually.
     add_executable(panelforegroundintegration panelforegroundintegration.cpp)
     target_link_libraries(panelforegroundintegration PRIVATE kdeconnectpanel Qt::Gui)

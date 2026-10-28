@@ -124,9 +124,26 @@ Item {
                                 }
                                 ColumnLayout {
                                     visible: config.appearance.showVolume; Layout.preferredWidth: 30; Layout.fillHeight: true
-                                    Kirigami.Icon { source: "audio-volume-high"; Layout.preferredWidth: 22; Layout.preferredHeight: 22; Layout.alignment: Qt.AlignHCenter }
-                                    C.Slider { orientation: Qt.Vertical; enabled: false; value: 0; Layout.fillHeight: true; Layout.alignment: Qt.AlignHCenter }
-                                    Kirigami.Icon { source: "audio-volume-muted"; Layout.preferredWidth: 22; Layout.preferredHeight: 22; Layout.alignment: Qt.AlignHCenter }
+                                    C.Label { text: localVolume.available ? localVolume.volume + "%" : "--"; font.pixelSize: 10; Layout.alignment: Qt.AlignHCenter }
+                                    C.Slider {
+                                        objectName: "panelLocalVolumeSlider"
+                                        property string dragOutput: ""
+                                        orientation: Qt.Vertical; enabled: localVolume.available; from: 0; to: 100; stepSize: 1
+                                        value: localVolume.volume; Layout.fillHeight: true; Layout.alignment: Qt.AlignHCenter
+                                        Accessible.name: qsTr("电脑音量")
+                                        onPressedChanged: if (pressed) dragOutput = localVolume.defaultId
+                                        onMoved: {
+                                            const output = pressed ? dragOutput : localVolume.defaultId;
+                                            if (output === localVolume.defaultId) localVolume.setSinkVolume(output, Math.round(value));
+                                        }
+                                    }
+                                    C.ToolButton {
+                                        objectName: "panelLocalMuteButton"
+                                        enabled: localVolume.available; Layout.alignment: Qt.AlignHCenter
+                                        Accessible.name: localVolume.muted ? qsTr("取消静音") : qsTr("静音")
+                                        contentItem: Kirigami.Icon { source: localVolume.muted ? "audio-volume-muted" : "audio-volume-high"; implicitWidth: 22; implicitHeight: 22 }
+                                        onClicked: localVolume.setSinkMuted(localVolume.defaultId, !localVolume.muted)
+                                    }
                                 }
                             }
                         }
@@ -208,6 +225,20 @@ Item {
                 C.Label { text: qsTr("切换方向"); Layout.leftMargin: 16 }
                 C.ComboBox { model: [qsTr("左右滑动"), qsTr("上下滑动")]; currentIndex: config.appearance.swipeDirection === "vertical" ? 1 : 0; onActivated: editor.setAppearance("swipeDirection", currentIndex ? "vertical" : "horizontal") }
             }
+            RowLayout {
+                visible: config.appearance.showVolume; Layout.fillWidth: true
+                C.Label { text: qsTr("音频输出") }
+                C.ComboBox {
+                    Layout.fillWidth: true; model: localVolume.outputs; textRole: "description"
+                    objectName: "panelLocalOutputSelector"
+                    currentIndex: localVolume.outputs.findIndex(item => item.enabled)
+                    enabled: localVolume.outputs.length > 0
+                    onActivated: localVolume.setDefaultSink(localVolume.outputs[currentIndex].name)
+                    Accessible.name: qsTr("默认音频输出设备")
+                }
+                C.Label { text: qsTr("无默认输出"); color: "#b3261e"; visible: !localVolume.available }
+            }
+            C.Label { visible: !!localVolume.error; text: qsTr("音量操作暂不可用：") + localVolume.error; color: "#b3261e"; font.pixelSize: 11; Layout.fillWidth: true }
         }
         ColumnLayout {
             C.Label { text: qsTr("开启连接"); font.pixelSize: 26; font.bold: true; color: "#273448" }

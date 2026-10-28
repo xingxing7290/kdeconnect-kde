@@ -24,6 +24,10 @@ add_executable(kdeconnect-app
     ${kdeconnect_custom_icons_SRCS}
 )
 
+if (APPLE)
+    target_sources(kdeconnect-app PRIVATE macosforegroundapp.mm)
+endif()
+
 ecm_add_qml_module(kdeconnect-app URI org.kde.kdeconnect.app)
 
 ecm_target_qml_sources(kdeconnect-app SOURCES
@@ -32,6 +36,8 @@ ecm_target_qml_sources(kdeconnect-app SOURCES
     qml/mousepad.qml
     qml/presentationRemote.qml
     qml/PluginItem.qml
+    qml/BatteryInfo.qml
+    qml/ConnectivityInfo.qml
     qml/DevicePage.qml
     qml/runcommand.qml
     qml/volume.qml
@@ -39,9 +45,27 @@ ecm_target_qml_sources(kdeconnect-app SOURCES
     qml/PluginSettings.qml
     qml/Settings.qml
     qml/WelcomePage.qml
+    qml/NotificationPanel.qml
 )
 
-target_link_libraries(kdeconnect-app PRIVATE Qt::Quick Qt::QuickControls2 Qt::Widgets KF6::CoreAddons KF6::I18n KF6::ColorScheme KF6::Crash KF6::ItemModels KF6::DBusAddons KF6::WindowSystem)
+target_link_libraries(kdeconnect-app PRIVATE
+    Qt::Quick
+    Qt::QuickControls2
+    Qt::Widgets
+    KF6::CoreAddons
+    KF6::I18n
+    KF6::I18nQml
+    KF6::ColorScheme
+    KF6::Crash
+    KF6::ItemModels
+    KF6::DBusAddons
+    KF6::WindowSystem
+)
 
-install(TARGETS kdeconnect-app ${KDE_INSTALL_TARGETS_DEFAULT_ARGS})
+if (APPLE)
+    target_link_libraries(kdeconnect-app PRIVATE "-framework AppKit")
+endif()
+
+set_target_properties(kdeconnect-app PROPERTIES MACOSX_BUNDLE FALSE)
+install(TARGETS kdeconnect-app ${KDECONNECT_INSTALL_TARGETS_DEFAULT_ARGS_BUNDLE})
 install(PROGRAMS org.kde.kdeconnect.app.desktop DESTINATION ${KDE_INSTALL_APPDIR})

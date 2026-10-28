@@ -13,6 +13,7 @@
 
 #include "dbusinterfaces/dbusinterfaces.h"
 
+#include <core/processhelper.h>
 #include <dbushelper.h>
 #include <dbushelpers.h>
 #include <systray_actions.h>
@@ -20,7 +21,7 @@
 DeviceIndicator::DeviceIndicator(DeviceDbusInterface *device)
     : QMenu(device->name(), nullptr)
     , m_device(device)
-    , m_remoteCommandsInterface(new RemoteCommandsDbusInterface(m_device->id()))
+    , m_remoteCommandsInterface(new RemoteCommandsDbusInterface(m_device->id(), this))
 {
     setIcon(QIcon::fromTheme(device->iconName()));
 
@@ -28,16 +29,18 @@ DeviceIndicator::DeviceIndicator(DeviceDbusInterface *device)
 
     // Battery status
     auto battery = new BatteryAction(device);
+    battery->setParent(this);
     addAction(battery);
     setWhenAvailable(
         device->hasPlugin(QStringLiteral("kdeconnect_battery")),
         [battery](bool error, bool available) {
-            battery->setVisible(available && !error);
+            battery->setVisible(available && !error && battery->hasBattery());
             battery->setDisabled(true);
         },
         this);
 
     auto connectivity = new ConnectivityAction(device);
+    connectivity->setParent(this);
     addAction(connectivity);
     setWhenAvailable(
         device->hasPlugin(QStringLiteral("kdeconnect_connectivity_report")),
@@ -93,16 +96,20 @@ DeviceIndicator::DeviceIndicator(DeviceDbusInterface *device)
 
     // Send file
     auto sendFile = addAction(QIcon::fromTheme(QStringLiteral("document-share")), i18n("Send files"));
-    connect(sendFile, &QAction::triggered, device, [device, this]() {
-        const QList<QUrl> urls = QFileDialog::getOpenFileUrls(this);
-        if (!urls.isEmpty()) {
+    connect(sendFile, &QAction::triggered, device, [device]() {
+        // Not parented to the indicator, which can be deleted by a menu refresh while the dialog is open
+        auto dialog = new QFileDialog();
+        dialog->setFileMode(QFileDialog::ExistingFiles);
+        dialog->setAttribute(Qt::WA_DeleteOnClose);
+        connect(dialog, &QFileDialog::urlsSelected, device, [device](const QList<QUrl> &urls) {
             QStringList urlsAsQStringList;
             for (const QUrl &url : urls)
                 urlsAsQStringList.append(url.toString());
             ShareDbusInterface *iface = new ShareDbusInterface(device->id(), device);
             iface->shareUrls(urlsAsQStringList);
             iface->deleteLater();
-        }
+        });
+        dialog->show();
     });
     setWhenAvailable(
         device->hasPlugin(QStringLiteral("kdeconnect_share")),
@@ -116,7 +123,7 @@ DeviceIndicator::DeviceIndicator(DeviceDbusInterface *device)
     if (!kdeconnectsmsExecutable.isEmpty()) {
         auto smsapp = addAction(QIcon::fromTheme(QStringLiteral("message-new")), i18n("SMS Messages…"));
         QObject::connect(smsapp, &QAction::triggered, device, [device, kdeconnectsmsExecutable]() {
-            QProcess::startDetached(kdeconnectsmsExecutable, {QStringLiteral("--device"), device->id()});
+            ProcessHelper::startDetached(kdeconnectsmsExecutable, {QStringLiteral("--device"), device->id()});
         });
         setWhenAvailable(
             device->hasPlugin(QStringLiteral("kdeconnect_sms")),
@@ -148,7 +155,7 @@ DeviceIndicator::DeviceIndicator(DeviceDbusInterface *device)
                 const QJsonObject cont = it->toObject();
                 QString key = it.key();
                 QAction *action = remoteCommandsMenu->addAction(cont.value(QStringLiteral("name")).toString());
-                connect(action, &QAction::triggered, [this, key] {
+                connect(action, &QAction::triggered, this, [this, key] {
                     m_remoteCommandsInterface->triggerCommand(key);
                 });
             }

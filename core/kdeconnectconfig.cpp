@@ -27,6 +27,19 @@
 #include "pluginloader.h"
 #include "sslhelper.h"
 
+#if defined(Q_OS_WIN)
+#include <windows.h>
+
+#include <powrprof.h>
+#elif defined(Q_OS_MAC)
+#include <IOKit/ps/IOPSKeys.h>
+#include <IOKit/ps/IOPowerSources.h>
+#else
+#include <QDBusConnection>
+#include <QDBusMessage>
+#include <QDBusVariant>
+#endif
+
 const QFile::Permissions strictPermissions = QFile::ReadOwner | QFile::WriteOwner | QFile::ReadUser | QFile::WriteUser;
 
 struct KdeConnectConfigPrivate {
@@ -59,15 +72,15 @@ KdeConnectConfig::KdeConnectConfig()
     d->m_trustedDevices = new QSettings(baseConfigDir().absoluteFilePath(QStringLiteral("trusted_devices")), QSettings::IniFormat);
 
     loadOrGeneratePrivateKeyAndCertificate(privateKeyPath(), certificatePath());
-
-    if (name().isEmpty()) {
-        setName(getDefaultDeviceName());
-    }
 }
 
 QString KdeConnectConfig::name()
 {
-    return d->m_config->value(QStringLiteral("name")).toString();
+    QString storedName = d->m_config->value(QStringLiteral("name")).toString();
+    if (storedName.isEmpty()) {
+        return getDefaultDeviceName(); // Fallback to hostname
+    }
+    return storedName;
 }
 
 void KdeConnectConfig::setName(const QString &name)
@@ -78,13 +91,82 @@ void KdeConnectConfig::setName(const QString &name)
 
 void KdeConnectConfig::setDisabledLinkProviders(const QStringList disabledProviders)
 {
-    d->m_config->setValue(QStringLiteral("disabled_providers"), disabledProviders);
+    d->m_config->setValue(QStringLiteral("disabled_providers_v2"), disabledProviders);
     d->m_config->sync();
 }
 
 QStringList KdeConnectConfig::disabledLinkProviders() const
 {
-    return d->m_config->value(QStringLiteral("disabled_providers")).toStringList();
+    // BluetoothLinkProvider is disabled by default because it causes
+    // issues with other BT devices:
+    // - https://bugs.kde.org/show_bug.cgi?id=520578
+    // - https://bugs.kde.org/show_bug.cgi?id=513536
+    return d->m_config->value(QStringLiteral("disabled_providers_v2"), QStringList{QStringLiteral("bluetooth"), QStringLiteral("loopback")}).toStringList();
+}
+
+static DeviceType detectPlatformDeviceType()
+{
+#if defined(Q_OS_WIN)
+    switch (PowerDeterminePlatformRoleEx(POWER_PLATFORM_ROLE_V2)) {
+    case PlatformRoleMobile:
+        return DeviceType::Laptop;
+    case PlatformRoleSlate:
+        return DeviceType::Tablet;
+    case PlatformRoleDesktop:
+    case PlatformRoleWorkstation:
+        return DeviceType::Desktop;
+    default:
+        return DeviceType::Unknown;
+    }
+#elif defined(Q_OS_MAC)
+    // Assume Macs with an internal battery are laptops
+    CFTypeRef info = IOPSCopyPowerSourcesInfo();
+    if (!info) {
+        return DeviceType::Unknown;
+    }
+    CFArrayRef sources = IOPSCopyPowerSourcesList(info);
+    if (!sources) {
+        CFRelease(info);
+        return DeviceType::Unknown;
+    }
+    DeviceType result = DeviceType::Unknown;
+    for (CFIndex i = 0; i < CFArrayGetCount(sources); i++) {
+        CFDictionaryRef description = IOPSGetPowerSourceDescription(info, CFArrayGetValueAtIndex(sources, i));
+        if (!description) {
+            continue;
+        }
+        const auto type = static_cast<CFStringRef>(CFDictionaryGetValue(description, CFSTR(kIOPSTypeKey)));
+        if (type && CFStringCompare(type, CFSTR(kIOPSInternalBatteryType), 0) == kCFCompareEqualTo) {
+            result = DeviceType::Laptop;
+            break;
+        }
+    }
+    CFRelease(sources);
+    CFRelease(info);
+    return result;
+#else
+    QDBusMessage message = QDBusMessage::createMethodCall(QStringLiteral("org.freedesktop.hostname1"),
+                                                          QStringLiteral("/org/freedesktop/hostname1"),
+                                                          QStringLiteral("org.freedesktop.DBus.Properties"),
+                                                          QStringLiteral("Get"));
+    message << QStringLiteral("org.freedesktop.hostname1") << QStringLiteral("Chassis");
+    QDBusMessage reply = QDBusConnection::systemBus().call(message, QDBus::Block, 1000);
+    if (reply.type() != QDBusMessage::ReplyMessage || reply.arguments().isEmpty()) {
+        qCDebug(KDECONNECT_CORE) << "Could not query chassis type from hostnamed" << reply.errorMessage();
+        return DeviceType::Unknown;
+    }
+    const QString chassis = reply.arguments().constFirst().value<QDBusVariant>().variant().toString();
+    if (chassis == QLatin1String("laptop") || chassis == QLatin1String("convertible")) {
+        return DeviceType::Laptop;
+    } else if (chassis == QLatin1String("desktop")) {
+        return DeviceType::Desktop;
+    } else if (chassis == QLatin1String("tablet")) {
+        return DeviceType::Tablet;
+    } else if (chassis == QLatin1String("handset")) {
+        return DeviceType::Phone;
+    }
+    return DeviceType::Unknown;
+#endif
 }
 
 DeviceType KdeConnectConfig::deviceType()
@@ -99,7 +181,10 @@ DeviceType KdeConnectConfig::deviceType()
         return DeviceType::Tv;
     }
 
-    // TODO non-Plasma mobile platforms
+    static const DeviceType detected = detectPlatformDeviceType();
+    if (detected != DeviceType::Unknown) {
+        return detected;
+    }
 
     return DeviceType::Desktop;
 }

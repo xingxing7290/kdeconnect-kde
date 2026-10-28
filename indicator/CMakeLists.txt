@@ -29,18 +29,17 @@ else ()
     list(APPEND indicator_SRCS indicatorhelper.cpp)
 endif()
 
-add_executable(kdeconnect-indicator ${indicator_SRCS})
+add_executable(kdeconnect-indicator MACOSX_BUNDLE ${indicator_SRCS})
 
 ecm_qt_declare_logging_category(kdeconnect-indicator
     HEADER indicator_debug.h
     IDENTIFIER KDECONNECT_INDICATOR CATEGORY_NAME kdeconnect.indicator
-    DEFAULT_SEVERITY Warning
     EXPORT kdeconnect-kde DESCRIPTION "kdeconnect (indicator)")
 
 
 target_include_directories(kdeconnect-indicator PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/systray_actions)
 
-target_link_libraries(kdeconnect-indicator Qt::Widgets Qt::QuickControls2 KF6::CoreAddons KF6::I18n KF6::Notifications KF6::DBusAddons KF6::ColorScheme KF6::Crash kdeconnectdbusinterfaces kdeconnectmodels kdeconnectcore kdeconnectversion)
+target_link_libraries(kdeconnect-indicator Qt::Widgets Qt::QuickControls2 KF6::CoreAddons KF6::I18n KF6::Notifications KF6::DBusAddons KF6::ColorScheme KF6::IconThemes KF6::Crash kdeconnectdbusinterfaces kdeconnectmodels kdeconnectcore kdeconnectversion)
 
 if (WIN32)
     target_link_libraries(kdeconnect-indicator windowsapp)
@@ -62,5 +61,5 @@ set_target_properties(kdeconnect-indicator PROPERTIES
 )
 endif()
 
-install(TARGETS kdeconnect-indicator ${KDE_INSTALL_TARGETS_DEFAULT_ARGS})
+install(TARGETS kdeconnect-indicator ${KDECONNECT_INSTALL_TARGETS_DEFAULT_ARGS_BUNDLE})
 install(PROGRAMS org.kde.kdeconnect.nonplasma.desktop DESTINATION ${KDE_INSTALL_APPDIR})

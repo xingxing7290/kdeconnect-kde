@@ -19,7 +19,6 @@
 #include "notificationserverinfo.h"
 
 #ifdef KDECONNECT_BLUETOOTH
-#include "backends/bluetooth/asynclinkprovider.h"
 #include "backends/bluetooth/bluetoothlinkprovider.h"
 #endif
 
@@ -36,7 +35,7 @@ struct DaemonPrivate {
     QSet<LinkProvider *> m_linkProviders;
 
     // Every known device
-    std::map<QString, std::unique_ptr<Device>> m_devices;
+    QMap<QString, Device *> m_devices;
 
     bool m_testMode;
 };
@@ -80,17 +79,17 @@ void Daemon::init()
     qCDebug(KDECONNECT_CORE) << "Constructing Backends";
     // Load backends
     if (d->m_testMode) {
-        d->m_linkProviders.insert(new LoopbackLinkProvider());
+        d->m_linkProviders.insert(new LoopbackLinkProvider(false));
         qCDebug(KDECONNECT_CORE) << "Constructed LoopbackLink Backend";
     } else {
-        d->m_linkProviders.insert(new LanLinkProvider(false, disabledLinkProviders.contains(QStringLiteral("LanLinkProvider"))));
+        d->m_linkProviders.insert(new LanLinkProvider(false, disabledLinkProviders.contains(QStringLiteral("lan"))));
         qCDebug(KDECONNECT_CORE) << "Constructed LanLinkProvider Backend";
 #ifdef KDECONNECT_BLUETOOTH
-        d->m_linkProviders.insert(new AsyncLinkProvider(disabledLinkProviders.contains(QStringLiteral("AsyncLinkProvider"))));
-        qCDebug(KDECONNECT_CORE) << "Constructed AsyncLinkProvider<AsyncLinkProvider> Backend";
+        d->m_linkProviders.insert(new BluetoothLinkProvider(disabledLinkProviders.contains(QStringLiteral("bluetooth"))));
+        qCDebug(KDECONNECT_CORE) << "Constructed BluetoothLinkProvider Backend";
 #endif
 #ifdef KDECONNECT_LOOPBACK
-        d->m_linkProviders.insert(new LoopbackLinkProvider());
+        d->m_linkProviders.insert(new LoopbackLinkProvider(disabledLinkProviders.contains(QStringLiteral("loopback"))));
         qCDebug(KDECONNECT_CORE) << "Constructed LoopbackLinkProvider Backend";
 #endif
     }
@@ -101,13 +100,13 @@ void Daemon::init()
     // Read remembered paired devices
     const QStringList &list = KdeConnectConfig::instance().trustedDevices();
     for (const QString &id : list) {
-        auto d = std::make_unique<Device>(id);
+        Device *d = new Device(this, id);
         // prune away devices with malformed certificates
         if (d->hasInvalidCertificate()) {
             qCDebug(KDECONNECT_CORE) << "Certificate for device " << id << "invalid, deleting the device";
             KdeConnectConfig::instance().removeTrustedDevice(id);
         } else {
-            addDevice(std::move(d));
+            addDevice(d);
         }
     }
 
@@ -115,7 +114,8 @@ void Daemon::init()
 
     // Listen to new devices
     for (LinkProvider *a : std::as_const(d->m_linkProviders)) {
-        connect(a, &LinkProvider::onConnectionReceived, this, &Daemon::onNewDeviceLink);
+        connect(a, &LinkProvider::connectionReceived, this, &Daemon::onNewDeviceLink);
+        connect(a, &LinkProvider::deviceInfoUpdated, this, &Daemon::onDeviceInfoUpdated);
         a->onStart();
     }
 
@@ -128,14 +128,9 @@ void Daemon::init()
 
 void Daemon::removeDevice(Device *device)
 {
-    const QString deviceId = device->id();
-
-    for (LinkProvider *a : std::as_const(d->m_linkProviders)) {
-        a->deviceRemoved(device->id());
-    }
-
-    d->m_devices.erase(deviceId);
-    Q_EMIT deviceRemoved(deviceId);
+    d->m_devices.remove(device->id());
+    device->deleteLater();
+    Q_EMIT deviceRemoved(device->id());
     Q_EMIT deviceListChanged();
 }
 
@@ -143,15 +138,19 @@ void Daemon::forceOnNetworkChange()
 {
     qCDebug(KDECONNECT_CORE) << "Sending onNetworkChange to" << d->m_linkProviders.size() << "LinkProviders";
     for (LinkProvider *a : std::as_const(d->m_linkProviders)) {
-        qCDebug(KDECONNECT_CORE) << "Sending onNetworkChange to:" << a->name();
+        qCDebug(KDECONNECT_CORE) << "Sending onNetworkChange to:" << a->id();
         a->onNetworkChange();
     }
 }
 
 Device *Daemon::getDevice(const QString &deviceId)
 {
-    auto it = d->m_devices.find(deviceId);
-    return it != d->m_devices.end() ? it->second.get() : nullptr;
+    for (Device *device : std::as_const(d->m_devices)) {
+        if (device->id() == deviceId) {
+            return device;
+        }
+    }
+    return nullptr;
 }
 
 QSet<LinkProvider *> Daemon::getLinkProviders() const
@@ -166,9 +165,9 @@ QStringList Daemon::linkProviders() const
     QStringList returnValue;
 
     for (LinkProvider *a : std::as_const(d->m_linkProviders)) {
-        QString line(a->displayName() + u'|' + a->name());
+        QString line(a->displayName() + u'|' + a->id());
 
-        if (disabledLinkProviders.contains(a->name())) {
+        if (disabledLinkProviders.contains(a->id())) {
             line += QStringLiteral("|disabled");
         } else {
             line += QStringLiteral("|enabled");
@@ -188,7 +187,7 @@ void Daemon::setLinkProviderState(const QString &linkProviderName, bool enabled)
     LinkProvider *providerByName = nullptr;
     const auto allLinkProviders = getLinkProviders();
     for (LinkProvider *provider : allLinkProviders) {
-        if (provider->name() == linkProviderName) {
+        if (provider->id().toLower() == linkProviderName.toLower() || provider->displayName().toLower() == linkProviderName.toLower()) {
             providerByName = provider;
             break;
         }
@@ -196,13 +195,13 @@ void Daemon::setLinkProviderState(const QString &linkProviderName, bool enabled)
     Q_ASSERT(providerByName);
 
     auto disabledLinkProviders = configInstance.disabledLinkProviders();
-    if (!enabled && !disabledLinkProviders.contains(linkProviderName)) {
-        qCDebug(KDECONNECT_CORE) << "disabling" << linkProviderName;
-        disabledLinkProviders.append(linkProviderName);
+    if (!enabled && !disabledLinkProviders.contains(providerByName->id())) {
+        qCDebug(KDECONNECT_CORE) << "disabling" << providerByName->id();
+        disabledLinkProviders.append(providerByName->id());
         providerByName->disable();
-    } else if (enabled && disabledLinkProviders.contains(linkProviderName)) {
-        qCDebug(KDECONNECT_CORE) << "enabling " << linkProviderName;
-        disabledLinkProviders.removeAll(linkProviderName);
+    } else if (enabled && disabledLinkProviders.contains(providerByName->id())) {
+        qCDebug(KDECONNECT_CORE) << "enabling " << providerByName->id();
+        disabledLinkProviders.removeAll(providerByName->id());
         providerByName->enable();
     } else {
         qCDebug(KDECONNECT_CORE) << "No changes to the disabledLinkProviders have been made, returning";
@@ -216,7 +215,7 @@ void Daemon::setLinkProviderState(const QString &linkProviderName, bool enabled)
 QStringList Daemon::devices(bool onlyReachable, bool onlyTrusted) const
 {
     QStringList ret;
-    for (const auto &[deviceId, device] : d->m_devices) {
+    for (Device *device : std::as_const(d->m_devices)) {
         if (onlyReachable && !device->isReachable())
             continue;
         if (onlyTrusted && !device->isPaired())
@@ -229,7 +228,7 @@ QStringList Daemon::devices(bool onlyReachable, bool onlyTrusted) const
 QMap<QString, QString> Daemon::deviceNames(bool onlyReachable, bool onlyTrusted) const
 {
     QMap<QString, QString> ret;
-    for (const auto &[deviceId, device] : d->m_devices) {
+    for (Device *device : std::as_const(d->m_devices)) {
         if (onlyReachable && !device->isReachable())
             continue;
         if (onlyTrusted && !device->isPaired())
@@ -242,12 +241,12 @@ QMap<QString, QString> Daemon::deviceNames(bool onlyReachable, bool onlyTrusted)
 void Daemon::onNewDeviceLink(DeviceLink *link)
 {
     QString id = link->deviceId();
-
-    qCDebug(KDECONNECT_CORE) << "Device discovered" << id << "via link with priority" << link->priority();
-
-    if (d->m_devices.contains(id)) {
-        qCDebug(KDECONNECT_CORE) << "It is a known device" << link->deviceInfo().name;
-        auto &device = d->m_devices[id];
+    auto it = d->m_devices.find(id);
+    bool isKnown = it != d->m_devices.end();
+    qCDebug(KDECONNECT_CORE) << id << "connected, name" << link->deviceInfo().name << (isKnown ? "(already known device)" : "(new device)") << "via"
+                             << link->provider();
+    if (isKnown) {
+        Device *device = it.value();
         bool wasReachable = device->isReachable();
         device->addLink(link);
         if (!wasReachable) {
@@ -255,10 +254,19 @@ void Daemon::onNewDeviceLink(DeviceLink *link)
             Q_EMIT deviceListChanged();
         }
     } else {
-        qCDebug(KDECONNECT_CORE) << "It is a new device" << link->deviceInfo().name;
-        auto device = std::make_unique<Device>(link);
-        addDevice(std::move(device));
+        Device *device = new Device(this, link);
+        addDevice(device);
     }
+}
+
+void Daemon::onDeviceInfoUpdated(const DeviceInfo &deviceInfo)
+{
+    Device *device = d->m_devices.value(deviceInfo.id);
+    if (!device) {
+        qCWarning(KDECONNECT_CORE) << "onDeviceInfoUpdated for an unknown device" << deviceInfo.id;
+        return;
+    }
+    device->updateDeviceInfo(deviceInfo);
 }
 
 void Daemon::onDeviceStatusChanged()
@@ -320,7 +328,7 @@ QNetworkAccessManager *Daemon::networkAccessManager()
 
 QString Daemon::deviceIdByName(const QString &name) const
 {
-    for (const auto &[deviceId, device] : d->m_devices) {
+    for (Device *device : std::as_const(d->m_devices)) {
         if (device->name() == name) {
             return device->id();
         }
@@ -328,18 +336,18 @@ QString Daemon::deviceIdByName(const QString &name) const
     return {};
 }
 
-void Daemon::addDevice(std::unique_ptr<Device> &&device)
+void Daemon::addDevice(Device *device)
 {
     const QString id = device->id();
-    connect(device.get(), &Device::reachableChanged, this, &Daemon::onDeviceStatusChanged);
-    connect(device.get(), &Device::pairStateChanged, this, &Daemon::onDeviceStatusChanged);
-    connect(device.get(), &Device::pairStateChanged, this, &Daemon::pairingRequestsChanged);
-    connect(device.get(), &Device::pairStateChanged, this, [this, device = device.get()](int pairStateAsInt) {
+    connect(device, &Device::reachableChanged, this, &Daemon::onDeviceStatusChanged);
+    connect(device, &Device::pairStateChanged, this, &Daemon::onDeviceStatusChanged);
+    connect(device, &Device::pairStateChanged, this, &Daemon::pairingRequestsChanged);
+    connect(device, &Device::pairStateChanged, this, [this, device](int pairStateAsInt) {
         PairState pairState = (PairState)pairStateAsInt;
         if (pairState == PairState::RequestedByPeer)
             askPairingConfirmation(device);
     });
-    d->m_devices[id] = std::move(device);
+    d->m_devices[id] = device;
 
     Q_EMIT deviceAdded(id);
     Q_EMIT deviceListChanged();
@@ -348,9 +356,9 @@ void Daemon::addDevice(std::unique_ptr<Device> &&device)
 QStringList Daemon::pairingRequests() const
 {
     QStringList ret;
-    for (const auto &[deviceId, device] : d->m_devices) {
-        if (device->isPairRequestedByPeer())
-            ret += device->id();
+    for (Device *dev : std::as_const(d->m_devices)) {
+        if (dev->isPairRequestedByPeer())
+            ret += dev->id();
     }
     return ret;
 }

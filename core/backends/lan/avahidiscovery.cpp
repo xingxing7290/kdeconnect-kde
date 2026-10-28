@@ -11,6 +11,8 @@
 #include "kdeconnectconfig.h"
 #include "lanlinkprovider.h"
 
+#include <QNetworkInterface>
+
 const QString kAvahiDbusService = QStringLiteral("org.freedesktop.Avahi");
 
 const QString kKdeConnectServiceType = QStringLiteral("_kdeconnect._udp");
@@ -54,6 +56,12 @@ enum {
     AVAHI_ENTRY_GROUP_COLLISION,
     AVAHI_ENTRY_GROUP_FAILURE,
 };
+
+bool AvahiDiscovery::hasAvahiDaemonRunning()
+{
+    OrgFreedesktopAvahiServer2Interface avahiServerInterface(kAvahiDbusService, QStringLiteral("/"), QDBusConnection::systemBus());
+    return avahiServerInterface.isValid();
+}
 
 AvahiDiscovery::AvahiDiscovery(LanLinkProvider *lanLinkProvider)
     : m_avahiServerInterface(kAvahiDbusService, QStringLiteral("/"), QDBusConnection::systemBus())
@@ -219,17 +227,26 @@ void AvahiDiscovery::startDiscovering()
                             return;
                         }
 
-                        // args: 0: iface, 1: protocol, 3: name, 4: type, 5: domain, 6: host, 7: aprotocol, 8: address, 9: port, 10: txt, 11: flags
-                        const QString address = service.argumentAt<7>();
+                        // args: 0: iface, 1: protocol, 2: name, 3: type, 4: domain, 5: host, 6: aprotocol, 7: address, 8: port, 9: txt, 10: flags
+                        QHostAddress address(service.argumentAt<7>());
+                        if (address.isLinkLocal() && address.protocol() == QAbstractSocket::IPv6Protocol) {
+                            // Avahi doesn't include the scope id, which is needed to connect to link-local addresses
+                            address.setScopeId(QNetworkInterface::interfaceNameFromIndex(service.argumentAt<0>()));
+                        }
+                        const ushort port = service.argumentAt<8>();
+                        const QByteArrayList txtRecords = service.argumentAt<9>();
 
-                        // TODO: For protocol v8, we can skip ahead and open a TCP connection
-                        //       instead of sending a UDP packet and waiting for the other end
-                        //       to send the TCP connection to us, since we already have all the
-                        //       info we need to start a connection (ip, port, device id and protocol
-                        //       version) and the remaining identity info is exchanged later.
+                        int protocolVersion = -1;
+                        const QByteArray protocolPrefix("protocol=");
+                        for (const auto &record : txtRecords) {
+                            if (record.startsWith(protocolPrefix)) {
+                                protocolVersion = record.mid(protocolPrefix.size()).toInt();
+                                break;
+                            }
+                        }
 
-                        qCDebug(KDECONNECT_CORE) << "Avahi: Discovered" << name << "at" << address;
-                        lanLinkProvider->sendUdpIdentityPacket(QList<QHostAddress>{QHostAddress(address)});
+                        qCDebug(KDECONNECT_CORE) << "Avahi: Discovered" << name << "at" << address << port;
+                        lanLinkProvider->deviceDiscovered(address, port, name, protocolVersion);
                     },
                     m_serviceBrowserInterface.get());
             });

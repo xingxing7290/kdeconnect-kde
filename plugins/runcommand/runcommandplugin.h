@@ -12,6 +12,7 @@
 #include <QFileSystemWatcher>
 #include <QMap>
 #include <QPair>
+#include <QProcess>
 #include <QString>
 #include <core/kdeconnectplugin.h>
 
@@ -21,10 +22,16 @@ class RunCommandPlugin : public KdeConnectPlugin
 
 public:
     explicit RunCommandPlugin(QObject *parent, const QVariantList &args);
+    ~RunCommandPlugin();
 
     void receivePacket(const NetworkPacket &np) override;
     void connected() override;
 
 private:
+    QMap<unsigned int, QProcess *> currentProcesses;
+    void startCommand(const NetworkPacket &np);
     void sendConfig();
+    void onProcessFinished(unsigned int id, int exitCode, QProcess::ExitStatus exitStatus);
+    void onProcessReadyReadState(unsigned int id, bool isErrorOutput);
+    void sendOutput(unsigned int id, const QStringList &standard, const QStringList &error) const;
 };

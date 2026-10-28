@@ -11,6 +11,7 @@
 #include "server.h"
 #include "uploadjob.h"
 #include <KCompositeJob>
+#include <QTimer>
 
 class Device;
 
@@ -26,32 +27,44 @@ public:
     bool isRunning();
     bool addSubjob(KJob *job) override;
 
+    enum ErrorCode {
+        NoPortAvailable = UserDefinedError,
+        SendingNetworkPacketFailed,
+        SocketError,
+        SslError,
+        ConnectionTimeoutError,
+    };
+
+#ifdef BUILD_TESTING
+    void testSetTimeoutMs(int ms)
+    {
+        m_timeout.setInterval(ms);
+    }
+#endif
+
 private:
     bool startListening();
     void emitDescription(const QString &currentFileName);
+    bool sendPacketFor(UploadJob *job);
+    void announceNextSubJob();
 
 protected:
     bool doKill() override;
 
 private:
-    enum {
-        NoPortAvailable = UserDefinedError,
-        SendingNetworkPacketFailed,
-        SocketError,
-        SslError,
-    };
-
     Server *const m_server;
     QSslSocket *m_socket;
     quint16 m_port;
     Device *m_device;
     bool m_running;
+    QTimer m_timeout;
     int m_currentJobNum;
     int m_totalJobs;
     quint64 m_currentJobSendPayloadSize;
     quint64 m_totalSendPayloadSize;
     quint64 m_totalPayloadSize;
     UploadJob *m_currentJob;
+    UploadJob *m_announcedJob = nullptr; // Next subjob, if its packet was already sent
     QElapsedTimer m_timer;
     quint64 m_prevElapsedTime;
     bool m_updatePacketPending;
@@ -61,6 +74,7 @@ private:
 
 private Q_SLOTS:
     void newConnection();
+    void timeoutTriggered();
     void slotProcessedAmount(KJob *job, KJob::Unit unit, qulonglong amount);
     void slotResult(KJob *job) override;
     void startNextSubJob();

@@ -27,6 +27,7 @@
 
 #include "core/daemon.h"
 #include "core/filetransferjob.h"
+#include "core/notificationserverinfo.h"
 #include "plugin_share_debug.h"
 
 K_PLUGIN_CLASS_WITH_JSON(SharePlugin, "kdeconnect_share.json")
@@ -57,10 +58,14 @@ QUrl SharePlugin::destinationDir() const
 
 QUrl SharePlugin::getFileDestination(const QString filename) const
 {
-    const QUrl dir = destinationDir().adjusted(QUrl::StripTrailingSlash);
-    QUrl destination(dir);
-    destination.setPath(dir.path() + QStringLiteral("/") + filename, QUrl::DecodedMode);
-    return destination;
+    const QDir destDir(destinationDir().toLocalFile());
+    const QString dir = QDir::cleanPath(destDir.absolutePath());
+    const QString filePath = QDir::cleanPath(destDir.absoluteFilePath(filename));
+    if (!filePath.startsWith(dir + QStringLiteral("/"))) {
+        qCWarning(KDECONNECT_PLUGIN_SHARE) << "Directory traversal detected";
+        return QUrl();
+    }
+    return QUrl::fromLocalFile(filePath);
 }
 
 static QString cleanFilename(const QString &filename)
@@ -71,8 +76,11 @@ static QString cleanFilename(const QString &filename)
 
 void SharePlugin::setDateModified(const QUrl &destination, const qint64 timestamp)
 {
+    if (timestamp == 0) {
+        return;
+    }
     QFile receivedFile(destination.toLocalFile());
-    if (!receivedFile.exists() || !receivedFile.open(QIODevice::ReadWrite | QIODevice::Text)) {
+    if (!receivedFile.exists() || !receivedFile.open(QIODevice::ReadWrite)) {
         return;
     }
     receivedFile.setFileTime(QDateTime::fromMSecsSinceEpoch(timestamp), QFileDevice::FileTime(QFileDevice::FileModificationTime));
@@ -80,67 +88,59 @@ void SharePlugin::setDateModified(const QUrl &destination, const qint64 timestam
 
 void SharePlugin::setDateCreated(const QUrl &destination, const qint64 timestamp)
 {
+    if (timestamp == 0) {
+        return;
+    }
     QFile receivedFile(destination.toLocalFile());
-    if (!receivedFile.exists() || !receivedFile.open(QIODevice::ReadWrite | QIODevice::Text)) {
+    if (!receivedFile.exists() || !receivedFile.open(QIODevice::ReadWrite)) {
         return;
     }
     receivedFile.setFileTime(QDateTime::fromMSecsSinceEpoch(timestamp), QFileDevice::FileTime(QFileDevice::FileBirthTime));
 }
 
+static bool isWebUrl(QUrl &url)
+{
+    if (!url.isValid()) {
+        return false;
+    }
+    const QString scheme = url.scheme();
+    return scheme == QStringLiteral("http") || scheme == QStringLiteral("https") || scheme == QStringLiteral("mailto");
+}
+
 void SharePlugin::receivePacket(const NetworkPacket &np)
 {
-    /*
-        //TODO: Write a test like this
-        if (np.type() == PACKET_TYPE_PING) {
-
-            qCDebug(KDECONNECT_PLUGIN_SHARE) << "sending file" << (QDesktopServices::storageLocation(QDesktopServices::HomeLocation) + "/.bashrc");
-
-            NetworkPacket out(PACKET_TYPE_SHARE_REQUEST);
-            out.set("filename", mDestinationDir + "itworks.txt");
-            AutoClosingQFile* file = new AutoClosingQFile(QDesktopServices::storageLocation(QDesktopServices::HomeLocation) + "/.bashrc"); //Test file to
-       transfer
-
-            out.setPayload(file, file->size());
-
-            device()->sendPacket(out);
-
-        }
-    */
-
     qCDebug(KDECONNECT_PLUGIN_SHARE) << "File transfer";
 
     if (np.hasPayload() || np.has(QStringLiteral("filename"))) {
         //         qCDebug(KDECONNECT_PLUGIN_SHARE) << "receiving file" << filename << "in" << dir << "into" << destination;
         const QString filename = cleanFilename(np.get<QString>(QStringLiteral("filename"), QString::number(QDateTime::currentMSecsSinceEpoch())));
-        QUrl destination = getFileDestination(filename);
+        const QUrl destination = getFileDestination(filename);
+        if (destination.isEmpty()) {
+            return;
+        }
+        const qint64 dateCreated = np.get<qint64>(QStringLiteral("creationTime"), QDateTime::currentMSecsSinceEpoch());
+        const qint64 dateModified = np.get<qint64>(QStringLiteral("lastModified"), QDateTime::currentMSecsSinceEpoch());
+        const bool open = np.get<bool>(QStringLiteral("open"), false);
 
-        if (np.hasPayload()) {
-            qint64 dateCreated = np.get<qint64>(QStringLiteral("creationTime"), QDateTime::currentMSecsSinceEpoch());
-            qint64 dateModified = np.get<qint64>(QStringLiteral("lastModified"), QDateTime::currentMSecsSinceEpoch());
-            const bool open = np.get<bool>(QStringLiteral("open"), false);
+        // Every incoming file (even ones with no payload, like empty files) goes through the same
+        // composite job so it gets counted, auto-renamed and timestamped like any other file.
+        if (!m_compositeJob) {
+            m_compositeJob = new CompositeFileTransferJob(device(), this);
+            m_compositeJob->setProperty("destUrl", destinationDir().toString());
+            m_compositeJob->setProperty("immediateProgressReporting", true);
+            Daemon::instance()->jobTracker()->registerJob(m_compositeJob);
+        }
 
-            if (!m_compositeJob) {
-                m_compositeJob = new CompositeFileTransferJob(device(), this);
-                m_compositeJob->setProperty("destUrl", destinationDir().toString());
-                m_compositeJob->setProperty("immediateProgressReporting", true);
-                Daemon::instance()->jobTracker()->registerJob(m_compositeJob);
-            }
+        FileTransferJob *job = np.createPayloadTransferJob(destination);
+        job->setOriginName(device()->name() + QStringLiteral(": ") + filename);
+        job->setAutoRenameIfDestinationExists(true);
+        connect(job, &KJob::result, this, [this, dateCreated, dateModified, open](KJob *job) -> void {
+            finished(job, dateCreated, dateModified, open);
+        });
+        m_compositeJob->addSubjob(job);
 
-            FileTransferJob *job = np.createPayloadTransferJob(destination);
-            job->setOriginName(device()->name() + QStringLiteral(": ") + filename);
-            job->setAutoRenameIfDestinatinonExists(true);
-            connect(job, &KJob::result, this, [this, dateCreated, dateModified, open](KJob *job) -> void {
-                finished(job, dateCreated, dateModified, open);
-            });
-            m_compositeJob->addSubjob(job);
-
-            if (!m_compositeJob->isRunning()) {
-                m_compositeJob->start();
-            }
-        } else {
-            QFile file(destination.toLocalFile());
-            file.open(QIODevice::WriteOnly);
-            file.close();
+        if (!m_compositeJob->isRunning()) {
+            m_compositeJob->start();
         }
     } else if (np.has(QStringLiteral("text"))) {
         QString text = np.get<QString>(QStringLiteral("text"));
@@ -151,14 +151,23 @@ void SharePlugin::receivePacket(const NetworkPacket &np)
 
         QUrl url;
         QStringList lines = text.split(QStringLiteral("\n"), Qt::SkipEmptyParts);
-        if (lines.count()) {
-            url.setUrl(lines[lines.count() - 1].trimmed());
+        if (!lines.isEmpty()) {
+            url.setUrl(lines.last().trimmed());
         }
 
         KNotification *notif = new KNotification(QStringLiteral("textShareReceived"));
         notif->setComponentName(QStringLiteral("kdeconnect"));
         notif->setText(text);
-        notif->setTitle(i18nc("@info Some piece of text was received from a connected device", "Shared text from %1 copied to clipboard", device()->name()));
+        if (NotificationServerInfo::instance().supportedHints().testFlag(NotificationServerInfo::X_KDE_ORIGIN_NAME)) {
+            notif->setTitle(i18nc("@info Some piece of text was received from a connected device", "Shared text copied to clipboard", device()->name()));
+            notif->setHint(QStringLiteral("x-kde-origin-name"), device()->name());
+        } else {
+            notif->setTitle(
+                i18nc("@info Some piece of text was received from a connected device", "Shared text from %1 copied to clipboard", device()->name()));
+        }
+
+        // Mark this notification so sendnotifications can filter it out and not echo it back to the device
+        notif->setHint(QStringLiteral("x-kdeconnect-source-device"), device()->name());
 
         auto openTextEditor = [this, text, notif] {
             KService::Ptr service = KApplicationTrader::preferredService(QStringLiteral("text/plain"));
@@ -166,6 +175,9 @@ void SharePlugin::receivePacket(const NetworkPacket &np)
 
             if (defaultApp == QLatin1String("org.kde.kate") || defaultApp == QLatin1String("org.kde.kwrite")) {
                 QProcess *proc = new QProcess();
+#ifdef Q_OS_UNIX
+                proc->setUnixProcessParameters(QProcess::UnixProcessFlag::CloseFileDescriptors);
+#endif
                 connect(proc, &QProcess::finished, proc, &QObject::deleteLater);
                 if (const QString token = notif->xdgActivationToken(); !token.isEmpty()) {
                     QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
@@ -177,9 +189,13 @@ void SharePlugin::receivePacket(const NetworkPacket &np)
                 proc->closeWriteChannel();
             } else {
                 QTemporaryFile tmpFile;
-                tmpFile.setFileTemplate(QStringLiteral("kdeconnect-XXXXXX.txt"));
+                QString tmpFilename = QStringLiteral("kdeconnect-XXXXXX.txt");
+                tmpFile.setFileTemplate(tmpFilename);
                 tmpFile.setAutoRemove(false);
-                tmpFile.open();
+                if (!tmpFile.open()) {
+                    qWarning() << "Couldn't open temp file:" << tmpFilename;
+                    return;
+                }
                 tmpFile.write(text.toUtf8());
                 tmpFile.close();
 
@@ -191,38 +207,38 @@ void SharePlugin::receivePacket(const NetworkPacket &np)
             }
         };
 
-        auto openUrl = [this, url, notif] {
-            auto *job = new KIO::OpenUrlJob(url);
-            job->setStartupId(notif->xdgActivationToken().toUtf8());
-            job->start();
-            Q_EMIT shareReceived(url.toString());
-        };
-
         KNotificationAction *textEditorAction = notif->addAction(i18nc("@action:button Edit text with default text editor", "Open in Text Editor"));
         connect(textEditorAction, &KNotificationAction::activated, this, openTextEditor);
 
-        if (url.isValid() && (url.scheme() == QStringLiteral("http") || url.scheme() == QStringLiteral("https"))) {
+        if (isWebUrl(url)) {
             KNotificationAction *openLinkAction = notif->addAction(i18nc("@action:button Open URL with default app", "Open Link"));
-            connect(openLinkAction, &KNotificationAction::activated, this, openUrl);
+            connect(openLinkAction, &KNotificationAction::activated, this, [this, url, notif] {
+                auto *job = new KIO::OpenUrlJob(url);
+                job->setStartupId(notif->xdgActivationToken().toUtf8());
+                job->start();
+                Q_EMIT shareReceived(url.toString());
+            });
         }
         notif->sendEvent();
 
     } else if (np.has(QStringLiteral("url"))) {
         QUrl url = QUrl::fromEncoded(np.get<QByteArray>(QStringLiteral("url")));
-        QDesktopServices::openUrl(url);
+        if (isWebUrl(url)) {
+            QDesktopServices::openUrl(url);
+        }
         Q_EMIT shareReceived(url.toString());
     } else {
         qCDebug(KDECONNECT_PLUGIN_SHARE) << "Error: Nothing attached!";
     }
 }
 
-void SharePlugin::finished(KJob *job, const qint64 dateModified, const qint64 dateCreated, const bool open)
+void SharePlugin::finished(KJob *job, const qint64 dateCreated, const qint64 dateModified, const bool open)
 {
     FileTransferJob *ftjob = qobject_cast<FileTransferJob *>(job);
     if (ftjob && !job->error()) {
-        Q_EMIT shareReceived(ftjob->destination().toString());
         setDateCreated(ftjob->destination(), dateCreated);
         setDateModified(ftjob->destination(), dateModified);
+        Q_EMIT shareReceived(ftjob->destination().toString());
         qCDebug(KDECONNECT_PLUGIN_SHARE) << "File transfer finished." << ftjob->destination();
         if (open) {
             QDesktopServices::openUrl(ftjob->destination());
@@ -242,18 +258,20 @@ void SharePlugin::shareUrl(const QUrl &url, bool open)
     NetworkPacket packet(PACKET_TYPE_SHARE_REQUEST);
     if (url.isLocalFile() && !url.isRelative()) {
         QSharedPointer<QFile> ioFile(new QFile(url.toLocalFile()));
-
         if (!ioFile->exists()) {
             Daemon::instance()->reportError(i18n("Could not share file"), i18n("%1 does not exist", url.toLocalFile()));
             return;
-        } else {
-            QFileInfo info(*ioFile);
-            packet.setPayload(ioFile, ioFile->size());
-            packet.set<QString>(QStringLiteral("filename"), QUrl(url).fileName());
-            packet.set<qint64>(QStringLiteral("creationTime"), info.birthTime().toMSecsSinceEpoch());
-            packet.set<qint64>(QStringLiteral("lastModified"), info.lastModified().toMSecsSinceEpoch());
-            packet.set<bool>(QStringLiteral("open"), open);
         }
+        QFileInfo info(*ioFile);
+        if (!info.isReadable()) {
+            Daemon::instance()->reportError(i18n("Could not share file"), i18n("Permission denied: %1", url.toLocalFile()));
+            return;
+        }
+        packet.setPayload(ioFile, ioFile->size());
+        packet.set<QString>(QStringLiteral("filename"), QUrl(url).fileName());
+        packet.set<qint64>(QStringLiteral("creationTime"), info.birthTime().toMSecsSinceEpoch());
+        packet.set<qint64>(QStringLiteral("lastModified"), info.lastModified().toMSecsSinceEpoch());
+        packet.set<bool>(QStringLiteral("open"), open);
     } else {
         packet.set<QString>(QStringLiteral("url"), url.toString());
     }

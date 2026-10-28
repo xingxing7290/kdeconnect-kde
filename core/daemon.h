@@ -50,6 +50,7 @@ public:
     void setCustomDevices(const QStringList &addresses);
 
     Q_SCRIPTABLE QString selfId() const;
+
 public Q_SLOTS:
     Q_SCRIPTABLE void forceOnNetworkChange();
 
@@ -84,13 +85,14 @@ Q_SIGNALS:
 
 private Q_SLOTS:
     void onNewDeviceLink(DeviceLink *dl);
+    void onDeviceInfoUpdated(const DeviceInfo &deviceInfo);
     void onDeviceStatusChanged();
 
 private:
     void init();
 
 protected:
-    void addDevice(std::unique_ptr<Device> &&device);
+    void addDevice(Device *device);
     void removeDevice(Device *d);
 
     const std::unique_ptr<struct DaemonPrivate> d;

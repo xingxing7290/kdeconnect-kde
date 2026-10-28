@@ -8,22 +8,10 @@ add_subdirectory(remotesystemvolume)
 add_subdirectory(clipboard)
 add_subdirectory(runcommand)
 add_subdirectory(digitizer)
-
-
-if(NOT WIN32)
-    # https://bugs.kde.org/show_bug.cgi?id=444612
-    add_subdirectory(battery)
-endif()
-
+add_subdirectory(battery)
 add_subdirectory(presenter)
-
-if((WIN32 AND MSVC AND ("${CMAKE_SYSTEM_VERSION}" VERSION_GREATER_EQUAL 10.0.17763.0)) OR (NOT WIN32 AND NOT APPLE))
-    add_subdirectory(mpriscontrol)
-endif()
+add_subdirectory(mpriscontrol)
 add_subdirectory(mprisremote)
-if(NOT APPLE)
-    add_subdirectory(lockdevice)
-endif()
 add_subdirectory(contacts)
 add_subdirectory(share)
 add_subdirectory(remotekeyboard)
@@ -45,6 +33,7 @@ if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
 endif()
 
 if(NOT APPLE)
+    add_subdirectory(lockdevice)
     add_subdirectory(sendnotifications)
     add_subdirectory(sftp)
 endif()

@@ -8,6 +8,9 @@
 
 #include <KNotification>
 #include <QDir>
+#include <QJsonArray>
+#include <QJsonObject>
+#include <QList>
 #include <QObject>
 #include <QPointer>
 #include <QString>
@@ -24,6 +27,9 @@ class Notification : public QObject
     Q_PROPERTY(QString ticker READ ticker NOTIFY ready)
     Q_PROPERTY(QString title READ title NOTIFY ready)
     Q_PROPERTY(QString text READ text NOTIFY ready)
+    Q_PROPERTY(QString groupName READ groupName NOTIFY ready)
+    Q_PROPERTY(bool isConversation READ isConversation NOTIFY ready)
+    Q_PROPERTY(bool isGroupConversation READ isGroupConversation NOTIFY ready)
     Q_PROPERTY(QString iconPath READ iconPath NOTIFY ready)
     Q_PROPERTY(bool dismissable READ dismissable NOTIFY ready)
     Q_PROPERTY(bool hasIcon READ hasIcon NOTIFY ready)
@@ -53,6 +59,10 @@ public:
     {
         return m_text;
     }
+    QString groupName() const
+    {
+        return m_groupName;
+    }
     QString iconPath() const
     {
         return m_iconPath;
@@ -79,6 +89,14 @@ public:
     {
         return m_ready;
     }
+    bool isConversation() const
+    {
+        return !m_conversation.isEmpty();
+    }
+    bool isGroupConversation() const
+    {
+        return !m_groupName.isEmpty();
+    }
     void createKNotification(const NetworkPacket &np);
 
 public Q_SLOTS:
@@ -99,6 +117,7 @@ private:
     QString m_ticker;
     QString m_title;
     QString m_text;
+    QString m_groupName;
     QString m_iconPath;
     QString m_requestReplyId;
     bool m_dismissable;
@@ -109,11 +128,24 @@ private:
     QString m_payloadHash;
     bool m_ready;
     QStringList m_actions;
+    QJsonArray m_conversation;
     const Device *m_device;
+
+    struct Message {
+        QString sender;
+        QString content;
+
+        static Message fromObject(QJsonObject object)
+        {
+            return {object.value(QStringLiteral("sender")).toString(), object.value(QStringLiteral("content")).toString()};
+        }
+    };
 
     void parseNetworkPacket(const NetworkPacket &np);
     void loadIcon(const NetworkPacket &np);
     void applyIcon();
+
+    QString getConversationMessages(bool supportsMarkup) const;
 
     static QMap<QString, FileTransferJob *> s_downloadsInProgress;
 };

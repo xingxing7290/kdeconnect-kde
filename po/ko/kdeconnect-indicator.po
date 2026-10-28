@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: kdeconnect-kde\n"
 "Report-Msgid-Bugs-To: https://bugs.kde.org\n"
-"POT-Creation-Date: 2025-11-17 11:51+0000\n"
+"POT-Creation-Date: 2026-10-21 00:51+0000\n"
 "PO-Revision-Date: 2025-07-21 00:59+0200\n"
 "Last-Translator: Shinjo Park <kde@peremen.name>\n"
 "Language-Team: Korean <kde-kr@kde.org>\n"
@@ -27,38 +27,38 @@ msgctxt "EMAIL OF TRANSLATORS"
 msgid "Your emails"
 msgstr "kde@peremen.name"
 
-#: deviceindicator.cpp:53
+#: deviceindicator.cpp:56
 #, kde-format
 msgid "Browse device"
 msgstr "장치 탐색"
 
-#: deviceindicator.cpp:67
+#: deviceindicator.cpp:70
 #, kde-format
 msgid "Send clipboard"
 msgstr "클립보드 보내기"
 
-#: deviceindicator.cpp:81
+#: deviceindicator.cpp:84
 #, kde-format
 msgctxt "@action:inmenu play bell sound"
 msgid "Ring device"
 msgstr "장치 울리기"
 
-#: deviceindicator.cpp:95
+#: deviceindicator.cpp:98
 #, kde-format
 msgid "Send files"
 msgstr "파일 보내기"
 
-#: deviceindicator.cpp:117
+#: deviceindicator.cpp:124
 #, kde-format
 msgid "SMS Messages…"
 msgstr "SMS 메시지…"
 
-#: deviceindicator.cpp:130
+#: deviceindicator.cpp:137
 #, kde-format
 msgid "Run command"
 msgstr "명령 실행"
 
-#: deviceindicator.cpp:132
+#: deviceindicator.cpp:139
 #, kde-format
 msgid "Add commands"
 msgstr "명령 추가"
@@ -82,74 +82,74 @@ msgstr ""
 msgid "Cannot find kdeconnectd"
 msgstr "kdeconnectd를 찾을 수 없음"
 
-#: main.cpp:57
+#: main.cpp:62
 #, kde-format
 msgid "KDE Connect Indicator"
 msgstr "KDE Connect 표시기"
 
-#: main.cpp:59
+#: main.cpp:64
 #, kde-format
 msgid "KDE Connect Indicator tool"
 msgstr "KDE Connect 표시기 도구"
 
-#: main.cpp:61
+#: main.cpp:66
 #, kde-format
 msgid "© 2016–2025 KDE Connect Team"
 msgstr "© 2016–2025 KDE Connect Team"
 
-#: main.cpp:62
+#: main.cpp:67
 #, kde-format
 msgid "Aleix Pol Gonzalez"
 msgstr "Aleix Pol Gonzalez"
 
-#: main.cpp:63
+#: main.cpp:68
 #, kde-format
 msgid "Albert Vaca Cintora"
 msgstr "Albert Vaca Cintora"
 
-#: main.cpp:101
+#: main.cpp:113
 #, kde-format
 msgid "Open app"
 msgstr "앱 열기"
 
-#: main.cpp:118
+#: main.cpp:130
 #, kde-format
 msgid "Pairing requests"
 msgstr "페어링 요청"
 
-#: main.cpp:123
+#: main.cpp:136
 #, kde-format
 msgctxt "Accept a pairing request"
 msgid "Pair"
 msgstr "페어링"
 
-#: main.cpp:124
+#: main.cpp:137
 #, kde-format
 msgid "Reject"
 msgstr "거부"
 
-#: main.cpp:129 main.cpp:138
+#: main.cpp:142 main.cpp:155
 #, kde-format
 msgid "Quit"
 msgstr "끝내기"
 
-#: main.cpp:157 main.cpp:179
+#: main.cpp:172 main.cpp:194
 #, kde-format
 msgid "%1 device connected"
 msgid_plural "%1 devices connected"
 msgstr[0] "장치 %1개 연결됨"
 
-#: systray_actions/battery_action.cpp:28
+#: systray_actions/battery_action.cpp:35
 #, kde-format
 msgid "No Battery"
 msgstr "배터리 없음"
 
-#: systray_actions/battery_action.cpp:30
+#: systray_actions/battery_action.cpp:37
 #, kde-format
 msgid "Battery: %1% (Charging)"
 msgstr "배터리: %1%(충전 중)"
 
-#: systray_actions/battery_action.cpp:32
+#: systray_actions/battery_action.cpp:39
 #, kde-format
 msgid "Battery: %1%"
 msgstr "배터리: %1%"

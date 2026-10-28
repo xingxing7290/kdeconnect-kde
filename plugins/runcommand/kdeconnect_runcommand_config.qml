@@ -31,28 +31,57 @@ Kirigami.ScrollablePage {
             deviceId: device
         }
 
-        delegate: Kirigami.SwipeListItem {
-            width: parent.width
-            enabled: true
+        delegate: QQC2.ItemDelegate {
+            id: commandDelegate
 
-            contentItem: ColumnLayout {
-                QQC2.Label {
-                    text: name
-                    Layout.fillWidth: true
-                    elide: Text.ElideRight
-                }
-                QQC2.Label {
-                    text: command
-                    font.italic: true
-                    Layout.fillWidth: true
-                    elide: Text.ElideRight
-                }
-            }
+            width: ListView.view.width
 
-            actions: Kirigami.Action {
-                text: i18nd("kdeconnect-plugins", "Delete")
-                icon.name: "delete"
-                onTriggered: commandModel.removeCommand(index)
+            required property var model
+
+            KeyNavigation.tab: editButton
+            KeyNavigation.right: editButton
+
+            contentItem: RowLayout {
+                ColumnLayout {
+                    spacing: 0
+                    Layout.fillWidth: true
+                    Layout.alignment: Qt.AlignVCenter
+
+                    QQC2.Label {
+                        text: commandDelegate.model.name
+                        Layout.fillWidth: true
+                        elide: Text.ElideRight
+                    }
+                    QQC2.Label {
+                        text: commandDelegate.model.command
+                        font.italic: true
+                        Layout.fillWidth: true
+                        elide: Text.ElideRight
+                    }
+                }
+
+                QQC2.ToolButton {
+                    id: editButton
+                    text: i18nd("kdeconnect-plugins", "Edit")
+                    icon.name: "edit-entry"
+                    display: QQC2.ToolButton.IconOnly
+                    KeyNavigation.right: deleteButton
+                    onClicked: {
+                        editDialog.index = commandDelegate.model.index;
+                        editNameField.text = commandDelegate.model.name;
+                        editCommandField.text = commandDelegate.model.command;
+                        editDialog.open();
+                    }
+                }
+                QQC2.ToolButton {
+                    id: deleteButton
+                    text: i18nd("kdeconnect-plugins", "Delete")
+                    icon.name: "delete"
+                    display: QQC2.ToolButton.IconOnly
+                    KeyNavigation.left: editButton
+                    KeyNavigation.right: deleteButton // Don't focus back to editButton.
+                    onClicked: commandModel.removeCommand(commandDelegate.model.index)
+                }
             }
         }
 
@@ -78,13 +107,10 @@ Kirigami.ScrollablePage {
                 icon.name: "list-add"
                 enabled: commandField.length > 0
                 onTriggered: {
-                    commandModel.addCommand(nameField.text, commandField.text)
+                    commandModel.addCommand(nameField.text, commandField.text);
                     addDialog.close();
                 }
-                Component.onCompleted: {
-                    // TODO: can be set directly once Qt 6.8 is required
-                    Accessible.Name = i18ndc("kdeconnect-plugins", "@action:button accessible", "Add command")
-                }
+                Accessible.name: i18ndc("kdeconnect-plugins", "@action:button accessible", "Add command")
             }
 
             standardButtons: Kirigami.Dialog.Cancel
@@ -102,43 +128,96 @@ Kirigami.ScrollablePage {
 
                 QQC2.ComboBox {
                     Kirigami.FormData.label: i18nd("kdeconnect-plugins", "Sample commands:")
+                    visible: model.length > 0
                     textRole: "name"
                     currentIndex: -1
                     displayText: currentIndex === -1 ? "" : currentText
-                    model: [
-                        {
-                            name: i18ndc("kdeconnect-plugins", "Sample command", "Suspend"),
-                            command: "systemctl suspend"
-                        },
-                        {
-                            name: i18ndc("kdeconnect-plugins", "Sample command", "Maximum Brightness"),
-                            command: "qdbus org.kde.Solid.PowerManagement /org/kde/Solid/PowerManagement/Actions/BrightnessControl org.kde.Solid.PowerManagement.Actions.BrightnessControl.setBrightness `qdbus org.kde.Solid.PowerManagement /org/kde/Solid/PowerManagement/Actions/BrightnessControl org.kde.Solid.PowerManagement.Actions.BrightnessControl.brightnessMax`"
-                        },
-                        {
-                            name: i18ndc("kdeconnect-plugins", "Sample command", "Lock Screen"),
-                            command: "loginctl lock-session"
-                        },
-                        {
-                            name: i18ndc("kdeconnect-plugins", "Sample command", "Unlock Screen"),
-                            command: "loginctl unlock-session"
-                        },
-                        {
-                            name: i18ndc("kdeconnect-plugins", "Sample command", "Close All Vaults"),
-                            command: "qdbus org.kde.kded5 /modules/plasmavault closeAllVaults"
-                        },
-                        {
-                            name: i18ndc("kdeconnect-plugins", "Sample command", "Forcefully Close All Vaults"),
-                            command: "qdbus org.kde.kded5 /modules/plasmavault forceCloseAllVaults"
-                        }
-                    ]
+                    model: createSampleCommands()
                     onActivated: {
                         if (currentIndex >= 0) {
-                            nameField.text = model[currentIndex].name
-                            commandField.text = model[currentIndex].command
+                            nameField.text = model[currentIndex].name;
+                            commandField.text = model[currentIndex].command;
+                        }
+                    }
+                    function createSampleCommands() {
+                        // See https://doc.qt.io/qt-6/qml-qtqml-qt.html#platform-prop
+                        // for possible platform values.
+                        if (Qt.platform.os == "windows") {
+                            return [
+                                {
+                                    name: i18ndc("kdeconnect-plugins", "Sample command", "Suspend"),
+                                    command: "rundll32.exe powrprof.dll,SetSuspendState 0,1,0"
+                                },
+                                {
+                                    name: i18ndc("kdeconnect-plugins", "Sample command", "Lock Screen"),
+                                    command: "rundll32.exe user32.dll,LockWorkStation"
+                                }
+                            ];
+                        } else if (Qt.platform.os == "linux" || Qt.platform.os == "unix") {
+                            return [
+                                {
+                                    name: i18ndc("kdeconnect-plugins", "Sample command", "Suspend"),
+                                    command: "systemctl suspend"
+                                },
+                                {
+                                    name: i18ndc("kdeconnect-plugins", "Sample command", "Maximum Brightness"),
+                                    command: "qdbus org.kde.Solid.PowerManagement /org/kde/Solid/PowerManagement/Actions/BrightnessControl org.kde.Solid.PowerManagement.Actions.BrightnessControl.setBrightness `qdbus org.kde.Solid.PowerManagement /org/kde/Solid/PowerManagement/Actions/BrightnessControl org.kde.Solid.PowerManagement.Actions.BrightnessControl.brightnessMax`"
+                                },
+                                {
+                                    name: i18ndc("kdeconnect-plugins", "Sample command", "Lock Screen"),
+                                    command: "loginctl lock-session"
+                                },
+                                {
+                                    name: i18ndc("kdeconnect-plugins", "Sample command", "Unlock Screen"),
+                                    command: "loginctl unlock-session"
+                                },
+                                {
+                                    name: i18ndc("kdeconnect-plugins", "Sample command", "Close All Vaults"),
+                                    command: "qdbus org.kde.kded5 /modules/plasmavault closeAllVaults"
+                                },
+                                {
+                                    name: i18ndc("kdeconnect-plugins", "Sample command", "Forcefully Close All Vaults"),
+                                    command: "qdbus org.kde.kded5 /modules/plasmavault forceCloseAllVaults"
+                                }
+                            ];
+                        } else {
+                            return [];
                         }
                     }
                 }
             }
+        }
+        Kirigami.Dialog {
+            id: editDialog
+            title: i18ndc("kdeconnect-plugins", "@title:window", "Edit Command")
+
+            padding: Kirigami.Units.largeSpacing
+            preferredWidth: Kirigami.Units.gridUnit * 20
+            property int index: 0
+            Kirigami.FormLayout {
+                QQC2.TextField {
+                    id: editNameField
+                    Kirigami.FormData.label: i18nd("kdeconnect-plugins", "Name:")
+                }
+                QQC2.TextField {
+                    id: editCommandField
+                    Kirigami.FormData.label: i18nd("kdeconnect-plugins", "Command:")
+                }
+            }
+
+            property Kirigami.Action editCommandAction: Kirigami.Action {
+                text: i18ndc("kdeconnect-plugins", "@action:button", "Confirm")
+                icon.name: "dialog-ok"
+                enabled: editCommandField.length > 0
+                onTriggered: {
+                    commandModel.changeCommand(editDialog.index, editNameField.text, editCommandField.text);
+                    editDialog.close();
+                }
+                Accessible.name: i18ndc("kdeconnect-plugins", "@action:button accessible", "Confirm")
+            }
+
+            standardButtons: Kirigami.Dialog.Cancel
+            customFooterActions: [editCommandAction]
         }
     }
 }

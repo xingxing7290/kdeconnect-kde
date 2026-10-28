@@ -11,6 +11,8 @@
 #include "generated/systeminterfaces/request.h"
 #include "generated/systeminterfaces/session.h"
 
+#include <KConfigGroup>
+#include <KSharedConfig>
 #include <QRandomGenerator>
 #include <private/qxkbcommon_p.h>
 
@@ -99,7 +101,22 @@ InputCaptureSession::InputCaptureSession(QObject *parent)
     connect(m_inputCapturePortal, &OrgFreedesktopPortalInputCaptureInterface::Deactivated, this, &InputCaptureSession::deactivated);
     connect(m_inputCapturePortal, &OrgFreedesktopPortalInputCaptureInterface::ZonesChanged, this, &InputCaptureSession::zonesChanged);
 
+    m_usesCreateSession2 = m_inputCapturePortal->version() >= 2;
     const QString token = u"kdeconnect_shareinputdevices%1"_s.arg(QRandomGenerator::global()->generate());
+    if (m_usesCreateSession2) {
+        auto call = m_inputCapturePortal->CreateSession2({{u"session_handle_token"_s, token}});
+        connect(new QDBusPendingCallWatcher(call, this), &QDBusPendingCallWatcher::finished, this, [this](QDBusPendingCallWatcher *watcher) {
+            watcher->deleteLater();
+            QDBusPendingReply<QVariantMap> reply = *watcher;
+            if (reply.isError()) {
+                qCWarning(KDECONNECT_PLUGIN_SHAREINPUTDEVICES) << "Error creating input capture session" << reply.error();
+                return;
+            }
+            sessionCreated(0, reply.value());
+        });
+        return;
+    }
+
     auto request = new OrgFreedesktopPortalRequestInterface(portalName(), requestPath(token), QDBusConnection::sessionBus(), this);
     connect(request, &OrgFreedesktopPortalRequestInterface::Response, request, &QObject::deleteLater);
     connect(request, &OrgFreedesktopPortalRequestInterface::Response, this, &InputCaptureSession::sessionCreated);
@@ -129,10 +146,54 @@ void InputCaptureSession::sessionCreated(uint response, const QVariantMap &resul
         qCWarning(KDECONNECT_PLUGIN_SHAREINPUTDEVICES) << "Couldn't create input capture session";
         return;
     }
+
     m_session = std::make_unique<OrgFreedesktopPortalSessionInterface>(portalName(),
                                                                        results[u"session_handle"_s].value<QDBusObjectPath>().path(),
                                                                        QDBusConnection::sessionBus());
     connect(m_session.get(), &OrgFreedesktopPortalSessionInterface::Closed, this, &InputCaptureSession::sessionClosed);
+
+    if (m_usesCreateSession2) {
+        startSession();
+    } else {
+        sessionStarted(0, {});
+    }
+}
+
+void InputCaptureSession::startSession()
+{
+    const QString token = u"kdeconnect_shareinputdevices%1"_s.arg(QRandomGenerator::global()->generate());
+    // Persist mode 2 = persist permission until explicitly revoked by user
+    QVariantMap options = {{u"handle_token"_s, token}, {u"capabilities"_s, 3u}, {u"persist_mode"_s, 2u}};
+    KConfigGroup stateConfig = KSharedConfig::openStateConfig()->group(u"inputcapture"_s);
+    const QString restoreToken = stateConfig.readEntry(u"RestoreToken"_s, QString());
+    if (!restoreToken.isEmpty()) {
+        options[u"restore_token"_s] = restoreToken;
+    }
+
+    auto request = new OrgFreedesktopPortalRequestInterface(portalName(), requestPath(token), QDBusConnection::sessionBus(), this);
+    connect(request, &OrgFreedesktopPortalRequestInterface::Response, request, &QObject::deleteLater);
+    connect(request, &OrgFreedesktopPortalRequestInterface::Response, this, &InputCaptureSession::sessionStarted);
+    auto call = m_inputCapturePortal->Start(QDBusObjectPath(m_session->path()), QString(), options);
+    connect(new QDBusPendingCallWatcher(call, this), &QDBusPendingCallWatcher::finished, request, [request](QDBusPendingCallWatcher *watcher) {
+        watcher->deleteLater();
+        if (watcher->isError()) {
+            qCWarning(KDECONNECT_PLUGIN_SHAREINPUTDEVICES) << "Error starting input capture session" << watcher->error();
+            request->deleteLater();
+        }
+    });
+}
+
+void InputCaptureSession::sessionStarted(uint response, const QVariantMap &results)
+{
+    if (response != 0) {
+        qCWarning(KDECONNECT_PLUGIN_SHAREINPUTDEVICES) << "Couldn't start input capture session";
+        return;
+    }
+
+    if (m_usesCreateSession2) {
+        KConfigGroup stateConfig = KSharedConfig::openStateConfig()->group(u"inputcapture"_s);
+        stateConfig.writeEntry(u"RestoreToken"_s, results.value(u"restore_token"_s).toString());
+    }
 
     auto call = m_inputCapturePortal->ConnectToEIS(QDBusObjectPath(m_session->path()), {});
     connect(new QDBusPendingCallWatcher(call, this), &QDBusPendingCallWatcher::finished, this, [this](QDBusPendingCallWatcher *watcher) {
@@ -246,7 +307,7 @@ void InputCaptureSession::barriersSet(uint response, const QVariantMap &results)
     }
     auto failedBarriers = qdbus_cast<QList<uint>>(results[u"failed_barriers"_s].value<QDBusArgument>());
     if (!failedBarriers.empty()) {
-        qCInfo(KDECONNECT_PLUGIN_SHAREINPUTDEVICES) << "Failed barriers" << failedBarriers;
+        qCDebug(KDECONNECT_PLUGIN_SHAREINPUTDEVICES) << "Failed barriers" << failedBarriers;
     }
     enable();
 }
@@ -399,9 +460,6 @@ void InputCaptureSession::handleEiEvent(ei_event *event)
     case EI_EVENT_FRAME:
         break;
     case EI_EVENT_POINTER_MOTION:
-        if (m_currentEisSequence < m_currentActivationId) {
-            queuedEiEvents.push_back(event);
-        }
         Q_EMIT mouseMove(ei_event_pointer_get_dx(event), ei_event_pointer_get_dy(event));
         break;
     case EI_EVENT_POINTER_MOTION_ABSOLUTE:
@@ -443,6 +501,10 @@ void InputCaptureSession::handleEiEvent(ei_event *event)
     case EI_EVENT_TOUCH_UP:
     case EI_EVENT_DEVICE_PAUSED:
     case EI_EVENT_DEVICE_RESUMED:
+    case EI_EVENT_PONG: // Ignore because we are never calling ei_ping()
+    case EI_EVENT_SYNC: // Ignore because that's libeis pinging us
+    case EI_EVENT_TEXT_KEYSYM:
+    case EI_EVENT_TEXT_UTF8:
         qCDebug(KDECONNECT_PLUGIN_SHAREINPUTDEVICES) << "Unexpected event of type" << ei_event_get_type(event);
         break;
     }

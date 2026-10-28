@@ -100,23 +100,21 @@ static int query_callback(int sock,
     Q_UNUSED(entry_type);
     Q_UNUSED(rclass);
     Q_UNUSED(ttl);
-    Q_UNUSED(name_offset);
     Q_UNUSED(name_length);
 
     // qCDebug(KDECONNECT_CORE) << "Received DNS record of type" << recordTypeToStr(record_type) << "from socket" << sock << "with type" <<
     // entryTypeToStr(entry_type);
 
-    Discoverer::MdnsService *discoveredService = (Discoverer::MdnsService *)user_data;
+    Discoverer::MdnsService *discoveredService = static_cast<Discoverer::MdnsService *>(user_data);
 
     switch (record_type) {
     case MDNS_RECORDTYPE_PTR: {
-        // We don't use mdns_record_parse_ptr() because we want to extract just the service name instead of the full
-        // "<instance-name>._<service-type>._tcp.local." string
+        char serviceTypeBuffer[256];
+        const mdns_string_t serviceType = mdns_string_extract(data, size, &name_offset, serviceTypeBuffer, sizeof(serviceTypeBuffer));
+        discoveredService->serviceType = QString::fromLatin1(serviceType.str, serviceType.length);
+
         mdns_string_pair_t instanceNamePos = mdns_get_next_substring(data, size, record_offset);
         discoveredService->name = QString::fromLatin1((char *)data + instanceNamePos.offset, instanceNamePos.length);
-        // static char instanceNameBuffer[256];
-        // mdns_string_t instanceName = mdns_record_parse_ptr(data, size, record_offset, record_length, instanceNameBuffer, sizeof(instanceNameBuffer));
-        // discoveredService->name = QString::fromLatin1(instanceName.str, instanceName.length);
         if (discoveredService->address == QHostAddress::Null) {
             discoveredService->address = QHostAddress(from); // In case we don't receive a A record, use from as address
         }
@@ -133,11 +131,15 @@ static int query_callback(int sock,
         mdns_record_parse_a(data, size, record_offset, record_length, &addr);
         discoveredService->address = QHostAddress(ntohl(addr.sin_addr.s_addr));
     } break;
-    case MDNS_RECORDTYPE_AAAA:
-        // Ignore IPv6 for now
-        // sockaddr_in6 addr6;
-        // mdns_record_parse_aaaa(data, size, record_offset, record_length, &addr6);
-        break;
+    case MDNS_RECORDTYPE_AAAA: {
+        // Prefer IPv4 if we also got an A record, then link-local IPv6 over other IPv6 addresses
+        const QHostAddress &current = discoveredService->address;
+        if (current.isNull() || (current.protocol() == QAbstractSocket::IPv6Protocol && !current.isLinkLocal())) {
+            sockaddr_in6 addr6;
+            mdns_record_parse_aaaa(data, size, record_offset, record_length, &addr6);
+            discoveredService->address = QHostAddress(addr6.sin6_addr.s6_addr);
+        }
+    } break;
     case MDNS_RECORDTYPE_TXT: {
         mdns_record_txt_t records[24];
         size_t parsed = mdns_record_parse_txt(data, size, record_offset, record_length, records, sizeof(records) / sizeof(mdns_record_txt_t));
@@ -152,12 +154,24 @@ static int query_callback(int sock,
         break;
     }
 
+    if (discoveredService->address.isLinkLocal() && discoveredService->address.scopeId().isEmpty() && from->sa_family == AF_INET6) {
+        const auto *sender = reinterpret_cast<const sockaddr_in6 *>(from);
+        if (sender->sin6_scope_id != 0) {
+            discoveredService->address.setScopeId(QString::number(sender->sin6_scope_id));
+        }
+    }
+
     return 0;
 }
 
 void Discoverer::startDiscovering(const QString &serviceType)
 {
-    int num_sockets = listenForQueryResponses();
+    QByteArray wantedServiceType = serviceType.toLatin1();
+    if (!wantedServiceType.endsWith('.')) {
+        wantedServiceType.append('.');
+    }
+
+    int num_sockets = listenForQueryResponses(wantedServiceType);
     if (num_sockets <= 0) {
         qCWarning(KDECONNECT_CORE) << "Failed to open any MDNS server sockets";
         return;
@@ -180,10 +194,10 @@ void Discoverer::stopListeningForQueryResponses()
     responseSocketNotifiers.clear();
 }
 
-int Discoverer::listenForQueryResponses()
+int Discoverer::listenForQueryResponses(const QByteArray &wantedServiceType)
 {
-    // Open a socket for each interface
-    QVector<int> sockets;
+    // Open a socket for each interface, keeping the interface name to scope link-local IPv6 addresses
+    QHash<int, QString> sockets;
     for (const QNetworkInterface &iface : QNetworkInterface::allInterfaces()) {
         int flags = iface.flags();
         if (!(flags & QNetworkInterface::IsUp) || !(flags & QNetworkInterface::CanMulticast) || (flags & QNetworkInterface::IsLoopBack)) {
@@ -196,7 +210,7 @@ int Discoverer::listenForQueryResponses()
                 struct sockaddr_in saddr = qHostAddressToSockaddr(sourceAddress);
                 int socket = mdns_socket_open_ipv4(&saddr);
                 if (socket >= 0) {
-                    sockets.append(socket);
+                    sockets.insert(socket, iface.name());
                 } else {
                     qCDebug(KDECONNECT_CORE) << "Couldn't open socket";
                 }
@@ -205,7 +219,7 @@ int Discoverer::listenForQueryResponses()
                 struct sockaddr_in6 saddr = qHostAddressToSockaddr6(sourceAddress);
                 int socket = mdns_socket_open_ipv6(&saddr);
                 if (socket >= 0) {
-                    sockets.append(socket);
+                    sockets.insert(socket, iface.name());
                 } else {
                     qCDebug(KDECONNECT_CORE) << "Couldn't open socket";
                 }
@@ -214,19 +228,29 @@ int Discoverer::listenForQueryResponses()
     }
 
     // Start listening on all sockets
-    for (int socket : std::as_const(sockets)) {
-        QSocketNotifier *socketNotifier = new QSocketNotifier(socket, QSocketNotifier::Read);
-        QObject::connect(socketNotifier, &QSocketNotifier::activated, [this](QSocketDescriptor socket) {
+    for (auto it = sockets.cbegin(); it != sockets.cend(); ++it) {
+        const QString ifaceName = it.value();
+        QSocketNotifier *socketNotifier = new QSocketNotifier(it.key(), QSocketNotifier::Read);
+        QObject::connect(socketNotifier, &QSocketNotifier::activated, this, [this, wantedServiceType, ifaceName](QSocketDescriptor socket) {
             MdnsService discoveredService;
 
             static char buffer[2048];
-            size_t num_records = mdns_query_recv(socket, buffer, sizeof(buffer), query_callback, (void *)&discoveredService, 0);
+            size_t num_records = mdns_query_recv(socket, buffer, sizeof(buffer), query_callback, &discoveredService, 0);
             Q_UNUSED(num_records);
-
-            // qCDebug(KDECONNECT_CORE) << "Discovered service" << discoveredService.name << "at" << discoveredService.address << "in" <<  num_records <<
+            // qCDebug(KDECONNECT_CORE) << "Discovered service" << discoveredService.name << "at" << discoveredService.address << "in" << num_records <<
             // "records via socket" << socket;
 
-            Q_EMIT serviceFound(discoveredService);
+            if (discoveredService.serviceType.toLatin1().compare(wantedServiceType, Qt::CaseInsensitive) != 0) {
+                return;
+            }
+
+            if (discoveredService.address.isLinkLocal() && discoveredService.address.scopeId().isEmpty()) {
+                discoveredService.address.setScopeId(ifaceName);
+            }
+
+            if (!discoveredService.name.isEmpty() && !discoveredService.address.isNull()) {
+                Q_EMIT serviceFound(discoveredService);
+            }
         });
         responseSocketNotifiers.append(socketNotifier);
     }
@@ -313,12 +337,60 @@ static QHostAddress findBestAddressMatchV4(const QVector<QHostAddress> &hostAddr
     return matchingIp;
 }
 
+int countCommonLeadingBitsV6(const Q_IPV6ADDR &addr1, const Q_IPV6ADDR &addr2)
+{
+    int count = 0;
+    for (int i = 0; i < 16; ++i) {
+        quint8 diff = addr1[i] ^ addr2[i];
+        if (diff == 0) {
+            count += 8;
+            continue;
+        }
+        while (!(diff & 0x80)) {
+            count++;
+            diff <<= 1;
+        }
+        break;
+    }
+    return count;
+}
+
 static QHostAddress findBestAddressMatchV6(const QVector<QHostAddress> &hostAddresses, const struct sockaddr *fromAddress)
 {
     Q_ASSERT(!hostAddresses.empty());
-    // We could do the same logic for v6 that we do for V4, but we don't care that much about IPv6
-    return hostAddresses[0];
-    Q_UNUSED(fromAddress);
+
+    if (hostAddresses.size() == 1 || fromAddress == nullptr || fromAddress->sa_family != AF_INET6) {
+        return hostAddresses[0];
+    }
+
+    // QHostAddress(sockaddr *) drops sin6_scope_id, so read it directly
+    const sockaddr_in6 *otherSockaddr = reinterpret_cast<const sockaddr_in6 *>(fromAddress);
+    const QHostAddress otherIp(otherSockaddr->sin6_addr.s6_addr);
+
+    if (otherIp.isLinkLocal()) {
+        // Answer with our link-local address on the interface the query came from
+        const QString ifaceName = QNetworkInterface::interfaceNameFromIndex(otherSockaddr->sin6_scope_id);
+        for (const QHostAddress &ip : hostAddresses) {
+            if (ip.isLinkLocal() && ip.scopeId() == ifaceName) {
+                return ip;
+            }
+        }
+        return hostAddresses[0];
+    }
+
+    QHostAddress matchingIp = hostAddresses[0];
+    int matchingBits = -1;
+    const Q_IPV6ADDR rawOtherIp = otherIp.toIPv6Address();
+    for (const QHostAddress &ip : hostAddresses) {
+        // Same as in findBestAddressMatchV4, compare prefixes since we don't have the network mask
+        int matchingBitsCount = countCommonLeadingBitsV6(ip.toIPv6Address(), rawOtherIp);
+        if (matchingBitsCount > matchingBits) {
+            matchingIp = ip;
+            matchingBits = matchingBitsCount;
+        }
+    }
+
+    return matchingIp;
 }
 
 static mdns_record_t createMdnsRecord(const Announcer::AnnouncedInfo &self,
@@ -609,7 +681,7 @@ int Announcer::listenForQueries()
         int socket = mdns_socket_open_ipv4(&sock_addr);
         if (socket >= 0) {
             socketNotifier = new QSocketNotifier(socket, QSocketNotifier::Read);
-            QObject::connect(socketNotifier, &QSocketNotifier::activated, callback);
+            QObject::connect(socketNotifier, &QSocketNotifier::activated, this, callback);
             numSockets++;
         }
     }
@@ -626,7 +698,7 @@ int Announcer::listenForQueries()
         int socket = mdns_socket_open_ipv6(&sock_addr);
         if (socket >= 0) {
             socketNotifierV6 = new QSocketNotifier(socket, QSocketNotifier::Read);
-            QObject::connect(socketNotifierV6, &QSocketNotifier::activated, callback);
+            QObject::connect(socketNotifierV6, &QSocketNotifier::activated, this, callback);
             numSockets++;
         }
     }
@@ -647,6 +719,40 @@ Announcer::Announcer(const QString &instanceName, const QString &serviceType, ui
     detectHostAddresses();
 }
 
+// Heuristic to detect virtual interfaces (bridges, VM/container adapters, etc.) whose addresses
+// are typically not reachable from other devices on the physical LAN. Advertising such addresses
+// in our mDNS A/AAAA records can make our hostname resolve to an unroutable address on remote
+// devices. We can't rely on QNetworkInterface::type(): bridges like virbr0/docker0 report as
+// Ethernet (ARPHRD_ETHER), while the only things flagged Virtual are tunnels (tun/WireGuard),
+// which we want to keep advertising in case a VPN is the machine's only connectivity. So we match
+// on well-known virtual-interface name prefixes instead.
+static bool isVirtualInterface(const QNetworkInterface &iface)
+{
+    // Only clearly-virtual interfaces that are never a machine's primary LAN link. We deliberately
+    // avoid prefixes that can legitimately be the real connection (e.g. "bridge" on a virtualization
+    // host, or "tun"/"tap" when a VPN is the only connectivity), since wrongly dropping those would
+    // leave us advertising no usable address at all.
+    static const QStringList virtualPrefixes = {
+        QStringLiteral("virbr"), // libvirt bridge
+        QStringLiteral("vnet"), // libvirt guest tap
+        QStringLiteral("vmnet"), // VMware host-only/NAT
+        QStringLiteral("vboxnet"), // VirtualBox host-only
+        QStringLiteral("docker"), // Docker bridge
+        QStringLiteral("br-"), // Docker user-defined bridges
+        QStringLiteral("veth"), // container veth pairs
+        QStringLiteral("awdl"), // macOS Apple Wireless Direct Link (AirDrop, not LAN)
+        QStringLiteral("llw"), // macOS low-latency WLAN (peer-to-peer, not LAN)
+    };
+
+    const QString name = iface.name();
+    for (const QString &prefix : virtualPrefixes) {
+        if (name.startsWith(prefix)) {
+            return true;
+        }
+    }
+    return false;
+}
+
 void Announcer::detectHostAddresses()
 {
     self.addressesV4.clear();
@@ -654,6 +760,10 @@ void Announcer::detectHostAddresses()
     for (const QNetworkInterface &iface : QNetworkInterface::allInterfaces()) {
         int flags = iface.flags();
         if (!(flags & QNetworkInterface::IsUp) || !(flags & QNetworkInterface::CanMulticast) || (flags & QNetworkInterface::IsLoopBack)) {
+            continue;
+        }
+        if (isVirtualInterface(iface)) {
+            qCDebug(KDECONNECT_CORE) << "Skipping virtual interface for mDNS announce:" << iface.name();
             continue;
         }
         for (const QNetworkAddressEntry &ifaceAddress : iface.addressEntries()) {
@@ -685,10 +795,16 @@ void Announcer::stopAnnouncing()
 
 void Announcer::stopListeningForQueries()
 {
-    delete socketNotifier;
-    socketNotifier = nullptr;
-    delete socketNotifierV6;
-    socketNotifierV6 = nullptr;
+    if (socketNotifier) {
+        mdns_socket_close(socketNotifier->socket());
+        delete socketNotifier;
+        socketNotifier = nullptr;
+    }
+    if (socketNotifierV6) {
+        mdns_socket_close(socketNotifierV6->socket());
+        delete socketNotifierV6;
+        socketNotifierV6 = nullptr;
+    }
 }
 
 void Announcer::sendMulticastAnnounce(bool isGoodbye)

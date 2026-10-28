@@ -1,13 +1,13 @@
 # Copyright (C) YEAR This_file_is_part_of_KDE
 # This file is distributed under the same license as the PACKAGE package.
-# SPDX-FileCopyrightText: 2014, 2015, 2016, 2018, 2019, 2020, 2021, 2023, 2025 Łukasz Wojniłowicz <lukasz.wojnilowicz@gmail.com>
+# SPDX-FileCopyrightText: 2014-2016, 2018-2021, 2023, 2025-2026 Łukasz Wojniłowicz <lukasz.wojnilowicz@gmail.com>
 #
 msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: https://bugs.kde.org\n"
-"POT-Creation-Date: 2025-12-26 00:42+0000\n"
-"PO-Revision-Date: 2025-12-24 16:22+0100\n"
+"POT-Creation-Date: 2026-10-25 00:50+0000\n"
+"PO-Revision-Date: 2026-09-06 10:31+0200\n"
 "Last-Translator: Łukasz Wojniłowicz <lukasz.wojnilowicz@gmail.com>\n"
 "Language-Team: pl\n"
 "Language: pl\n"
@@ -16,68 +16,73 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=3; plural=(n==1 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 "
 "|| n%100>=20) ? 1 : 2);\n"
-"X-Generator: Lokalize 25.08.2\n"
+"X-Generator: Lokalize 26.08.0\n"
 
-#: backends/bluetooth/asynclinkprovider.cpp:39
-#, kde-format
-msgctxt "@info"
-msgid "Bluetooth"
-msgstr "Bluetooth"
-
-#: backends/lan/compositeuploadjob.cpp:78
+#: backends/lan/compositeuploadjob.cpp:83
 #, kde-format
 msgid "Couldn't find an available port"
 msgstr "Nie można było znaleźć dostępnego portu"
 
-#: backends/lan/compositeuploadjob.cpp:110
+#: backends/lan/compositeuploadjob.cpp:112
 #, kde-format
 msgid "Failed to send packet to %1"
 msgstr "Nie udało się wysyłanie pakietu do %1"
 
-#: backends/lan/compositeuploadjob.cpp:256
+#: backends/lan/compositeuploadjob.cpp:303
+#, kde-format
+msgid "Timeout waiting for receiver to connect"
+msgstr "Przekroczono czas oczekiwania na połączenie się odbiornika"
+
+#: backends/lan/compositeuploadjob.cpp:356
 #, kde-format
 msgid "Sending to %1"
 msgstr "Wysyłanie do %1"
 
-#: backends/lan/compositeuploadjob.cpp:256
+#: backends/lan/compositeuploadjob.cpp:356
 #, kde-format
 msgid "File"
 msgstr "Plik"
 
-#: backends/pairinghandler.cpp:61
+#: backends/lan/uploadjob.cpp:102
+#, fuzzy, kde-format
+#| msgid "Could not store certificate file: %1"
+msgid "Could not open source file: %1"
+msgstr "Nie można zachować pliku certyfikatu: %1"
+
+#: backends/pairinghandler.cpp:57
 #, kde-format
 msgid "Device clocks are out of sync"
 msgstr "Zegary urządzenia nie są zsynchronizowane"
 
-#: backends/pairinghandler.cpp:80
+#: backends/pairinghandler.cpp:76
 #, kde-format
 msgid "Canceled by other peer"
 msgstr "Anulowane przez innego uczestnika"
 
-#: backends/pairinghandler.cpp:96
-#, kde-format
-msgid "%1: Already paired"
-msgstr "%1: Już sparowane"
-
-#: backends/pairinghandler.cpp:105 backends/pairinghandler.cpp:124
+#: backends/pairinghandler.cpp:100 backends/pairinghandler.cpp:119
 #, kde-format
 msgid "%1: Device not reachable"
 msgstr "%1: Urządzenie jest nieosiągalne"
 
-#: backends/pairinghandler.cpp:139
+#: backends/pairinghandler.cpp:142
 #, kde-format
 msgid "Device not reachable"
 msgstr "Urządzenie nieosiągalne"
 
-#: backends/pairinghandler.cpp:150
+#: backends/pairinghandler.cpp:158
 #, kde-format
 msgid "Cancelled by user"
 msgstr "Porzucone przez użytkownika"
 
-#: backends/pairinghandler.cpp:166
+#: backends/pairinghandler.cpp:178
 #, kde-format
 msgid "Timed out"
 msgstr "Upłynął czasu oczekiwania"
+
+#: backends/pairinghandler.cpp:191
+#, kde-format
+msgid "Pairing is not in progress"
+msgstr ""
 
 #: compositefiletransferjob.cpp:47
 #, kde-format
@@ -100,55 +105,70 @@ msgctxt "The destination of a file operation"
 msgid "Destination"
 msgstr "Cel"
 
-#: device.cpp:475
+#: device.cpp:496
 #, kde-format
 msgid "SHA256 fingerprint of your device certificate is: %1\n"
 msgstr "Odcisk palca SHA256 certyfikatu twojego urządzenia to: %1\n"
 
-#: device.cpp:481
+#: device.cpp:502
 #, kde-format
 msgid "SHA256 fingerprint of remote device certificate is: %1\n"
 msgstr "Odcisk palca SHA256 certyfikatu twojego zdalnego urządzenia to: %1\n"
 
-#: device.cpp:483
+#: device.cpp:504
 #, kde-format
 msgid "Protocol version: %1\n"
 msgstr "Wersja protokołu: %1\n"
 
-#: filetransferjob.cpp:53
+#: filetransferjob.cpp:54
 #, kde-format
 msgid "Filename already present"
 msgstr "Nazwa pliku już istnieje"
 
-#: filetransferjob.cpp:116
+#: filetransferjob.cpp:70
+#, kde-format
+msgid "Could not create destination file: %1"
+msgstr "Nie można utworzyć pliku docelowego: %1"
+
+#: filetransferjob.cpp:129
 #, kde-format
 msgid "Received incomplete file from: %1"
 msgstr "Pobrano niepełny plik od: %1"
 
-#: kdeconnectconfig.cpp:348 kdeconnectconfig.cpp:382
+#: kdeconnectconfig.cpp:433 kdeconnectconfig.cpp:467
 #, kde-format
 msgid "KDE Connect failed to start"
 msgstr "Nie udało się uruchomić KDE Connect"
 
-#: kdeconnectconfig.cpp:348
+#: kdeconnectconfig.cpp:433
 #, kde-format
 msgid "Could not generate the private key."
 msgstr "Nie można utworzyć klucza prywatnego."
 
-#: kdeconnectconfig.cpp:367
+#: kdeconnectconfig.cpp:452
 #, kde-format
 msgid "Could not store private key file: %1"
 msgstr "Nie można zachować pliku klucza prywatnego: %1"
 
-#: kdeconnectconfig.cpp:382
+#: kdeconnectconfig.cpp:467
 #, kde-format
 msgid "Could not generate the device certificate."
 msgstr "Nie można utworzyć certyfikatu urządzenia."
 
-#: kdeconnectconfig.cpp:398
+#: kdeconnectconfig.cpp:483
 #, kde-format
 msgid "Could not store certificate file: %1"
 msgstr "Nie można zachować pliku certyfikatu: %1"
+
+#~ msgid "%1: Already paired"
+#~ msgstr "%1: Już sparowane"
+
+#, fuzzy
+#~| msgctxt "@info"
+#~| msgid "Bluetooth"
+#~ msgctxt "@info"
+#~ msgid "Bluetooth (beta)"
+#~ msgstr "Bluetooth"
 
 #~ msgid "Received incomplete file: %1"
 #~ msgstr "Pobrano niepełny plik: %1"

@@ -25,6 +25,7 @@
 #include <KColorSchemeManager>
 #include <KCrash>
 #include <KDBusService>
+#include <KIconTheme>
 #include <KLocalizedString>
 
 #include "dbusinterfaces/dbusinterfaces.h"
@@ -48,6 +49,10 @@ int main(int argc, char **argv)
     }
 #endif
 
+#if defined(Q_OS_WIN) || defined(Q_OS_MAC)
+    // Install KIconEngine so widget icons get recolored in dark mode. Must be called before QApplication.
+    KIconTheme::initTheme();
+#endif
     QApplication app(argc, argv);
 
     IndicatorHelper helper;
@@ -96,9 +101,16 @@ int main(int argc, char **argv)
     DaemonDbusInterface iface;
 
     auto refreshMenu = [&iface, &proxyModel, &menu]() {
+        // Submenus are not owned by their actions, so clear() doesn't delete them
+        const auto actions = menu->actions();
+        for (QAction *action : actions) {
+            if (QMenu *subMenu = action->menu()) {
+                subMenu->deleteLater();
+            }
+        }
         menu->clear();
         // Note: This is needed on macOS since a single click on the icon doesn't open the app like on other platforms.
-        menu->addAction(i18n("Open app"), []() {
+        menu->addAction(i18n("Open app"), menu, []() {
             OpenConfig oc;
             oc.openConfiguration();
         });
@@ -118,26 +130,29 @@ int main(int argc, char **argv)
             menu->addSection(i18n("Pairing requests"));
 
             for (const auto &req : requests) {
-                DeviceDbusInterface *dev = new DeviceDbusInterface(req, menu);
+                DeviceDbusInterface *dev = new DeviceDbusInterface(req);
                 auto pairMenu = menu->addMenu(dev->name());
+                dev->setParent(pairMenu);
                 pairMenu->addAction(i18nc("Accept a pairing request", "Pair"), dev, &DeviceDbusInterface::acceptPairing);
                 pairMenu->addAction(i18n("Reject"), dev, &DeviceDbusInterface::cancelPairing);
             }
         }
         // Add quit menu
 #if defined(Q_OS_MAC)
-        menu->addAction(i18n("Quit"), []() {
-            auto message = QDBusMessage::createMethodCall(QStringLiteral("org.kde.kdeconnect.daemon"),
-                                                          QStringLiteral("/MainApplication"),
-                                                          QStringLiteral("org.qtproject.Qt.QCoreApplication"),
-                                                          QStringLiteral("quit"));
-            QDBusConnection::sessionBus().call(message, QDBus::NoBlock);
+        menu->addAction(i18n("Quit"), qApp, []() {
+            const auto quitApplication = [](const QString &service) {
+                const auto message = QDBusMessage::createMethodCall(service,
+                                                                    QStringLiteral("/MainApplication"),
+                                                                    QStringLiteral("org.qtproject.Qt.QCoreApplication"),
+                                                                    QStringLiteral("quit"));
+                QDBusConnection::sessionBus().call(message, QDBus::NoBlock);
+            };
+            quitApplication(QStringLiteral("org.kde.kdeconnect.app"));
+            quitApplication(QStringLiteral("org.kde.kdeconnect.daemon"));
             qApp->quit();
         });
 #elif defined(Q_OS_WIN)
-        menu->addAction(QIcon::fromTheme(QStringLiteral("application-exit")), i18n("Quit"), []() {
-            qApp->quit();
-        });
+        menu->addAction(QIcon::fromTheme(QStringLiteral("application-exit")), i18n("Quit"), qApp, &QApplication::quit);
 #endif
     };
 
@@ -156,7 +171,7 @@ int main(int argc, char **argv)
     QObject::connect(&model, &DevicesModel::rowsChanged, &model, [&systray, &model]() {
         systray.setToolTip(i18np("%1 device connected", "%1 devices connected", model.rowCount()));
     });
-    QObject::connect(&systray, &QSystemTrayIcon::activated, [](QSystemTrayIcon::ActivationReason reason) {
+    QObject::connect(&systray, &QSystemTrayIcon::activated, &systray, [](QSystemTrayIcon::ActivationReason reason) {
         if (reason == QSystemTrayIcon::Trigger) {
             OpenConfig oc;
             oc.openConfiguration();

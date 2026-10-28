@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: kdeconnect-kde\n"
 "Report-Msgid-Bugs-To: https://bugs.kde.org\n"
-"POT-Creation-Date: 2025-12-22 00:42+0000\n"
-"PO-Revision-Date: 2025-12-16 01:56+0200\n"
+"POT-Creation-Date: 2026-10-25 00:50+0000\n"
+"PO-Revision-Date: 2026-10-26 16:52+0200\n"
 "Last-Translator: Moo <<>>\n"
 "Language-Team: none\n"
 "Language: lt\n"
@@ -17,47 +17,47 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=4; plural=(n==1 ? 0 : n%10>=2 && (n%100<10 || n"
 "%100>=20) ? 1 : n%10==0 || (n%100>10 && n%100<20) ? 2 : 3);\n"
-"X-Generator: Poedit 3.8\n"
+"X-Generator: Poedit 3.10\n"
 
-#: main.cpp:38 main.cpp:40
+#: main.cpp:45 main.cpp:47
 #, kde-format
 msgid "KDE Connect"
 msgstr "KDE Connect"
 
-#: main.cpp:42
+#: main.cpp:49
 #, kde-format
 msgid "© 2015–2025 KDE Connect Team"
 msgstr "© 2015–2025 KDE Connect komanda"
 
-#: main.cpp:43
+#: main.cpp:50
 #, kde-format
 msgid "Aleix Pol Gonzalez"
 msgstr "Aleix Pol Gonzalez"
 
-#: main.cpp:44
+#: main.cpp:51
 #, kde-format
 msgid "Albert Vaca Cintora"
 msgstr "Albert Vaca Cintora"
 
-#: main.cpp:45
+#: main.cpp:52
 #, kde-format
 msgctxt "NAME OF TRANSLATORS"
 msgid "Your names"
 msgstr "Moo"
 
-#: main.cpp:45
+#: main.cpp:52
 #, kde-format
 msgctxt "EMAIL OF TRANSLATORS"
 msgid "Your emails"
 msgstr "<>"
 
-#: main.cpp:76
+#: main.cpp:83
 #, kde-format
 msgctxt "@info:shell"
 msgid "Device id to open the app in"
 msgstr "Įrenginio, kuriame atverti programėlę, ID"
 
-#: main.cpp:79
+#: main.cpp:86
 #, kde-format
 msgctxt "@info:shell"
 msgid "Configuration module to show, requires --device to be set."
@@ -65,132 +65,172 @@ msgstr ""
 "Konfigūracijos modulis, kurį rodyti. Reikalauja, kad būtų nustatytas --"
 "device."
 
-#: main.cpp:83
+#: main.cpp:90
 #, kde-format
 msgctxt "command line description"
 msgid "Replace an existing instance"
 msgstr "Pakeisti esamą egzempliorių"
 
-#: main.cpp:86
+#: main.cpp:93
 #, kde-format
 msgid "URL to share"
 msgstr "Norimas bendrinti URL"
 
-#: qml/DevicePage.qml:36
+#: qml/BatteryInfo.qml:26
+#, kde-format
+msgid "Battery: No info"
+msgstr "Akumuliatorius: Nėra informacijos"
+
+#: qml/BatteryInfo.qml:28
+#, kde-format
+msgid "Battery: %1% (Charging)"
+msgstr "Akumuliatorius: %1% (Įkraunamas)"
+
+#: qml/BatteryInfo.qml:30
+#, kde-format
+msgid "Battery: %1%"
+msgstr "Akumuliatorius: %1%"
+
+#: qml/ConnectivityInfo.qml:20
+#, kde-format
+msgid "Unknown"
+msgstr "Nežinoma"
+
+#: qml/ConnectivityInfo.qml:26
+#, kde-format
+msgid "Mobile Network: No signal"
+msgstr "Mobilusis tinklas: Nėra signalo"
+
+#: qml/ConnectivityInfo.qml:28
+#, kde-format
+msgid "Mobile Network: %1"
+msgstr "Mobilusis tinklas: %1"
+
+#: qml/DevicePage.qml:54
 #, kde-format
 msgid "Unpair"
 msgstr "Panaikinti suporavimą"
 
-#: qml/DevicePage.qml:41
+#: qml/DevicePage.qml:59
 #, kde-format
 msgid "Send Ping"
 msgstr "Siųsti ryšio patikrinimą"
 
-#: qml/DevicePage.qml:49 qml/PluginSettings.qml:20
+#: qml/DevicePage.qml:67 qml/PluginSettings.qml:21
 #, kde-format
 msgid "Plugin Settings"
 msgstr "Įskiepio nuostatos"
 
-#: qml/DevicePage.qml:65
+#: qml/DevicePage.qml:83
 #, kde-format
 msgctxt "@title:group device page section header"
 msgid "Actions"
 msgstr "Veiksmai"
 
-#: qml/DevicePage.qml:67
+#: qml/DevicePage.qml:85
 #, kde-format
 msgctxt "@title:group device page section header"
 msgid "Controls"
 msgstr "Valdikliai"
 
-#: qml/DevicePage.qml:69
+#: qml/DevicePage.qml:87
 #, kde-format
 msgctxt "@title:group device page section header"
 msgid "Information"
 msgstr "Informacija"
 
-#: qml/DevicePage.qml:115
+#: qml/DevicePage.qml:149
 #, kde-format
 msgid "Multimedia control"
 msgstr "Įvairialypės terpės valdymas"
 
-#: qml/DevicePage.qml:123
+#: qml/DevicePage.qml:157
+#, kde-format
+msgid "Notifications"
+msgstr "Pranešimai"
+
+#: qml/DevicePage.qml:165
 #, kde-format
 msgid "Remote input"
 msgstr "Nuotolinis įvedimas"
 
-#: qml/DevicePage.qml:131 qml/runcommand.qml:16
+#: qml/DevicePage.qml:173 qml/runcommand.qml:16
 #, kde-format
 msgid "Run command"
 msgstr "Vykdyti komandą"
 
-#: qml/DevicePage.qml:139 qml/presentationRemote.qml:15
+#: qml/DevicePage.qml:181 qml/presentationRemote.qml:15
 #, kde-format
 msgid "Presentation Remote"
 msgstr "Pristatymo nuotolinis valdymo pultas"
 
-#: qml/DevicePage.qml:147 qml/volume.qml:16
+#: qml/DevicePage.qml:190 qml/volume.qml:16
 #, kde-format
 msgid "Volume control"
 msgstr "Garsumo valdymas"
 
-#: qml/DevicePage.qml:157 qml/mousepad.qml:44
+#: qml/DevicePage.qml:200
+#, kde-format
+msgid "SMS Messages"
+msgstr "SMS žinutės"
+
+#: qml/DevicePage.qml:208 qml/mousepad.qml:44
 #, kde-format
 msgid "Lock"
 msgstr "Užrakinti"
 
-#: qml/DevicePage.qml:157
+#: qml/DevicePage.qml:208
 #, kde-format
 msgid "Unlock"
 msgstr "Atrakinti"
 
-#: qml/DevicePage.qml:165
+#: qml/DevicePage.qml:216
 #, kde-format
 msgid "Find Device"
 msgstr "Rasti įrenginį"
 
-#: qml/DevicePage.qml:173
+#: qml/DevicePage.qml:224
 #, kde-format
 msgid "Send Clipboard"
 msgstr "Siųsti iškarpinę"
 
-#: qml/DevicePage.qml:180
+#: qml/DevicePage.qml:231
 #, kde-format
 msgid "Share File"
 msgstr "Bendrinti failą"
 
-#: qml/DevicePage.qml:188
+#: qml/DevicePage.qml:239
 #, kde-format
 msgid "Browse this device"
 msgstr "Naršyti šį įrenginį"
 
-#: qml/DevicePage.qml:196
+#: qml/DevicePage.qml:247
 #, kde-format
 msgid "Stop virtual monitor session"
 msgstr "Stabdyti virtualaus monitoriaus seansą"
 
-#: qml/DevicePage.qml:196
+#: qml/DevicePage.qml:247
 #, kde-format
 msgid "Use device as an external monitor"
 msgstr "Naudoti įrenginį kaip išorinį monitorių"
 
-#: qml/DevicePage.qml:211
+#: qml/DevicePage.qml:278
 #, kde-format
 msgid "Address: %1 via %2"
 msgstr "Adresas: %1 per %2"
 
-#: qml/DevicePage.qml:220
+#: qml/DevicePage.qml:288
 #, kde-format
 msgid "This device is not paired."
 msgstr "Šis įrenginys nėra suporuotas."
 
-#: qml/DevicePage.qml:224
+#: qml/DevicePage.qml:292
 #, kde-format
 msgctxt "Request pairing with a given device"
 msgid "Pair"
 msgstr "Suporuoti"
 
-#: qml/DevicePage.qml:231 qml/DevicePage.qml:240
+#: qml/DevicePage.qml:299 qml/DevicePage.qml:308
 #, kde-format
 msgid ""
 "Pair requested\n"
@@ -199,64 +239,82 @@ msgstr ""
 "Paprašyta suporavimo\n"
 "Raktas: "
 
-#: qml/DevicePage.qml:246
+#: qml/DevicePage.qml:314
 #, kde-format
 msgid "Accept"
 msgstr "Priimti"
 
-#: qml/DevicePage.qml:252
+#: qml/DevicePage.qml:320
 #, kde-format
 msgid "Reject"
 msgstr "Atmesti"
 
-#: qml/DevicePage.qml:263
+#: qml/DevicePage.qml:331
 #, kde-format
 msgid "This device is not reachable"
 msgstr "Šis įrenginys yra nepasiekiamas"
 
-#: qml/DevicePage.qml:271
+#: qml/DevicePage.qml:339
 #, kde-format
 msgid "Please choose a file"
 msgstr "Pasirinkite failą"
 
-#: qml/Main.qml:87
+#: qml/Main.qml:93
+#, kde-format
+msgctxt "@action:button"
+msgid "Open device list"
+msgstr "Atverti įrenginių sąrašą"
+
+#: qml/Main.qml:94
+#, kde-format
+msgctxt "@action:button"
+msgid "Close device list"
+msgstr "Užverti įrenginių sąrašą"
+
+#: qml/Main.qml:113
 #, kde-format
 msgid "Devices"
 msgstr "Įrenginiai"
 
-#: qml/Main.qml:95
+#: qml/Main.qml:121
 #, kde-format
 msgctxt "@action:button"
 msgid "Refresh"
 msgstr "Įkelti iš naujo"
 
-#: qml/Main.qml:97
+#: qml/Main.qml:124
 #, kde-format
 msgctxt "@action:button accessible"
 msgid "Refresh Devices"
 msgstr "Įkelti įrenginius iš naujo"
 
-#: qml/Main.qml:133
+#: qml/Main.qml:160
 #, kde-format
 msgid "Remembered"
 msgstr "Įsimintas"
 
-#: qml/Main.qml:135
+#: qml/Main.qml:162
 #, kde-format
 msgid "Available"
 msgstr "Prieinamas"
 
-#: qml/Main.qml:137
+#: qml/Main.qml:164
 #, kde-format
 msgid "Connected"
 msgstr "Prisijungęs"
 
-#: qml/Main.qml:142
+#: qml/Main.qml:169
 #, kde-format
 msgid "No devices found"
 msgstr "Nerasta jokių įrenginių"
 
-#: qml/Main.qml:214 qml/Main.qml:229
+#: qml/Main.qml:248
+#, kde-format
+msgctxt "@action:button"
+msgid "Settings"
+msgstr "Nuostatos"
+
+#: qml/Main.qml:263
 #, kde-format
 msgid "Settings"
 msgstr "Nuostatos"
@@ -304,17 +362,56 @@ msgstr "Nėra jokių prieinamų leistuvių"
 #: qml/mpris.qml:128
 #, kde-format
 msgid "%1 - %2"
-msgstr "%1 - %2"
+msgstr "%1 – %2"
 
-#: qml/PluginSettings.qml:131
+#: qml/NotificationPanel.qml:21
 #, kde-format
-msgid "Configure plugin"
-msgstr "Konfigūruoti įskiepį"
+msgctxt "@title:window"
+msgid "Notifications"
+msgstr "Pranešimai"
+
+#: qml/NotificationPanel.qml:164
+#, kde-format
+msgid "Reply"
+msgstr "Atsakyti"
+
+#: qml/NotificationPanel.qml:179
+#, kde-format
+msgid "Dismiss"
+msgstr "Atmesti"
+
+#: qml/NotificationPanel.qml:206
+#, kde-format
+msgid "Cancel"
+msgstr "Atsisakyti"
+
+#: qml/NotificationPanel.qml:224
+#, kde-format
+msgctxt "@info:placeholder"
+msgid "Reply to %1…"
+msgstr "Atsakyti %1…"
+
+#: qml/NotificationPanel.qml:243
+#, kde-format
+msgid "Send"
+msgstr "Siųsti"
 
 #: qml/presentationRemote.qml:22
 #, kde-format
 msgid "Enable Full-Screen"
 msgstr "Įjungti visą ekraną"
+
+#: qml/presentationRemote.qml:39
+#, kde-format
+msgctxt "@action:button accessible"
+msgid "Previous Slide"
+msgstr "Ankstesnė skaidrė"
+
+#: qml/presentationRemote.qml:47
+#, kde-format
+msgctxt "@action:button accessible"
+msgid "Next Slide"
+msgstr "Kita skaidrė"
 
 #: qml/runcommand.qml:23
 #, kde-format
@@ -331,32 +428,37 @@ msgstr "Galite taisyti komandas prijungtame įrenginyje"
 msgid "No commands defined"
 msgstr "Nėra jokių apibrėžtų komandų"
 
-#: qml/Settings.qml:13
+#: qml/Settings.qml:15
 #, kde-format
 msgctxt "@title:window"
 msgid "Settings"
 msgstr "Nuostatos"
 
-#: qml/Settings.qml:21
+#: qml/Settings.qml:27
 #, kde-format
 msgid "Device name"
 msgstr "Įrenginio pavadinimas"
 
-#: qml/Settings.qml:33
+#: qml/Settings.qml:39
 #, kde-format
 msgctxt "@title:group"
 msgid "Backends"
 msgstr "Vidinės pusės"
 
-#: qml/Settings.qml:66
+#: qml/Settings.qml:72
 #, kde-format
 msgid "About KDE Connect"
 msgstr "Apie KDE Connect"
 
-#: qml/Settings.qml:74
+#: qml/Settings.qml:80
 #, kde-format
 msgid "About KDE"
 msgstr "Apie KDE"
+
+#: qml/Settings.qml:91
+#, kde-format
+msgid "Close"
+msgstr "Užverti"
 
 #: qml/WelcomePage.qml:27
 #, kde-format
@@ -370,45 +472,50 @@ msgctxt "@info"
 msgid "Make sure to install KDE Connect on your other devices."
 msgstr "Nepamirškite įsidiegti KDE Connect kituose savo įrenginiuose."
 
-#: qml/WelcomePage.qml:43
+#: qml/WelcomePage.qml:44
 #, kde-format
 msgctxt "@title:context"
 msgid "KDE Connect Android App"
 msgstr "KDE Connect „Android“ programėlė"
 
-#: qml/WelcomePage.qml:50
+#: qml/WelcomePage.qml:51
 #, kde-format
 msgctxt "Android Application Store"
 msgid "F-Droid"
 msgstr "F-Droid"
 
-#: qml/WelcomePage.qml:57
+#: qml/WelcomePage.qml:58
 #, kde-format
 msgctxt "Android Application Store"
 msgid "Play Store"
 msgstr "„Play“ parduotuvė"
 
-#: qml/WelcomePage.qml:63
+#: qml/WelcomePage.qml:64
 #, kde-format
 msgctxt "@title:context"
 msgid "KDE Connect iOS App"
 msgstr "KDE Connect „iOS“ programėlė"
 
-#: qml/WelcomePage.qml:68
+#: qml/WelcomePage.qml:69
 #, kde-format
-msgid "Apple Store"
-msgstr "„Apple“ parduotuvė"
+msgid "App Store"
+msgstr "„App Store“"
 
-#: qml/WelcomePage.qml:74
-#, kde-format
-msgid ""
-"If you are having problems, visit the <a href=\"https://userbase.kde.org/"
-"KDEConnect\"><span style=\" text-decoration: underline;\">KDE Connect "
-"Community wiki</span></a> for help."
-msgstr ""
-"Jei susidūrėte su problemomis, apsilankykite <a href=\"https://userbase.kde."
-"org/KDEConnect\"><span style=\" text-decoration: underline;\">KDE Connect "
-"bendruomenės vikyje</span></a>, kad gautumėte pagalbos."
+#~ msgid "Configure plugin"
+#~ msgstr "Konfigūruoti įskiepį"
+
+#~ msgid ""
+#~ "If you are having problems, visit the <a href=\"https://userbase.kde.org/"
+#~ "KDEConnect\"><span style=\" text-decoration: underline;\">KDE Connect "
+#~ "Community wiki</span></a> for help."
+#~ msgstr ""
+#~ "Jei susidūrėte su problemomis, apsilankykite <a href=\"https://userbase."
+#~ "kde.org/KDEConnect\"><span style=\" text-decoration: underline;\">KDE "
+#~ "Connect bendruomenės vikyje</span></a>, kad gautumėte pagalbos."
+
+#~ msgctxt "@title:window"
+#~ msgid "Active Notifications"
+#~ msgstr "Aktyvūs pranešimai"
 
 #~ msgctxt "@info KDE Connect provider name"
 #~ msgid "Bluetooth"

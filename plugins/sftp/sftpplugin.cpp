@@ -17,6 +17,8 @@
 #include <KNotificationJobUiDelegate>
 #include <KPluginFactory>
 
+#include <Solid/DeviceNotifier>
+
 #include "daemon.h"
 #include "mounter.h"
 #include "plugin_sftp_debug.h"
@@ -42,6 +44,19 @@ void SftpPlugin::addToDolphin()
 {
     removeFromDolphin();
 
+    static bool s_hasSolidBackend = [] {
+        // Initialize solid.
+        const auto notifier = Solid::DeviceNotifier::instance();
+        Q_UNUSED(notifier);
+
+        return QCoreApplication::instance()->property("_kde_solid_has_kdeconnect_backend").toBool();
+    }();
+
+    if (s_hasSolidBackend) {
+        qCDebug(KDECONNECT_PLUGIN_SFTP) << "not adding to dolphin, Solid KDE Connect backend available";
+        return;
+    }
+
     QUrl kioUrl(QStringLiteral("kdeconnect://") + deviceId + QStringLiteral("/"));
     m_placesModel.addPlace(device()->name(), kioUrl, QStringLiteral("kdeconnect"));
     qCDebug(KDECONNECT_PLUGIN_SFTP) << "add to dolphin";
@@ -52,6 +67,13 @@ void SftpPlugin::removeFromDolphin()
     QUrl kioUrl(QStringLiteral("kdeconnect://") + deviceId + QStringLiteral("/"));
     for (int i = 0; i < m_placesModel.rowCount(); ++i) {
         QModelIndex index = m_placesModel.index(i, 0);
+        // Skip Solid device entries: when the KDE Connect Solid backend is installed, each device
+        // shows up in the places model with a kdeconnect://<deviceId>/ URL that matches kioUrl.
+        // removePlace() is a no-op for device items, so trying to remove one here would never
+        // decrease rowCount() and the --i below would spin on the same row forever (100% CPU hang).
+        if (m_placesModel.isDevice(index)) {
+            continue;
+        }
         QUrl url = m_placesModel.url(index);
         if (url == kioUrl) {
             m_placesModel.removePlace(index);
@@ -103,7 +125,7 @@ QString SftpPlugin::getMountError()
 bool SftpPlugin::startBrowsing()
 {
     if (mountAndWait()) {
-        auto *job = new KIO::OpenUrlJob(QUrl(QStringLiteral("kdeconnect://") + deviceId));
+        auto *job = new KIO::OpenUrlJob(QUrl(QStringLiteral("kdeconnect://") + deviceId + QStringLiteral("/")));
         job->setUiDelegate(new KNotificationJobUiDelegate(KJobUiDelegate::AutoHandlingEnabled));
         job->start();
         return true;
@@ -113,13 +135,25 @@ bool SftpPlugin::startBrowsing()
 
 void SftpPlugin::receivePacket(const NetworkPacket &np)
 {
+    if (np.has(QStringLiteral("serverRunning"))) {
+        if (!np.get<bool>(QStringLiteral("serverRunning")) && m_mounter) {
+            m_mounter->restart();
+        }
+        return;
+    }
+
     if (np.has(QStringLiteral("errorMessage"))) {
-        onFailed(np.get<QString>(QStringLiteral("errorMessage")));
+        const QString errorMessage = np.get<QString>(QStringLiteral("errorMessage"));
+        if (m_mounter) {
+            Q_EMIT m_mounter->failed(errorMessage);
+        } else {
+            onFailed(errorMessage);
+        }
         return;
     }
 
     // Note: for Windows, a password field is also expected. See the expectedFields definition in sftpplugin-win.cpp
-    static const QSet<QString> expectedFields{QStringLiteral("user"), QStringLiteral("port"), QStringLiteral("path"), QStringLiteral("password")};
+    static const QSet<QString> expectedFields{QStringLiteral("user"), QStringLiteral("port"), QStringLiteral("path")};
     const QStringList receivedFieldsList = np.body().keys();
     const QSet<QString> receivedFields(receivedFieldsList.begin(), receivedFieldsList.end());
     if (!(expectedFields - receivedFields).isEmpty()) {

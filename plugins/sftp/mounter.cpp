@@ -62,6 +62,7 @@ void Mounter::onPacketReceived(const NetworkPacket &np)
 
     m_proc = new KProcess();
     m_proc->setOutputChannelMode(KProcess::MergedChannels);
+    m_proc->setUnixProcessParameters(QProcess::UnixProcessFlag::CloseFileDescriptors);
 
     connect(m_proc, &QProcess::started, this, &Mounter::onStarted);
     connect(m_proc, &QProcess::errorOccurred, this, &Mounter::onError);
@@ -113,6 +114,17 @@ void Mounter::onPacketReceived(const NetworkPacket &np)
     // qCDebug(KDECONNECT_PLUGIN_SFTP) << "Passing password: " << np.get<QString>("password").toLatin1();
     m_proc->write(np.get<QString>(QStringLiteral("password")).toLatin1());
     m_proc->write("\n");
+}
+
+void Mounter::restart()
+{
+    if (!m_started) {
+        return;
+    }
+
+    qCDebug(KDECONNECT_PLUGIN_SFTP) << "Restarting mount";
+    unmount(false, false);
+    start();
 }
 
 void Mounter::onStarted()
@@ -177,7 +189,7 @@ void Mounter::start()
     m_connectTimer.start();
 }
 
-void Mounter::unmount(bool finished)
+void Mounter::unmount(bool finished, bool notify)
 {
     qCDebug(KDECONNECT_PLUGIN_SFTP) << "Unmount" << m_proc;
     if (m_proc) {
@@ -190,21 +202,26 @@ void Mounter::unmount(bool finished)
 
             auto proc = m_proc;
             m_proc = nullptr;
-            connect(proc, &QProcess::finished, [proc]() {
+            connect(proc, &QProcess::finished, proc, [proc]() {
                 qCDebug(KDECONNECT_PLUGIN_SFTP) << "Free" << proc;
                 proc->deleteLater();
             });
-            Q_EMIT unmounted();
+            if (notify) {
+                Q_EMIT unmounted();
+            }
         } else {
             m_proc->deleteLater();
         }
 
         // Free mount point (won't always succeed if the path is in use)
+        KProcess unmountProcess;
+        unmountProcess.setUnixProcessParameters(QProcess::UnixProcessFlag::CloseFileDescriptors);
 #if defined(HAVE_FUSERMOUNT)
-        KProcess::execute(QStringList{QStringLiteral("fusermount"), QStringLiteral("-u"), m_mountPoint}, 10000);
+        unmountProcess.setProgram(QStringList{QStringLiteral("fusermount"), QStringLiteral("-u"), m_mountPoint});
 #else
-        KProcess::execute(QStringList{QStringLiteral("umount"), m_mountPoint}, 10000);
+        unmountProcess.setProgram(QStringList{QStringLiteral("umount"), m_mountPoint});
 #endif
+        unmountProcess.execute(10000);
         m_proc = nullptr;
     }
     m_started = false;

@@ -65,7 +65,7 @@ int DevicesModel::rowForDevice(const QString &id) const
 void DevicesModel::deviceAdded(const QString &id)
 {
     if (rowForDevice(id) >= 0) {
-        Q_ASSERT_X(false, "deviceAdded", "Trying to add a device twice");
+        qCDebug(KDECONNECT_MODELS) << "Trying to add a device twice" << id;
         return;
     }
 
@@ -133,6 +133,19 @@ void DevicesModel::setDisplayFilter(int flags)
     Q_EMIT displayFilterChanged(flags);
 }
 
+bool DevicesModel::busy() const
+{
+    return m_busy;
+}
+
+void DevicesModel::setBusy(bool busy)
+{
+    if (m_busy != busy) {
+        m_busy = busy;
+        Q_EMIT busyChanged(busy);
+    }
+}
+
 void DevicesModel::refreshDeviceList()
 {
     if (!m_dbusInterface->isValid()) {
@@ -140,6 +153,8 @@ void DevicesModel::refreshDeviceList()
         qCWarning(KDECONNECT_MODELS) << "dbus interface not valid";
         return;
     }
+
+    setBusy(true);
 
     bool onlyPaired = (m_displayFilter & StatusFilterFlag::Paired);
     bool onlyReachable = (m_displayFilter & StatusFilterFlag::Reachable);
@@ -153,24 +168,38 @@ void DevicesModel::refreshDeviceList()
 void DevicesModel::receivedDeviceList(QDBusPendingCallWatcher *watcher)
 {
     watcher->deleteLater();
-    clearDevices();
     QDBusPendingReply<QStringList> pendingDeviceIds = *watcher;
     if (pendingDeviceIds.isError()) {
         qCWarning(KDECONNECT_MODELS) << "error while refreshing device list" << pendingDeviceIds.error().message();
-        return;
+        clearDevices();
+    } else {
+        const QStringList deviceIds = pendingDeviceIds.value();
+
+        for (int row = m_deviceList.size() - 1; row >= 0; --row) {
+            if (!deviceIds.contains(m_deviceList[row]->id())) {
+                beginRemoveRows(QModelIndex(), row, row);
+                delete m_deviceList.takeAt(row);
+                endRemoveRows();
+            }
+        }
+
+        QStringList newIds;
+        for (const QString &id : deviceIds) {
+            if (rowForDevice(id) < 0) {
+                newIds.append(id);
+            }
+        }
+
+        if (!newIds.isEmpty()) {
+            beginInsertRows(QModelIndex(), m_deviceList.size(), m_deviceList.size() + newIds.count() - 1);
+            for (const QString &id : std::as_const(newIds)) {
+                appendDevice(new DeviceDbusInterface(id, this));
+            }
+            endInsertRows();
+        }
     }
 
-    Q_ASSERT(m_deviceList.isEmpty());
-    const QStringList deviceIds = pendingDeviceIds.value();
-
-    if (deviceIds.isEmpty())
-        return;
-
-    beginInsertRows(QModelIndex(), 0, deviceIds.count() - 1);
-    for (const QString &id : deviceIds) {
-        appendDevice(new DeviceDbusInterface(id, this));
-    }
-    endInsertRows();
+    setBusy(false);
 }
 
 void DevicesModel::appendDevice(DeviceDbusInterface *dev)
@@ -232,7 +261,7 @@ QVariant DevicesModel::data(const QModelIndex &index, int role) const
         return status;
     }
     case IconNameRole:
-        return device->statusIconName();
+        return device->iconName();
     case DeviceRole:
         return QVariant::fromValue<QObject *>(device);
     default:

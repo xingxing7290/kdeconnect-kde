@@ -15,10 +15,10 @@
 #include "multiplexchannel.h"
 
 BluetoothDeviceLink::BluetoothDeviceLink(const DeviceInfo &deviceInfo,
-                                         BluetoothLinkProvider *linkProvider,
+                                         BluetoothLinkProvider *parent,
                                          ConnectionMultiplexer *connection,
                                          QSharedPointer<MultiplexChannel> socket)
-    : DeviceLink(linkProvider)
+    : DeviceLink(deviceInfo.id, parent)
     , mConnection(connection)
     , mChannel(socket)
     , mDeviceInfo(deviceInfo)
@@ -30,7 +30,7 @@ BluetoothDeviceLink::BluetoothDeviceLink(const DeviceInfo &deviceInfo,
     // the socket (and the reader) will be
     // destroyed as well
     mConnection->setParent(this);
-    connect(socket.data(), &MultiplexChannel::aboutToClose, this, &BluetoothDeviceLink::disconnected);
+    connect(socket.data(), &MultiplexChannel::aboutToClose, this, &QObject::deleteLater);
 }
 
 QString BluetoothDeviceLink::address() const
@@ -58,7 +58,11 @@ void BluetoothDeviceLink::dataReceived()
         // qCDebug(KDECONNECT_CORE) << "BluetoothDeviceLink dataReceived" << packet;
 
         NetworkPacket packet;
-        NetworkPacket::unserialize(serializedPacket, &packet);
+        bool success = NetworkPacket::unserialize(serializedPacket, &packet);
+        if (!success) {
+            // unserialize already logs
+            continue;
+        }
 
         if (packet.hasPayloadTransferInfo()) {
             BluetoothDownloadJob *downloadJob = new BluetoothDownloadJob(mConnection, packet.payloadTransferInfo(), this);

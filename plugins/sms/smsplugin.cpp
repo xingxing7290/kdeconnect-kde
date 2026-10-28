@@ -10,12 +10,14 @@
 #include <KLocalizedString>
 #include <KPluginFactory>
 
+#include <core/processhelper.h>
+
 #include <QDBusConnection>
 #include <QDebug>
+#include <QDir>
 #include <QFile>
 #include <QFileInfo>
 #include <QMimeDatabase>
-#include <QProcess>
 
 #include <core/daemon.h>
 #include <core/device.h>
@@ -140,9 +142,13 @@ bool SmsPlugin::handleSmsAttachmentFile(const NetworkPacket &np)
         return false;
     }
 
-    QUrl fileUrl = QUrl::fromLocalFile(attachmentsCacheDir.absolutePath());
-    fileUrl = fileUrl.adjusted(QUrl::StripTrailingSlash);
-    fileUrl.setPath(fileUrl.path() + QStringLiteral("/") + fileName, QUrl::DecodedMode);
+    const QString dir = QDir::cleanPath(attachmentsCacheDir.absolutePath());
+    const QString filePath = QDir::cleanPath(attachmentsCacheDir.absoluteFilePath(fileName));
+    if (!filePath.startsWith(dir + QStringLiteral("/"))) {
+        qCWarning(KDECONNECT_PLUGIN_SMS) << "Directory traversal detected";
+        return false;
+    }
+    const QUrl fileUrl = QUrl::fromLocalFile(filePath);
 
     FileTransferJob *job = np.createPayloadTransferJob(fileUrl);
     connect(job, &FileTransferJob::result, this, [this, fileName](KJob *job) -> void {
@@ -188,9 +194,8 @@ void SmsPlugin::getAttachment(const qint64 &partID, const QString &uniqueIdentif
 Attachment SmsPlugin::createAttachmentFromUrl(const QString &url)
 {
     QFile file(url);
-    file.open(QIODevice::ReadOnly);
-
-    if (!file.exists()) {
+    if (!file.open(QIODevice::ReadOnly)) {
+        qCWarning(KDECONNECT_PLUGIN_SMS) << "Could not read the attachment" << url << file.errorString();
         return Attachment();
     }
 
@@ -214,7 +219,8 @@ QString SmsPlugin::dbusPath() const
 
 void SmsPlugin::launchApp()
 {
-    QProcess::startDetached(QLatin1String("kdeconnect-sms"), {QStringLiteral("--device"), device()->id()});
+    const QString kdeconnectsmsExecutable = QStandardPaths::findExecutable(QStringLiteral("kdeconnect-sms"), {QCoreApplication::applicationDirPath()});
+    ProcessHelper::startDetached(kdeconnectsmsExecutable, {QStringLiteral("--device"), device()->id()});
 }
 
 #include "moc_smsplugin.cpp"

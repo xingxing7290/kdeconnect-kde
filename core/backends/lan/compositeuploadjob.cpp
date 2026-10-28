@@ -20,6 +20,7 @@ CompositeUploadJob::CompositeUploadJob(Device *device, bool displayNotification)
     , m_port(0)
     , m_device(device)
     , m_running(false)
+    , m_timeout(this)
     , m_currentJobNum(1)
     , m_totalJobs(0)
     , m_currentJobSendPayloadSize(0)
@@ -30,6 +31,10 @@ CompositeUploadJob::CompositeUploadJob(Device *device, bool displayNotification)
     , m_updatePacketPending(false)
 {
     setCapabilities(Killable);
+
+    m_timeout.setSingleShot(true);
+    m_timeout.setInterval(30000);
+    connect(&m_timeout, &QTimer::timeout, this, &CompositeUploadJob::timeoutTriggered);
 
     if (displayNotification) {
         Daemon::instance()->jobTracker()->registerJob(this);
@@ -82,6 +87,7 @@ bool CompositeUploadJob::startListening()
     }
 
     qCDebug(KDECONNECT_CORE) << "CompositeUploadJob::startListening() - listening on port: " << m_port;
+
     return true;
 }
 
@@ -96,40 +102,100 @@ void CompositeUploadJob::startNextSubJob()
     // Already done by KCompositeJob
     // connect(m_currentJob, &KJob::result, this, &CompositeUploadJob::slotResult);
 
-    // TODO: Create a copy of the networkpacket that can be re-injected if sending via lan fails?
-    NetworkPacket np = m_currentJob->getNetworkPacket();
-    np.setPayload(nullptr, np.payloadSize());
-    np.setPayloadTransferInfo({{QStringLiteral("port"), m_port}});
-    np.set<int>(QStringLiteral("numberOfFiles"), m_totalJobs);
-    np.set<quint64>(QStringLiteral("totalPayloadSize"), m_totalPayloadSize);
+    // The packet may have already been sent while the previous file was being transferred
+    const bool alreadyAnnounced = (m_currentJob == m_announcedJob);
+    m_announcedJob = nullptr;
 
-    if (m_device->sendPacket(np)) {
-        m_server->resumeAccepting();
-    } else {
+    if (!alreadyAnnounced && !sendPacketFor(m_currentJob)) {
+        m_running = false;
         setError(SendingNetworkPacketFailed);
         setErrorText(i18n("Failed to send packet to %1", m_device->name()));
 
         emitResult();
+        return;
     }
+
+    if (m_currentJob->getNetworkPacket().hasPayload()) {
+        m_server->resumeAccepting();
+        m_timeout.start();
+        if (m_server->hasPendingConnections()) {
+            // The receiver already connected for this file while the previous one was being sent
+            newConnection();
+        }
+    } else {
+        // Nothing to transfer for this file (e.g. it's empty), the subjob is already done.
+        m_currentJob->start();
+    }
+}
+
+bool CompositeUploadJob::sendPacketFor(UploadJob *job)
+{
+    // TODO: Create a copy of the networkpacket that can be re-injected if sending via lan fails?
+    NetworkPacket np = job->getNetworkPacket();
+    np.set<int>(QStringLiteral("numberOfFiles"), m_totalJobs);
+    np.set<quint64>(QStringLiteral("totalPayloadSize"), m_totalPayloadSize);
+
+    const bool hasPayload = np.hasPayload();
+    // This packet is now just a header announcing the transfer to the other end: strip the payload
+    // socket instead of mistaking it for a new file to enqueue.
+    np.setPayload(nullptr, np.payloadSize());
+    if (hasPayload) {
+        np.setPayloadTransferInfo({{QStringLiteral("port"), m_port}});
+    }
+
+    return m_device->sendPacket(np);
+}
+
+void CompositeUploadJob::announceNextSubJob()
+{
+    // Announce the next file while the current one is being transferred, so the receiver already
+    // has it queued (and can connect to us) by the time this transfer ends, instead of waiting for
+    // a round trip. We don't accept that connection until startNextSubJob() resumes accepting,
+    // so payloads are still sent one at a time and in order.
+    if (subjobs().size() < 2) {
+        return;
+    }
+    UploadJob *next = qobject_cast<UploadJob *>(subjobs().at(1));
+    if (sendPacketFor(next)) {
+        m_announcedJob = next;
+    } // else startNextSubJob() will retry and report the error
 }
 
 void CompositeUploadJob::newConnection()
 {
-    m_server->pauseAccepting();
+    if (!m_running) {
+        return;
+    }
+
+    if (m_socket || !m_currentJob || !m_currentJob->getNetworkPacket().hasPayload()) {
+        // The receiver connects as soon as a file is announced, and we announce the next file while
+        // the current one is still being sent. Leave that connection pending until it's that file's
+        // turn (startNextSubJob() picks it up), so it doesn't get mixed up with the current transfer.
+        m_server->pauseAccepting();
+        return;
+    }
 
     m_socket = m_server->nextPendingConnection();
+    // Note nextPendingConnection() resumes accepting, so this has to come after it
+    m_server->pauseAccepting();
 
     if (!m_socket) {
         qCDebug(KDECONNECT_CORE) << "CompositeUploadJob::newConnection() - m_server->nextPendingConnection() returned a nullptr";
         return;
     }
 
-    m_currentJob->setSocket(m_socket);
+    QSslSocket *socket = m_socket;
+    m_currentJob->setSocket(socket);
 
-    connect(m_socket, &QSslSocket::disconnected, this, [this]() {
-        m_socket->close();
+    // Signals from the socket of a file that has already been sent (e.g. it being closed by the
+    // receiver) must not affect the transfer of the next one, so check the socket is still current.
+    connect(socket, &QSslSocket::disconnected, this, [socket]() {
+        socket->close();
     });
-    connect(m_socket, &QAbstractSocket::errorOccurred, this, [this](QAbstractSocket::SocketError error) {
+    connect(socket, &QAbstractSocket::errorOccurred, this, [this, socket](QAbstractSocket::SocketError error) {
+        if (socket != m_socket) {
+            return;
+        }
         qCDebug(KDECONNECT_CORE) << "Error in socket occurred" << error;
         // Do not close the socket because when android closes the socket (share is cancelled) closing the socket leads to a cyclic socketError and eventually a
         // segv
@@ -138,25 +204,33 @@ void CompositeUploadJob::newConnection()
 
         m_running = false;
     });
-    connect(m_socket, &QSslSocket::sslErrors, this, [this](const QList<QSslError> &errors) {
+    connect(socket, &QSslSocket::sslErrors, this, [this, socket](const QList<QSslError> &errors) {
+        if (socket != m_socket) {
+            return;
+        }
         qCDebug(KDECONNECT_CORE) << "Received ssl errors" << errors;
-        m_socket->close();
+        socket->close();
         setError(SslError);
         emitResult();
 
         m_running = false;
     });
-    connect(m_socket, &QSslSocket::encrypted, this, [this]() {
+    connect(socket, &QSslSocket::encrypted, this, [this, socket]() {
+        if (socket != m_socket) {
+            return;
+        }
+        m_timeout.stop();
         if (!m_timer.isValid()) {
             m_timer.start();
         }
 
         m_currentJob->start();
+        announceNextSubJob();
     });
 
-    LanLinkProvider::configureSslSocket(m_socket, m_device->id(), true);
+    LanLinkProvider::configureSslSocket(socket, m_device->id(), true);
 
-    m_socket->startServerEncryption();
+    socket->startServerEncryption();
 }
 
 bool CompositeUploadJob::addSubjob(KJob *job)
@@ -209,11 +283,25 @@ bool CompositeUploadJob::doKill()
 {
     if (m_running) {
         m_running = false;
-
+        m_timeout.stop();
+        m_server->close();
         return m_currentJob->stop();
     }
 
     return true;
+}
+
+void CompositeUploadJob::timeoutTriggered()
+{
+    if (!m_running) {
+        return;
+    }
+    m_running = false;
+    qCWarning(KDECONNECT_CORE) << "CompositeUploadJob::timeoutTriggered() - no connection received, closing port" << m_port;
+    m_server->close();
+    setError(ConnectionTimeoutError);
+    setErrorText(i18n("Timeout waiting for receiver to connect"));
+    emitResult();
 }
 
 void CompositeUploadJob::slotProcessedAmount(KJob * /*job*/, KJob::Unit unit, qulonglong amount)
@@ -237,16 +325,28 @@ void CompositeUploadJob::slotResult(KJob *job)
     // Copies job error and errorText and emits result if job is in error otherwise removes job from subjob list
     KCompositeJob::slotResult(job);
 
-    if (error() || !m_running) {
+    if (error()) {
+        // KCompositeJob::slotResult() already called emitResult() for us in this case.
+        m_running = false;
+        return;
+    }
+
+    if (!m_running) {
         return;
     }
 
     m_totalSendPayloadSize += m_currentJobSendPayloadSize;
+    // The socket belonged to the finished subjob and gets deleted with it
+    m_socket = nullptr;
 
     if (hasSubjobs()) {
         m_currentJobNum++;
         startNextSubJob();
     } else {
+        // Mark as finished before emitting the result: a new file added right after this point
+        // (e.g. from another share action) must start a new composite job rather than being
+        // silently attached to this one, which has already stopped picking up new subjobs.
+        m_running = false;
         emitResult();
     }
 }

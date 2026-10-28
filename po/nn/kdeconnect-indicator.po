@@ -1,13 +1,14 @@
 # Translation of kdeconnect-indicator to Norwegian Nynorsk
 #
+# Karl Ove Hufthammer <karl@huftis.org>, 2020, 2022, 2023, 2024, 2025.
 msgid ""
 msgstr ""
 "Project-Id-Version: kdeconnect-kde\n"
 "Report-Msgid-Bugs-To: https://bugs.kde.org\n"
-"POT-Creation-Date: 2025-11-17 11:51+0000\n"
+"POT-Creation-Date: 2026-10-21 00:51+0000\n"
 "PO-Revision-Date: 2025-06-01 14:59+0200\n"
 "Last-Translator: Karl Ove Hufthammer <karl@huftis.org>\n"
-"Language-Team: Norwegian Nynorsk <l10n-no@lister.huftis.org>\n"
+"Language-Team: Norwegian Nynorsk <l10n-no@nuug.no>\n"
 "Language: nn\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -28,39 +29,39 @@ msgctxt "EMAIL OF TRANSLATORS"
 msgid "Your emails"
 msgstr "karl@huftis.org"
 
-#: deviceindicator.cpp:53
+#: deviceindicator.cpp:56
 #, kde-format
 msgid "Browse device"
 msgstr "Bla gjennom eining"
 
-#: deviceindicator.cpp:67
+#: deviceindicator.cpp:70
 #, kde-format
 msgid "Send clipboard"
 msgstr "Send utklippstavla"
 
-#: deviceindicator.cpp:81
+#: deviceindicator.cpp:84
 #, kde-format
 msgctxt "@action:inmenu play bell sound"
 msgid "Ring device"
 msgstr "Ring eining"
 
-#: deviceindicator.cpp:95
+#: deviceindicator.cpp:98
 #, kde-format
 msgid "Send files"
 msgstr "Send filer"
 
-#: deviceindicator.cpp:117
+#: deviceindicator.cpp:124
 #, fuzzy, kde-format
 #| msgid "SMS Messages..."
 msgid "SMS Messages…"
 msgstr "SMS-ar …"
 
-#: deviceindicator.cpp:130
+#: deviceindicator.cpp:137
 #, kde-format
 msgid "Run command"
 msgstr "Køyr kommando"
 
-#: deviceindicator.cpp:132
+#: deviceindicator.cpp:139
 #, kde-format
 msgid "Add commands"
 msgstr "Legg til kommandoar"
@@ -84,76 +85,76 @@ msgstr ""
 msgid "Cannot find kdeconnectd"
 msgstr "Fann ikkje kdeconnectd"
 
-#: main.cpp:57
+#: main.cpp:62
 #, kde-format
 msgid "KDE Connect Indicator"
 msgstr "KDE Connect-indikator"
 
-#: main.cpp:59
+#: main.cpp:64
 #, kde-format
 msgid "KDE Connect Indicator tool"
 msgstr "KDE Connect-indikatorverktøy"
 
-#: main.cpp:61
+#: main.cpp:66
 #, fuzzy, kde-format
 #| msgid "(c) 2016-2025, KDE Connect Team"
 msgid "© 2016–2025 KDE Connect Team"
 msgstr "© 2018–2025 KDE Connect-gruppa"
 
-#: main.cpp:62
+#: main.cpp:67
 #, kde-format
 msgid "Aleix Pol Gonzalez"
 msgstr "Aleix Pol Gonzalez"
 
-#: main.cpp:63
+#: main.cpp:68
 #, kde-format
 msgid "Albert Vaca Cintora"
 msgstr "Albert Vaca Cintora"
 
-#: main.cpp:101
+#: main.cpp:113
 #, kde-format
 msgid "Open app"
 msgstr "Opna app"
 
-#: main.cpp:118
+#: main.cpp:130
 #, kde-format
 msgid "Pairing requests"
 msgstr "Paringsførespurnadar"
 
-#: main.cpp:123
+#: main.cpp:136
 #, kde-format
 msgctxt "Accept a pairing request"
 msgid "Pair"
 msgstr "Par"
 
-#: main.cpp:124
+#: main.cpp:137
 #, kde-format
 msgid "Reject"
 msgstr "Avvis"
 
-#: main.cpp:129 main.cpp:138
+#: main.cpp:142 main.cpp:155
 #, kde-format
 msgid "Quit"
 msgstr "Avslutt"
 
-#: main.cpp:157 main.cpp:179
+#: main.cpp:172 main.cpp:194
 #, kde-format
 msgid "%1 device connected"
 msgid_plural "%1 devices connected"
 msgstr[0] "%1 eining kopla til"
 msgstr[1] "%1 einingar kopla til"
 
-#: systray_actions/battery_action.cpp:28
+#: systray_actions/battery_action.cpp:35
 #, kde-format
 msgid "No Battery"
 msgstr "Manglar batteri"
 
-#: systray_actions/battery_action.cpp:30
+#: systray_actions/battery_action.cpp:37
 #, kde-format
 msgid "Battery: %1% (Charging)"
 msgstr "Batteri: %1 % (ladar)"
 
-#: systray_actions/battery_action.cpp:32
+#: systray_actions/battery_action.cpp:39
 #, kde-format
 msgid "Battery: %1%"
 msgstr "Batteri: %1 %"

@@ -24,7 +24,7 @@ class KDECONNECTMODELS_EXPORT CommandsModel : public QAbstractListModel
 
 public:
     enum ModelRoles {
-        KeyRole,
+        KeyRole = Qt::UserRole,
         NameRole,
         CommandRole,
     };
@@ -42,6 +42,7 @@ public:
 
     Q_SCRIPTABLE void removeCommand(int index);
     Q_SCRIPTABLE void addCommand(const QString &name, const QString &command);
+    Q_SCRIPTABLE void changeCommand(int index, const QString &name, const QString &command);
 
 private Q_SLOTS:
     void refreshCommandList();

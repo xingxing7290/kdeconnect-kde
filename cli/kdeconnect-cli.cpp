@@ -19,7 +19,6 @@
 #include "kdeconnect-version.h"
 #include "models/conversationmessage.h"
 #include "models/devicesmodel.h"
-#include "models/notificationsmodel.h"
 
 #include <dbushelper.h>
 
@@ -101,8 +100,12 @@ int main(int argc, char **argv)
     parser.addOption(QCommandLineOption(QStringLiteral("execute-command"), i18n("Execute remote command by id"), QStringLiteral("id")));
     parser.addOption(QCommandLineOption(QStringList{QStringLiteral("k"), QStringLiteral("send-keys")}, i18n("Send keys to device"), QStringLiteral("key")));
     parser.addOption(QCommandLineOption(QStringLiteral("my-id"), i18n("Display this device's id and exit")));
+#ifdef Q_OS_WIN
+    parser.addOption(QCommandLineOption(QStringLiteral("browse"), i18n("Browse the filesystem of a said device")));
+#else
     parser.addOption(QCommandLineOption(QStringLiteral("mount"), i18n("Mount filesystem of a said device")));
     parser.addOption(QCommandLineOption(QStringLiteral("get-mount-point"), i18n("Print mount point for the filesystem of a said device")));
+#endif
 
     // Hidden because it's an implementation detail
     QCommandLineOption deviceAutocomplete(QStringLiteral("shell-device-autocompletion"));
@@ -144,20 +147,22 @@ int main(int argc, char **argv)
                 displayCount = false;
             } else {
                 DeviceDbusInterface deviceIface(id);
-                QString statusInfo;
                 const bool isReachable = deviceIface.isReachable();
                 const bool isPaired = deviceIface.isPaired();
-                if (isReachable && isPaired) {
-                    statusInfo = i18n("(paired and reachable)");
-                } else if (isReachable) {
-                    statusInfo = i18n("(reachable)");
-                } else if (isPaired) {
-                    statusInfo = i18n("(paired)");
+                QTextStream(stdout) << "- " << deviceIface.name() << ": " << deviceIface.id() << ' ';
+                if (isReachable) {
+                    const QString addresses = deviceIface.reachableAddresses().join(QStringLiteral(", "));
+                    const QString providers = deviceIface.activeProviderNames().join(QStringLiteral(", "));
+                    QTextStream(stdout)
+                        << i18nc("Details on how a device is connected eg: on <network address> via Bluetooth", "on %1 via %2", addresses, providers) << ' ';
                 }
-
-                QTextStream(stdout) << "- " << deviceIface.name() << ": " << deviceIface.id() << QStringLiteral(" on ")
-                                    << deviceIface.reachableAddresses().join(QStringLiteral(", ")) << QStringLiteral(" via ")
-                                    << deviceIface.activeProviderNames().join(QStringLiteral(", ")) << ' ' << statusInfo << Qt::endl;
+                if (isReachable && isPaired) {
+                    QTextStream(stdout) << i18n("(paired and reachable)") << Qt::endl;
+                } else if (isReachable) {
+                    QTextStream(stdout) << i18n("(reachable)") << Qt::endl;
+                } else if (isPaired) {
+                    QTextStream(stdout) << i18n("(paired)") << Qt::endl;
+                }
             }
         }
         if (displayCount) {
@@ -393,7 +398,7 @@ int main(int argc, char **argv)
             if (in.open(stdin, QIODevice::ReadOnly | QIODevice::Unbuffered)) {
                 while (!in.atEnd()) {
                     QByteArray line = in.readLine(); // sanitize to ASCII-codes > 31?
-                    msg.setArguments({QString::fromLatin1(line), -1, false, false, false});
+                    msg.setArguments({QString::fromLatin1(line), -1, false, false, false, false});
                     blockOnReply(QDBusConnection::sessionBus().asyncCall(msg));
                 }
                 in.close();
@@ -407,12 +412,12 @@ int main(int argc, char **argv)
         if (device.isEmpty())
             return 1;
 
-        NotificationsModel notifications;
-        notifications.setDeviceId(device);
-        for (int i = 0, rows = notifications.rowCount(); i < rows; ++i) {
-            QModelIndex idx = notifications.index(i);
-            QTextStream(stdout) << "- " << idx.data(NotificationsModel::AppNameModelRole).toString() << ": "
-                                << idx.data(NotificationsModel::NameModelRole).toString() << Qt::endl;
+        DeviceNotificationsDbusInterface notifIface(device);
+        const QStringList ids = blockOnReply<QStringList>(notifIface.activeNotifications());
+
+        for (const QString &id : ids) {
+            NotificationDbusInterface notification(device, id);
+            QTextStream(stdout) << "- " << notification.appName() << ": " << notification.ticker() << Qt::endl;
         }
     } else if (parser.isSet(QStringLiteral("list-commands"))) {
         QString device = getDevice(iface, parser);
@@ -441,6 +446,18 @@ int main(int argc, char **argv)
         DeviceDbusInterface dev(device);
         QString info = blockOnReply<QString>(dev.encryptionInfo()); // QSsl::Der = 1
         QTextStream(stdout) << info << Qt::endl;
+#ifdef Q_OS_WIN
+    } else if (parser.isSet(QStringLiteral("browse"))) {
+        QString device = getDevice(iface, parser);
+        if (device.isEmpty())
+            return 1;
+
+        QDBusMessage msgBrowse = QDBusMessage::createMethodCall(QStringLiteral("org.kde.kdeconnect"),
+                                                                QLatin1String("/modules/kdeconnect/devices/%1/sftp").arg(device),
+                                                                QStringLiteral("org.kde.kdeconnect.device.sftp"),
+                                                                QStringLiteral("startBrowsing"));
+        blockOnReply(QDBusConnection::sessionBus().asyncCall(msgBrowse));
+#else
     } else if (parser.isSet(QStringLiteral("mount"))) {
         QString device = getDevice(iface, parser);
         if (device.isEmpty())
@@ -462,6 +479,7 @@ int main(int argc, char **argv)
                                                                     QStringLiteral("mountPoint"));
         QString mountPoint = blockOnReply<QString>(QDBusConnection::sessionBus().call(msgMountPoint));
         QTextStream(stdout) << mountPoint << Qt::endl;
+#endif
     } else {
         parser.showHelp(1);
     }

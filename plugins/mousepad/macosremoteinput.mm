@@ -31,10 +31,10 @@ int SpecialKeysMap[] = {
     kVK_Escape,         // 14
     0,                  // 15
     0,                  // 16
-    0,                  // 17
-    0,                  // 18
-    0,                  // 19
-    0,                  // 20
+    kVK_Control,        // 17
+    kVK_Option,         // 18
+    kVK_Shift,          // 19
+    kVK_Command,        // 20
     kVK_F1,             // 21
     kVK_F2,             // 22
     kVK_F3,             // 23
@@ -48,9 +48,6 @@ int SpecialKeysMap[] = {
     kVK_F11,            // 31
     kVK_F12,            // 32
 };
-
-template <typename T, size_t N>
-size_t arraySize(T(&arr)[N]) { (void)arr; return N; }
 
 MacOSRemoteInput::MacOSRemoteInput(QObject* parent)
     : AbstractRemoteInput(parent)
@@ -83,6 +80,7 @@ bool MacOSRemoteInput::handlePacket(const NetworkPacket& np)
     bool isScroll = np.get<bool>(QStringLiteral("scroll"), false);
     QString key = np.get<QString>(QStringLiteral("key"), QLatin1String(""));
     int specialKey = np.get<int>(QStringLiteral("specialKey"), 0);
+    bool validSpecialKey = (specialKey > 0 && specialKey < (int)std::size(SpecialKeysMap));
 
     if (isSingleClick || isDoubleClick || isMiddleClick || isRightClick || isSingleHold || isSingleRelease || isScroll || !key.isEmpty() || specialKey) {
         QPoint point = QCursor::pos();
@@ -93,6 +91,7 @@ bool MacOSRemoteInput::handlePacket(const NetworkPacket& np)
             CGEventSetType(event, kCGEventLeftMouseUp);
             CGEventPost(kCGHIDEventTap, event);
             CFRelease(event);
+            m_leftButtonPressed = false;
         } else if (isDoubleClick) {
             CGEventRef event = CGEventCreateMouseEvent(NULL, kCGEventLeftMouseDown, CGPointMake(point.x(), point.y()), kCGMouseButtonLeft);
             CGEventPost(kCGHIDEventTap, event);
@@ -110,31 +109,34 @@ bool MacOSRemoteInput::handlePacket(const NetworkPacket& np)
             CGEventSetType(event, kCGEventLeftMouseUp);
             CGEventPost(kCGHIDEventTap, event);
             CFRelease(event);
-		} else if (isMiddleClick) {
+            m_leftButtonPressed = false;
+        } else if (isMiddleClick) {
             CGEventRef event = CGEventCreateMouseEvent(NULL, kCGEventOtherMouseDown, CGPointMake(point.x(), point.y()), kCGMouseButtonLeft);
             CGEventPost(kCGHIDEventTap, event);
             CGEventSetType(event, kCGEventOtherMouseUp);
             CGEventPost(kCGHIDEventTap, event);
             CFRelease(event);
-		} else if (isRightClick) {
+        } else if (isRightClick) {
             CGEventRef event = CGEventCreateMouseEvent(NULL, kCGEventRightMouseDown, CGPointMake(point.x(), point.y()), kCGMouseButtonLeft);
             CGEventPost(kCGHIDEventTap, event);
             CGEventSetType(event, kCGEventRightMouseUp);
             CGEventPost(kCGHIDEventTap, event);
             CFRelease(event);
-		} else if (isSingleHold) {
+        } else if (isSingleHold) {
             CGEventRef event = CGEventCreateMouseEvent(NULL, kCGEventLeftMouseDown, CGPointMake(point.x(), point.y()), kCGMouseButtonLeft);
             CGEventPost(kCGHIDEventTap, event);
             CFRelease(event);
+            m_leftButtonPressed = true;
         } else if (isSingleRelease) {
             CGEventRef event = CGEventCreateMouseEvent(NULL, kCGEventLeftMouseUp, CGPointMake(point.x(), point.y()), kCGMouseButtonLeft);
             CGEventPost(kCGHIDEventTap, event);
             CFRelease(event);
+            m_leftButtonPressed = false;
         } else if (isScroll) {
-            CGEventRef event = CGEventCreateScrollWheelEvent(NULL, kCGScrollEventUnitPixel, 1, dy);
+            CGEventRef event = CGEventCreateScrollWheelEvent(NULL, kCGScrollEventUnitPixel, 2, (int)dy, -(int)dx);
             CGEventPost(kCGHIDEventTap, event);
             CFRelease(event);
-        } else if (!key.isEmpty() || specialKey) {
+        } else if (!key.isEmpty() || validSpecialKey) {
             // Get function keys
             bool ctrl = np.get<bool>(QStringLiteral("ctrl"), false);
             bool alt = np.get<bool>(QStringLiteral("alt"), false);
@@ -164,13 +166,8 @@ bool MacOSRemoteInput::handlePacket(const NetworkPacket& np)
             }
 
             // Keys
-            if (specialKey)
+            if (validSpecialKey)
             {
-                if (specialKey >= (int)arraySize(SpecialKeysMap)) {
-                    qWarning() << "Unsupported special key identifier";
-                    return false;
-                }
-
                 CGEventRef specialKeyDownEvent = CGEventCreateKeyboardEvent(NULL, (CGKeyCode)SpecialKeysMap[specialKey], true),
                            specialKeyUpEvent = CGEventCreateKeyboardEvent(NULL, (CGKeyCode)SpecialKeysMap[specialKey], false);
 
@@ -216,11 +213,11 @@ bool MacOSRemoteInput::handlePacket(const NetworkPacket& np)
 
         }
     } else { //Is a mouse move event
-         if (dx || dy) {
+        if (dx || dy) {
             QPoint point = QCursor::pos();
-            QCursor::setPos(point.x() + (int)dx, point.y() + (int)dy);
+            setMousePos(QPoint(point.x() + (int)dx, point.y() + (int)dy));
         } else if (np.has(QStringLiteral("x")) || np.has(QStringLiteral("y"))) {
-            QCursor::setPos(x, y);
+            setMousePos(QPoint((int)x, (int)y));
         }
     }
     return true;
@@ -228,6 +225,20 @@ bool MacOSRemoteInput::handlePacket(const NetworkPacket& np)
 
 bool MacOSRemoteInput::hasKeyboardSupport() {
     return true;
+}
+
+void MacOSRemoteInput::setMousePos(const QPoint &pos)
+{
+    if (m_leftButtonPressed) {
+        // Moving the cursor via QCursor::setPos() with a button pressed does not
+        // generate a kCGEventLeftMouseDragged event, so without this apps never
+        // see a "mouse dragged" event and the mouse moves without dragging anything.
+        CGEventRef event = CGEventCreateMouseEvent(NULL, kCGEventLeftMouseDragged, CGPointMake(pos.x(), pos.y()), kCGMouseButtonLeft);
+        CGEventPost(kCGHIDEventTap, event);
+        CFRelease(event);
+    } else {
+        QCursor::setPos(pos);
+    }
 }
 
 #include "moc_macosremoteinput.cpp"

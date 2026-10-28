@@ -6,40 +6,23 @@
 
 #include "batteryplugin.h"
 
+#include <QCoreApplication>
+
 #include <KLocalizedString>
 #include <KPluginFactory>
 
-#include <Solid/Battery>
-#include <Solid/Device>
-#include <Solid/Predicate>
-
 #include <core/daemon.h>
 
+#include "batterymonitor.h"
 #include "plugin_battery_debug.h"
 
 K_PLUGIN_CLASS_WITH_JSON(BatteryPlugin, "kdeconnect_battery.json")
 
-const auto batteryDevice = Solid::DeviceInterface::Type::Battery;
-const auto primary = Solid::Battery::BatteryType::PrimaryBattery;
-
 BatteryPlugin::BatteryPlugin(QObject *parent, const QVariantList &args)
     : KdeConnectPlugin(parent, args)
+    , m_monitor(new BatteryMonitor(this))
 {
-    QList<Solid::Device> batteries = Solid::Device::listFromQuery(Solid::Predicate(batteryDevice, QStringLiteral("type"), primary));
-
-    if (batteries.isEmpty()) {
-        qCWarning(KDECONNECT_PLUGIN_BATTERY) << "No Primary Battery detected on this system. This may be a bug.";
-        QList<Solid::Device> allBatteries = Solid::Device::listFromType(batteryDevice);
-        qCWarning(KDECONNECT_PLUGIN_BATTERY) << "Total quantity of batteries found: " << allBatteries.size();
-        return;
-    }
-
-    // Ok, there's at least one. Let's assume it will remain attached (for most laptops
-    // and desktops, this is a safe assumption).
-    const Solid::Battery *chosen = batteries.first().as<Solid::Battery>();
-
-    connect(chosen, &Solid::Battery::chargeStateChanged, this, &BatteryPlugin::slotChargeChanged);
-    connect(chosen, &Solid::Battery::chargePercentChanged, this, &BatteryPlugin::slotChargeChanged);
+    connect(m_monitor, &BatteryMonitor::changed, this, &BatteryPlugin::slotChargeChanged);
 }
 
 int BatteryPlugin::charge() const
@@ -52,6 +35,29 @@ bool BatteryPlugin::isCharging() const
     return m_isCharging;
 }
 
+bool BatteryPlugin::hasBattery() const
+{
+    return m_charge >= 0;
+}
+
+QString BatteryPlugin::iconName() const
+{
+    // Suggests an icon name to use for the current battery level.
+    if (m_charge < 0) {
+        return QStringLiteral("battery-missing-symbolic");
+    } else if (m_charge < 10) {
+        return m_isCharging ? QStringLiteral("battery-empty-charging-symbolic") : QStringLiteral("battery-empty-symbolic");
+    } else if (m_charge < 25) {
+        return m_isCharging ? QStringLiteral("battery-caution-charging-symbolic") : QStringLiteral("battery-caution-symbolic");
+    } else if (m_charge < 50) {
+        return m_isCharging ? QStringLiteral("battery-low-charging-symbolic") : QStringLiteral("battery-low-symbolic");
+    } else if (m_charge < 75) {
+        return m_isCharging ? QStringLiteral("battery-good-charging-symbolic") : QStringLiteral("battery-good-symbolic");
+    } else {
+        return m_isCharging ? QStringLiteral("battery-full-charging-symbolic") : QStringLiteral("battery-full-symbolic");
+    }
+}
+
 void BatteryPlugin::connected()
 {
     // Explicitly send the current charge
@@ -60,45 +66,20 @@ void BatteryPlugin::connected()
 
 void BatteryPlugin::slotChargeChanged()
 {
-    // Note: the NetworkPacket sent at the end of this method can reflect MULTIPLE batteries.
-    // We average the total charge against the total number of batteries, which in practice
-    // seems to work out ok.
-    bool isAnyBatteryCharging = false;
-    int batteryQuantity = 0;
-    int cumulativeCharge = 0;
-
-    QList<Solid::Device> batteries = Solid::Device::listFromQuery(Solid::Predicate(batteryDevice, QStringLiteral("type"), primary));
-
-    for (auto device : batteries) {
-        const Solid::Battery *battery = device.as<Solid::Battery>();
-
-        // Don't look at batteries that can be easily detached
-        if (battery->isPowerSupply()) {
-            batteryQuantity++;
-            cumulativeCharge += battery->chargePercent();
-            if (battery->chargeState() == Solid::Battery::ChargeState::Charging) {
-                isAnyBatteryCharging = true;
-            }
-        }
-    }
-
-    if (batteryQuantity == 0) {
+    const std::optional<BatteryStatus> battery = m_monitor->status();
+    if (!battery) {
         qCWarning(KDECONNECT_PLUGIN_BATTERY) << "Primary Battery seems to have been removed. Suspending packets until it is reconnected.";
         return;
     }
 
-    // Load a new Battery object to represent the first device in the list
-    Solid::Battery *chosen = batteries.first().as<Solid::Battery>();
-
     // Prepare an outgoing network packet
     NetworkPacket status(PACKET_TYPE_BATTERY, {{}});
-    status.set(QStringLiteral("isCharging"), isAnyBatteryCharging);
-    const int charge = cumulativeCharge / batteryQuantity;
-    status.set(QStringLiteral("currentCharge"), charge);
+    status.set(QStringLiteral("isCharging"), battery->isCharging);
+    status.set(QStringLiteral("currentCharge"), battery->charge);
     // FIXME: In future, we should consider sending an array of battery objects
-    status.set(QStringLiteral("batteryQuantity"), batteryQuantity);
+    status.set(QStringLiteral("batteryQuantity"), battery->batteryQuantity);
     // We consider the primary battery to be low if it's below 15%
-    if (charge <= 15 && chosen->chargeState() == Solid::Battery::ChargeState::Discharging) {
+    if (battery->charge <= 15 && battery->isDischarging) {
         status.set(QStringLiteral("thresholdEvent"), (int)ThresholdBatteryLow);
     } else {
         status.set(QStringLiteral("thresholdEvent"), (int)ThresholdNone);
@@ -115,6 +96,12 @@ void BatteryPlugin::receivePacket(const NetworkPacket &np)
     Q_EMIT refreshed(m_isCharging, m_charge);
 
     if (thresholdEvent == ThresholdBatteryLow && !m_isCharging) {
+        static const bool s_plasma = QStringView(qEnvironmentVariable("XDG_CURRENT_DESKTOP")).split(QLatin1Char(';')).contains(QLatin1String("KDE"));
+        // Disabled because Solid takes care of showing a similar notification already
+        if (s_plasma && QCoreApplication::instance()->property("_kde_solid_has_kdeconnect_backend").toBool()) {
+            return;
+        }
+
         Daemon::instance()->sendSimpleNotification(QStringLiteral("batteryLow"),
                                                    i18nc("device name: low battery", "%1: Low Battery", device()->name()),
                                                    i18n("Battery at %1%", m_charge),

@@ -99,7 +99,8 @@ void VirtualMonitorPlugin::connected()
     qCDebug(KDECONNECT_PLUGIN_VIRTUALMONITOR) << "Local device supports Virtual Monitor:" << m_capabilitiesLocal.virtualMonitor;
 
     auto screen = QGuiApplication::primaryScreen();
-    auto resolution = screen->size();
+    // QScreen size() is in logical pixels.
+    auto resolution = screen->size() * screen->devicePixelRatio();
     QString resolutionString = QString::number(resolution.width()) + QLatin1Char('x') + QString::number(resolution.height());
     NetworkPacket np(PACKET_TYPE_VIRTUALMONITOR,
                      {
@@ -137,7 +138,7 @@ void VirtualMonitorPlugin::receivePacket(const NetworkPacket &received)
         url.setPort(received.get<int>(QS("port"), DEFAULT_PORT));
         url.setHost(addr.toString());
 
-        qCInfo(KDECONNECT_PLUGIN_VIRTUALMONITOR) << "Received request, try connecting to" << url.toDisplayString();
+        qCDebug(KDECONNECT_PLUGIN_VIRTUALMONITOR) << "Received request, try connecting to" << url.toDisplayString();
 
         if (!QDesktopServices::openUrl(url)) {
             qCWarning(KDECONNECT_PLUGIN_VIRTUALMONITOR) << "Failed to open" << url.toDisplayString();
@@ -211,6 +212,9 @@ bool VirtualMonitorPlugin::requestRdp()
     const QString port = QString::number(s_port++);
 
     auto process = new QProcess(this);
+#ifdef Q_OS_UNIX
+    process->setUnixProcessParameters(QProcess::UnixProcessFlag::CloseFileDescriptors);
+#endif
     process->setProgram(QS("krdpserver"));
     const double scale = m_remoteResolution.value(QLatin1String("scale")).toDouble();
     QStringList args = {QS("--virtual-monitor"),
@@ -271,8 +275,7 @@ bool VirtualMonitorPlugin::checkRdpClient() const
 
 bool VirtualMonitorPlugin::checkDefaultSchemeHandler(const QString &scheme) const
 {
-    // TODO: macOS built-in tool: defaults read com.apple.LaunchServices/com.apple.launchservices.secure
-    // A function to use such a program was implemented and later removed in MR !670 (Commit e72f688ae1fad8846c006a3f87d57e507f6dbcb6)
+    // TODO: macOS. Could use: defaults read com.apple.LaunchServices/com.apple.launchservices.secure
 #if defined(Q_OS_WIN)
     // Scheme handlers are stored in the registry on Windows
     // https://learn.microsoft.com/en-us/previous-versions/windows/internet-explorer/ie-developer/platform-apis/aa767914(v=vs.85)

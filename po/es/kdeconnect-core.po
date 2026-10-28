@@ -1,14 +1,14 @@
 # Spanish translations for kdeconnect-core.po package.
-# Copyright (C) 2014-2025 This file is copyright:
+# Copyright (C) 2014-2026 This file is copyright:
 # This file is distributed under the same license as the kdeconnect-kde package.
 #
-# SPDX-FileCopyrightText: 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2023, 2025 Víctor Rodrigo Córdoba <vrcordoba@gmail.com>
+# SPDX-FileCopyrightText: 2014-2021, 2023, 2025-2026 Víctor Rodrigo Córdoba <vrcordoba@gmail.com>
 msgid ""
 msgstr ""
 "Project-Id-Version: kdeconnect-core\n"
 "Report-Msgid-Bugs-To: https://bugs.kde.org\n"
-"POT-Creation-Date: 2025-12-26 00:42+0000\n"
-"PO-Revision-Date: 2025-12-06 22:02+0100\n"
+"POT-Creation-Date: 2026-10-25 00:50+0000\n"
+"PO-Revision-Date: 2026-09-19 18:05+0100\n"
 "Last-Translator: Víctor Rodrigo Córdoba <vrcordoba@gmail.com>\n"
 "Language-Team: Spanish <kde-l10n-es@kde.org>\n"
 "Language: es\n"
@@ -18,66 +18,70 @@ msgstr ""
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
 "X-Generator: Lokalize 25.04.0\n"
 
-#: backends/bluetooth/asynclinkprovider.cpp:39
-#, kde-format
-msgctxt "@info"
-msgid "Bluetooth"
-msgstr "Bluetooth"
-
-#: backends/lan/compositeuploadjob.cpp:78
+#: backends/lan/compositeuploadjob.cpp:83
 #, kde-format
 msgid "Couldn't find an available port"
 msgstr "No se pudo encontrar ningún puerto disponible"
 
-#: backends/lan/compositeuploadjob.cpp:110
+#: backends/lan/compositeuploadjob.cpp:112
 #, kde-format
 msgid "Failed to send packet to %1"
 msgstr "Fallo al enviar el paquete a %1"
 
-#: backends/lan/compositeuploadjob.cpp:256
+#: backends/lan/compositeuploadjob.cpp:303
+#, kde-format
+msgid "Timeout waiting for receiver to connect"
+msgstr "Tiempo de espera cumplido esperando la conexión del receptor"
+
+#: backends/lan/compositeuploadjob.cpp:356
 #, kde-format
 msgid "Sending to %1"
 msgstr "Enviando a %1"
 
-#: backends/lan/compositeuploadjob.cpp:256
+#: backends/lan/compositeuploadjob.cpp:356
 #, kde-format
 msgid "File"
 msgstr "Archivo"
 
-#: backends/pairinghandler.cpp:61
+#: backends/lan/uploadjob.cpp:102
+#, kde-format
+msgid "Could not open source file: %1"
+msgstr "No se pudo abrir archivo fuente: %1"
+
+#: backends/pairinghandler.cpp:57
 #, kde-format
 msgid "Device clocks are out of sync"
 msgstr "Los relojes de los dispositivos no están sincronizados"
 
-#: backends/pairinghandler.cpp:80
+#: backends/pairinghandler.cpp:76
 #, kde-format
 msgid "Canceled by other peer"
 msgstr "Cancelado desde el otro dispositivo"
 
-#: backends/pairinghandler.cpp:96
-#, kde-format
-msgid "%1: Already paired"
-msgstr "%1: Ya conectado"
-
-#: backends/pairinghandler.cpp:105 backends/pairinghandler.cpp:124
+#: backends/pairinghandler.cpp:100 backends/pairinghandler.cpp:119
 #, kde-format
 msgid "%1: Device not reachable"
 msgstr "%1: Dispositivo no accesible"
 
-#: backends/pairinghandler.cpp:139
+#: backends/pairinghandler.cpp:142
 #, kde-format
 msgid "Device not reachable"
 msgstr "Dispositivo no accesible"
 
-#: backends/pairinghandler.cpp:150
+#: backends/pairinghandler.cpp:158
 #, kde-format
 msgid "Cancelled by user"
 msgstr "Cancelado por el usuario"
 
-#: backends/pairinghandler.cpp:166
+#: backends/pairinghandler.cpp:178
 #, kde-format
 msgid "Timed out"
 msgstr "Se alcanzó el tiempo máximo de espera"
+
+#: backends/pairinghandler.cpp:191
+#, kde-format
+msgid "Pairing is not in progress"
+msgstr "La vinculación no está en progreso"
 
 #: compositefiletransferjob.cpp:47
 #, kde-format
@@ -99,53 +103,58 @@ msgctxt "The destination of a file operation"
 msgid "Destination"
 msgstr "Destino"
 
-#: device.cpp:475
+#: device.cpp:496
 #, kde-format
 msgid "SHA256 fingerprint of your device certificate is: %1\n"
 msgstr "La huella digital SHA256 del certificado de su dispositivo es: %1\n"
 
-#: device.cpp:481
+#: device.cpp:502
 #, kde-format
 msgid "SHA256 fingerprint of remote device certificate is: %1\n"
 msgstr ""
 "La huella digital SHA256 del certificado del dispositivo remoto es: %1\n"
 
-#: device.cpp:483
+#: device.cpp:504
 #, kde-format
 msgid "Protocol version: %1\n"
 msgstr "Versión del protocolo: %1\n"
 
-#: filetransferjob.cpp:53
+#: filetransferjob.cpp:54
 #, kde-format
 msgid "Filename already present"
 msgstr "Nombre de archivo ya presente"
 
-#: filetransferjob.cpp:116
+#: filetransferjob.cpp:70
+#, kde-format
+msgid "Could not create destination file: %1"
+msgstr "No se pudo crear el archivo en destino: %1"
+
+#: filetransferjob.cpp:129
 #, kde-format
 msgid "Received incomplete file from: %1"
-msgstr "Recibido archivo incompleto desde: %1"
+msgstr "Archivo incompleto recibido desde: %1"
 
-#: kdeconnectconfig.cpp:348 kdeconnectconfig.cpp:382
+#: kdeconnectconfig.cpp:433 kdeconnectconfig.cpp:467
 #, kde-format
 msgid "KDE Connect failed to start"
 msgstr "KDE Connect falló al iniciarse"
 
-#: kdeconnectconfig.cpp:348
+#: kdeconnectconfig.cpp:433
 #, kde-format
 msgid "Could not generate the private key."
 msgstr "No se pudo generar la clave privada."
 
-#: kdeconnectconfig.cpp:367
+#: kdeconnectconfig.cpp:452
 #, kde-format
 msgid "Could not store private key file: %1"
 msgstr "No se pudo almacenar archivo de clave privada: %1"
 
-#: kdeconnectconfig.cpp:382
+#: kdeconnectconfig.cpp:467
 #, kde-format
 msgid "Could not generate the device certificate."
 msgstr "No se pudo generar el certificado del dispositivo."
 
-#: kdeconnectconfig.cpp:398
+#: kdeconnectconfig.cpp:483
 #, kde-format
 msgid "Could not store certificate file: %1"
 msgstr "No se pudo almacenar archivo del certificado: %1"

@@ -42,10 +42,10 @@ int SpecialKeysMap[] = {
     XK_Escape, // 14
     XK_Sys_Req, // 15
     XK_Scroll_Lock, // 16
-    0, // 17
-    0, // 18
-    0, // 19
-    0, // 20
+    XK_Control_L, // 17
+    XK_Alt_L, // 18
+    XK_Shift_L, // 19
+    XK_Super_L, // 20
     XK_F1, // 21
     XK_F2, // 22
     XK_F3, // 23
@@ -59,13 +59,6 @@ int SpecialKeysMap[] = {
     XK_F11, // 31
     XK_F12, // 32
 };
-
-template<typename T, size_t N>
-size_t arraySize(T (&arr)[N])
-{
-    (void)arr;
-    return N;
-}
 
 X11RemoteInput::X11RemoteInput(QObject *parent)
     : AbstractRemoteInput(parent)
@@ -110,13 +103,14 @@ bool X11RemoteInput::handlePacket(const NetworkPacket &np)
     bool isScroll = np.get<bool>(QStringLiteral("scroll"), false);
     QString key = np.get<QString>(QStringLiteral("key"), QLatin1String(""));
     int specialKey = np.get<int>(QStringLiteral("specialKey"), 0);
+    bool validSpecialKey = (specialKey > 0 && specialKey < (int)std::size(SpecialKeysMap));
+
+    Display *display = QX11Info::display();
+    if (!display) {
+        return false;
+    }
 
     if (isSingleClick || isDoubleClick || isMiddleClick || isRightClick || isSingleHold || isSingleRelease || isScroll || !key.isEmpty() || specialKey) {
-        Display *display = QX11Info::display();
-        if (!display) {
-            return false;
-        }
-
         bool leftHanded = isLeftHanded(display);
         int mainMouseButton = leftHanded ? RightMouseButton : LeftMouseButton;
         int secondaryMouseButton = leftHanded ? LeftMouseButton : RightMouseButton;
@@ -148,7 +142,7 @@ bool X11RemoteInput::handlePacket(const NetworkPacket &np)
                 XTestFakeButtonEvent(display, MouseWheelUp, True, 0);
                 XTestFakeButtonEvent(display, MouseWheelUp, False, 0);
             }
-        } else if (!key.isEmpty() || specialKey) {
+        } else if (!key.isEmpty() || validSpecialKey) {
             bool ctrl = np.get<bool>(QStringLiteral("ctrl"), false);
             bool alt = np.get<bool>(QStringLiteral("alt"), false);
             bool shift = np.get<bool>(QStringLiteral("shift"), false);
@@ -163,17 +157,10 @@ bool X11RemoteInput::handlePacket(const NetworkPacket &np)
             if (super)
                 XTestFakeKeyEvent(display, XKeysymToKeycode(display, XK_Super_L), True, 0);
 
-            if (specialKey) {
-                if (specialKey >= (int)arraySize(SpecialKeysMap)) {
-                    qWarning() << "Unsupported special key identifier";
-                    return false;
-                }
-
+            if (validSpecialKey) {
                 int keycode = XKeysymToKeycode(display, SpecialKeysMap[specialKey]);
-
                 XTestFakeKeyEvent(display, keycode, True, 0);
                 XTestFakeKeyEvent(display, keycode, False, 0);
-
             } else {
                 if (!m_fakekey) {
                     m_fakekey = fakekey_init(display);
@@ -201,16 +188,15 @@ bool X11RemoteInput::handlePacket(const NetworkPacket &np)
                 XTestFakeKeyEvent(display, XKeysymToKeycode(display, XK_Super_L), False, 0);
         }
 
-        XFlush(display);
-
     } else { // Is a mouse move event
         if (dx || dy) {
-            QPoint point = QCursor::pos();
-            QCursor::setPos(point.x() + (int)dx, point.y() + (int)dy);
+            XWarpPointer(display, None, None, 0, 0, 0, 0, (int)dx, (int)dy);
         } else if (np.has(QStringLiteral("x")) || np.has(QStringLiteral("y"))) {
-            QCursor::setPos(x, y);
+            Window &rootWindow = RootWindow(display, DefaultScreen(display));
+            XWarpPointer(display, None, rootWindow, 0, 0, 0, 0, (int)x, (int)y);
         }
     }
+    XFlush(display);
     return true;
 }
 

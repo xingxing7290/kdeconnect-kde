@@ -1,18 +1,18 @@
 # Translation for kdeconnect-urlhandler.po to Euskara/Basque (eu).
-# Copyright (C) 2017-2025 This file is copyright:
+# Copyright (C) 2017-2026 This file is copyright:
 # This file is distributed under the same license as the kdeconnect-kde package.
-# SPDX-FileCopyrightText: 2025 KDE euskaratzeko proiektuaren arduraduna <xalba@ni.eus>
+# SPDX-FileCopyrightText: 2025, 2026 KDE euskaratzeko proiektuaren arduraduna <xalba@ni.eus>
 #
 # Translators:
 # Osoitz <oelkoro@gmail.com>, 2017.
-# Iñigo Salvador Azurmendi <xalba@ni.eus>, 2017, 2019, 2020, 2021, 2022, 2025.
+# Iñigo Salvador Azurmendi <xalba@ni.eus>, 2017, 2019, 2020, 2021, 2022, 2025, 2026.
 # Thadah Denyse <gontzalpujana@protonmail.com>, 2019.
 msgid ""
 msgstr ""
 "Project-Id-Version: kdeconnect-kde\n"
 "Report-Msgid-Bugs-To: https://bugs.kde.org\n"
-"POT-Creation-Date: 2025-11-17 11:51+0000\n"
-"PO-Revision-Date: 2025-12-08 08:15+0100\n"
+"POT-Creation-Date: 2026-10-19 00:46+0000\n"
+"PO-Revision-Date: 2026-03-02 23:06+0100\n"
 "Last-Translator: Iñigo Salvador Azurmendi <xalba@ni.eus>\n"
 "Language-Team: Basque <kde-i18n-eu@kde.org>\n"
 "Language: eu\n"
@@ -20,7 +20,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
-"X-Generator: Lokalize 25.08.3\n"
+"X-Generator: Lokalize 25.12.2\n"
 
 #, kde-format
 msgctxt "NAME OF TRANSLATORS"
@@ -44,73 +44,79 @@ msgstr "Hautatu gailua:"
 msgid "Enter a file location or URL:"
 msgstr "Sartu fitxategi baten kokalekua edo URL bat:"
 
-#: kdeconnect-handler.cpp:44
+#: kdeconnect-handler.cpp:57
 #, kde-format
 msgid "KDE Connect URL handler"
 msgstr "KDE Connect-en URL-kudeatzailea"
 
-#: kdeconnect-handler.cpp:50
+#: kdeconnect-handler.cpp:63
 #, kde-format
 msgid "© 2015–2025 KDE Connect Team"
 msgstr "© 2015-2025 KDE Connect taldea"
 
-#: kdeconnect-handler.cpp:51
+#: kdeconnect-handler.cpp:64
 #, kde-format
 msgid "Aleix Pol Gonzalez"
 msgstr "Aleix Pol Gonzalez"
 
-#: kdeconnect-handler.cpp:52
+#: kdeconnect-handler.cpp:65
 #, kde-format
 msgid "Albert Vaca Cintora"
 msgstr "Albert Vaca Cintora"
 
-#: kdeconnect-handler.cpp:84
+#: kdeconnect-handler.cpp:99
 #, kde-format
 msgid "URL to share"
 msgstr "Partekatzeko URLa"
 
-#: kdeconnect-handler.cpp:85
+#: kdeconnect-handler.cpp:100
 #, kde-format
 msgid "Select a device"
 msgstr "Hautatu gailu bat"
 
-#: kdeconnect-handler.cpp:85
+#: kdeconnect-handler.cpp:100
 #, kde-format
 msgid "id"
 msgstr "IDa"
 
-#: kdeconnect-handler.cpp:86
+#: kdeconnect-handler.cpp:101
 #, kde-format
 msgid "Automatically open the file on the remote device, when supported"
 msgstr "Ireki fitxategi automatikoki urruneko gailuan, onartzen denean"
 
-#: kdeconnect-handler.cpp:128
+#: kdeconnect-handler.cpp:152
 #, kde-format
 msgctxt "Placeholder for input field that should contain a file/URL to share"
 msgid "Local file or web URL"
 msgstr "Fitxategi lokala edo web URLa"
 
-#: kdeconnect-handler.cpp:137
+#: kdeconnect-handler.cpp:160
 #, kde-format
 msgid "Device to call %1 with:"
 msgstr "%1(r)i deitzeko gailua:"
 
-#: kdeconnect-handler.cpp:140
+#: kdeconnect-handler.cpp:163
 #, kde-format
 msgid "Device to open %1 on:"
 msgstr "%1 irekitzeko gailua:"
 
-#: kdeconnect-handler.cpp:143
+#: kdeconnect-handler.cpp:166
 #, kde-format
 msgid "Device to send a SMS with:"
 msgstr "SMS bat bidaltzeko gailua:"
 
-#: kdeconnect-handler.cpp:146
+#: kdeconnect-handler.cpp:169
 #, kde-format
 msgid "Device to send %1 to:"
 msgstr "%1 bidaltzeko gailua:"
 
-#: kdeconnect-handler.cpp:165
+#: kdeconnect-handler.cpp:176
+#, kde-format
+msgctxt "Label, for a list of items like files or urls"
+msgid "Shared content:"
+msgstr "Partekatutako edukia:"
+
+#: kdeconnect-handler.cpp:201
 #, kde-format
 msgid "Couldn't share %1"
 msgstr "Ezin izan da %1 partekatu"

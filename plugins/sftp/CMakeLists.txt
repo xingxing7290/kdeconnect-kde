@@ -19,7 +19,17 @@ target_link_libraries(kdeconnect_sftp
     kdeconnectcore
     Qt::DBus
     KF6::I18n
-    KF6::KIOFileWidgets
-    KF6::KIOWidgets
     KF6::Notifications
 )
+
+if(WIN32)
+    target_link_libraries(kdeconnect_sftp
+        Qt::Widgets
+    )
+else()
+    target_link_libraries(kdeconnect_sftp
+        KF6::KIOFileWidgets
+        KF6::KIOWidgets
+        KF6::Solid
+    )
+endif()

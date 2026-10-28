@@ -1,13 +1,14 @@
 # Translation of kdeconnect-app to Norwegian Nynorsk
 #
+# Karl Ove Hufthammer <karl@huftis.org>, 2020, 2022, 2023, 2024, 2025.
 msgid ""
 msgstr ""
 "Project-Id-Version: kdeconnect-kde\n"
 "Report-Msgid-Bugs-To: https://bugs.kde.org\n"
-"POT-Creation-Date: 2025-12-22 00:42+0000\n"
+"POT-Creation-Date: 2026-10-25 00:50+0000\n"
 "PO-Revision-Date: 2025-06-01 14:57+0200\n"
 "Last-Translator: Karl Ove Hufthammer <karl@huftis.org>\n"
-"Language-Team: Norwegian Nynorsk <l10n-no@lister.huftis.org>\n"
+"Language-Team: Norwegian Nynorsk <l10n-no@nuug.no>\n"
 "Language: nn\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -18,177 +19,217 @@ msgstr ""
 "X-Accelerator-Marker: &\n"
 "X-Text-Markup: kde4\n"
 
-#: main.cpp:38 main.cpp:40
+#: main.cpp:45 main.cpp:47
 #, kde-format
 msgid "KDE Connect"
 msgstr "KDE Connect"
 
-#: main.cpp:42
+#: main.cpp:49
 #, fuzzy, kde-format
 #| msgid "(c) 2015-2025, KDE Connect Team"
 msgid "© 2015–2025 KDE Connect Team"
 msgstr "© 2018–2025 KDE Connect-gruppa"
 
-#: main.cpp:43
+#: main.cpp:50
 #, kde-format
 msgid "Aleix Pol Gonzalez"
 msgstr "Aleix Pol Gonzalez"
 
-#: main.cpp:44
+#: main.cpp:51
 #, kde-format
 msgid "Albert Vaca Cintora"
 msgstr "Albert Vaca Cintora"
 
-#: main.cpp:45
+#: main.cpp:52
 #, kde-format
 msgctxt "NAME OF TRANSLATORS"
 msgid "Your names"
 msgstr "Karl Ove Hufthammer"
 
-#: main.cpp:45
+#: main.cpp:52
 #, kde-format
 msgctxt "EMAIL OF TRANSLATORS"
 msgid "Your emails"
 msgstr "karl@huftis.org"
 
-#: main.cpp:76
+#: main.cpp:83
 #, kde-format
 msgctxt "@info:shell"
 msgid "Device id to open the app in"
 msgstr ""
 
-#: main.cpp:79
+#: main.cpp:86
 #, kde-format
 msgctxt "@info:shell"
 msgid "Configuration module to show, requires --device to be set."
 msgstr ""
 
-#: main.cpp:83
+#: main.cpp:90
 #, kde-format
 msgctxt "command line description"
 msgid "Replace an existing instance"
 msgstr ""
 
-#: main.cpp:86
+#: main.cpp:93
 #, kde-format
 msgid "URL to share"
 msgstr "Adresse å dela"
 
-#: qml/DevicePage.qml:36
+#: qml/BatteryInfo.qml:26
+#, kde-format
+msgid "Battery: No info"
+msgstr ""
+
+#: qml/BatteryInfo.qml:28
+#, kde-format
+msgid "Battery: %1% (Charging)"
+msgstr ""
+
+#: qml/BatteryInfo.qml:30
+#, kde-format
+msgid "Battery: %1%"
+msgstr ""
+
+#: qml/ConnectivityInfo.qml:20
+#, kde-format
+msgid "Unknown"
+msgstr ""
+
+#: qml/ConnectivityInfo.qml:26
+#, kde-format
+msgid "Mobile Network: No signal"
+msgstr ""
+
+#: qml/ConnectivityInfo.qml:28
+#, kde-format
+msgid "Mobile Network: %1"
+msgstr ""
+
+#: qml/DevicePage.qml:54
 #, kde-format
 msgid "Unpair"
 msgstr "Løys paring"
 
-#: qml/DevicePage.qml:41
+#: qml/DevicePage.qml:59
 #, kde-format
 msgid "Send Ping"
 msgstr "Send pingsignal"
 
-#: qml/DevicePage.qml:49 qml/PluginSettings.qml:20
+#: qml/DevicePage.qml:67 qml/PluginSettings.qml:21
 #, kde-format
 msgid "Plugin Settings"
 msgstr "Programtillegg-oppsett"
 
-#: qml/DevicePage.qml:65
+#: qml/DevicePage.qml:83
 #, kde-format
 msgctxt "@title:group device page section header"
 msgid "Actions"
 msgstr "Handlingar"
 
-#: qml/DevicePage.qml:67
+#: qml/DevicePage.qml:85
 #, kde-format
 msgctxt "@title:group device page section header"
 msgid "Controls"
 msgstr "Styring"
 
-#: qml/DevicePage.qml:69
+#: qml/DevicePage.qml:87
 #, kde-format
 msgctxt "@title:group device page section header"
 msgid "Information"
 msgstr ""
 
-#: qml/DevicePage.qml:115
+#: qml/DevicePage.qml:149
 #, kde-format
 msgid "Multimedia control"
 msgstr "Mediekontroll"
 
-#: qml/DevicePage.qml:123
+#: qml/DevicePage.qml:157
+#, kde-format
+msgid "Notifications"
+msgstr ""
+
+#: qml/DevicePage.qml:165
 #, kde-format
 msgid "Remote input"
 msgstr "Fjernstyring"
 
-#: qml/DevicePage.qml:131 qml/runcommand.qml:16
+#: qml/DevicePage.qml:173 qml/runcommand.qml:16
 #, kde-format
 msgid "Run command"
 msgstr "Køyr kommando"
 
-#: qml/DevicePage.qml:139 qml/presentationRemote.qml:15
+#: qml/DevicePage.qml:181 qml/presentationRemote.qml:15
 #, kde-format
 msgid "Presentation Remote"
 msgstr "Fjernkontroll av presentasjon"
 
-#: qml/DevicePage.qml:147 qml/volume.qml:16
+#: qml/DevicePage.qml:190 qml/volume.qml:16
 #, kde-format
 msgid "Volume control"
 msgstr "Lydstyrkekontroll"
 
-#: qml/DevicePage.qml:157 qml/mousepad.qml:44
+#: qml/DevicePage.qml:200
+#, kde-format
+msgid "SMS Messages"
+msgstr ""
+
+#: qml/DevicePage.qml:208 qml/mousepad.qml:44
 #, kde-format
 msgid "Lock"
 msgstr "Lås"
 
-#: qml/DevicePage.qml:157
+#: qml/DevicePage.qml:208
 #, kde-format
 msgid "Unlock"
 msgstr "Lås opp"
 
-#: qml/DevicePage.qml:165
+#: qml/DevicePage.qml:216
 #, kde-format
 msgid "Find Device"
 msgstr "Finn eining"
 
-#: qml/DevicePage.qml:173
+#: qml/DevicePage.qml:224
 #, kde-format
 msgid "Send Clipboard"
 msgstr "Send utklippstavla"
 
-#: qml/DevicePage.qml:180
+#: qml/DevicePage.qml:231
 #, kde-format
 msgid "Share File"
 msgstr "Del fil"
 
-#: qml/DevicePage.qml:188
+#: qml/DevicePage.qml:239
 #, kde-format
 msgid "Browse this device"
 msgstr ""
 
-#: qml/DevicePage.qml:196
+#: qml/DevicePage.qml:247
 #, kde-format
 msgid "Stop virtual monitor session"
 msgstr ""
 
-#: qml/DevicePage.qml:196
+#: qml/DevicePage.qml:247
 #, kde-format
 msgid "Use device as an external monitor"
 msgstr ""
 
-#: qml/DevicePage.qml:211
+#: qml/DevicePage.qml:278
 #, kde-format
 msgid "Address: %1 via %2"
 msgstr ""
 
-#: qml/DevicePage.qml:220
+#: qml/DevicePage.qml:288
 #, kde-format
 msgid "This device is not paired."
 msgstr "Eininga er ikkje para."
 
-#: qml/DevicePage.qml:224
+#: qml/DevicePage.qml:292
 #, kde-format
 msgctxt "Request pairing with a given device"
 msgid "Pair"
 msgstr "Par"
 
-#: qml/DevicePage.qml:231 qml/DevicePage.qml:240
+#: qml/DevicePage.qml:299 qml/DevicePage.qml:308
 #, kde-format
 msgid ""
 "Pair requested\n"
@@ -197,64 +238,83 @@ msgstr ""
 "Paringsførespurnad\n"
 "Nøkkel: "
 
-#: qml/DevicePage.qml:246
+#: qml/DevicePage.qml:314
 #, kde-format
 msgid "Accept"
 msgstr "Godta"
 
-#: qml/DevicePage.qml:252
+#: qml/DevicePage.qml:320
 #, kde-format
 msgid "Reject"
 msgstr "Avvis"
 
-#: qml/DevicePage.qml:263
+#: qml/DevicePage.qml:331
 #, kde-format
 msgid "This device is not reachable"
 msgstr "Får ikkje kontakt med eininga"
 
-#: qml/DevicePage.qml:271
+#: qml/DevicePage.qml:339
 #, kde-format
 msgid "Please choose a file"
 msgstr "Vel ei fil"
 
-#: qml/Main.qml:87
+#: qml/Main.qml:93
+#, kde-format
+msgctxt "@action:button"
+msgid "Open device list"
+msgstr ""
+
+#: qml/Main.qml:94
+#, kde-format
+msgctxt "@action:button"
+msgid "Close device list"
+msgstr ""
+
+#: qml/Main.qml:113
 #, kde-format
 msgid "Devices"
 msgstr "Einingar"
 
-#: qml/Main.qml:95
+#: qml/Main.qml:121
 #, kde-format
 msgctxt "@action:button"
 msgid "Refresh"
 msgstr "Oppdater"
 
-#: qml/Main.qml:97
+#: qml/Main.qml:124
 #, kde-format
 msgctxt "@action:button accessible"
 msgid "Refresh Devices"
 msgstr "Oppdater einingar"
 
-#: qml/Main.qml:133
+#: qml/Main.qml:160
 #, kde-format
 msgid "Remembered"
 msgstr "Hugsa"
 
-#: qml/Main.qml:135
+#: qml/Main.qml:162
 #, kde-format
 msgid "Available"
 msgstr "Tilgjengeleg"
 
-#: qml/Main.qml:137
+#: qml/Main.qml:164
 #, kde-format
 msgid "Connected"
 msgstr "Kopla til"
 
-#: qml/Main.qml:142
+#: qml/Main.qml:169
 #, kde-format
 msgid "No devices found"
 msgstr "Fann ingen einingar"
 
-#: qml/Main.qml:214 qml/Main.qml:229
+#: qml/Main.qml:248
+#, fuzzy, kde-format
+#| msgid "Settings"
+msgctxt "@action:button"
+msgid "Settings"
+msgstr "Innstillingar"
+
+#: qml/Main.qml:263
 #, kde-format
 msgid "Settings"
 msgstr "Innstillingar"
@@ -302,15 +362,55 @@ msgstr "Ingen spelarar er tilgjengelege"
 msgid "%1 - %2"
 msgstr "%1 – %2"
 
-#: qml/PluginSettings.qml:131
+#: qml/NotificationPanel.qml:21
 #, kde-format
-msgid "Configure plugin"
-msgstr "Set opp programtillegg"
+msgctxt "@title:window"
+msgid "Notifications"
+msgstr ""
+
+#: qml/NotificationPanel.qml:164
+#, kde-format
+msgid "Reply"
+msgstr ""
+
+#: qml/NotificationPanel.qml:179
+#, kde-format
+msgid "Dismiss"
+msgstr ""
+
+#: qml/NotificationPanel.qml:206
+#, kde-format
+msgid "Cancel"
+msgstr ""
+
+#: qml/NotificationPanel.qml:224
+#, kde-format
+msgctxt "@info:placeholder"
+msgid "Reply to %1…"
+msgstr ""
+
+#: qml/NotificationPanel.qml:243
+#, fuzzy, kde-format
+#| msgid "Send Ping"
+msgid "Send"
+msgstr "Send pingsignal"
 
 #: qml/presentationRemote.qml:22
 #, kde-format
 msgid "Enable Full-Screen"
 msgstr "Bruk fullskjerm"
+
+#: qml/presentationRemote.qml:39
+#, kde-format
+msgctxt "@action:button accessible"
+msgid "Previous Slide"
+msgstr ""
+
+#: qml/presentationRemote.qml:47
+#, kde-format
+msgctxt "@action:button accessible"
+msgid "Next Slide"
+msgstr ""
 
 #: qml/runcommand.qml:23
 #, kde-format
@@ -327,32 +427,37 @@ msgstr "Du kan redigera kommandoar på den tilkopla eininga"
 msgid "No commands defined"
 msgstr "Ingen kommandoar er definerte"
 
-#: qml/Settings.qml:13
+#: qml/Settings.qml:15
 #, kde-format
 msgctxt "@title:window"
 msgid "Settings"
 msgstr "Innstillingar"
 
-#: qml/Settings.qml:21
+#: qml/Settings.qml:27
 #, kde-format
 msgid "Device name"
 msgstr "Einingsnamn"
 
-#: qml/Settings.qml:33
+#: qml/Settings.qml:39
 #, kde-format
 msgctxt "@title:group"
 msgid "Backends"
 msgstr "Motorar"
 
-#: qml/Settings.qml:66
+#: qml/Settings.qml:72
 #, kde-format
 msgid "About KDE Connect"
 msgstr "Om KDE Connect"
 
-#: qml/Settings.qml:74
+#: qml/Settings.qml:80
 #, kde-format
 msgid "About KDE"
 msgstr "Om KDE"
+
+#: qml/Settings.qml:91
+#, kde-format
+msgid "Close"
+msgstr ""
 
 #: qml/WelcomePage.qml:27
 #, kde-format
@@ -366,39 +471,32 @@ msgctxt "@info"
 msgid "Make sure to install KDE Connect on your other devices."
 msgstr "Sjå til at KDE Connect er installert på dei andre einingane."
 
-#: qml/WelcomePage.qml:43
+#: qml/WelcomePage.qml:44
 #, kde-format
 msgctxt "@title:context"
 msgid "KDE Connect Android App"
 msgstr "KDE Connect Android-app"
 
-#: qml/WelcomePage.qml:50
+#: qml/WelcomePage.qml:51
 #, kde-format
 msgctxt "Android Application Store"
 msgid "F-Droid"
 msgstr "F-Droid"
 
-#: qml/WelcomePage.qml:57
+#: qml/WelcomePage.qml:58
 #, kde-format
 msgctxt "Android Application Store"
 msgid "Play Store"
 msgstr "Play Store"
 
-#: qml/WelcomePage.qml:63
+#: qml/WelcomePage.qml:64
 #, kde-format
 msgctxt "@title:context"
 msgid "KDE Connect iOS App"
 msgstr "KDE Connect iOS-app"
 
-#: qml/WelcomePage.qml:68
-#, kde-format
-msgid "Apple Store"
+#: qml/WelcomePage.qml:69
+#, fuzzy, kde-format
+#| msgid "Apple Store"
+msgid "App Store"
 msgstr "Apple Store"
-
-#: qml/WelcomePage.qml:74
-#, kde-format
-msgid ""
-"If you are having problems, visit the <a href=\"https://userbase.kde.org/"
-"KDEConnect\"><span style=\" text-decoration: underline;\">KDE Connect "
-"Community wiki</span></a> for help."
-msgstr ""

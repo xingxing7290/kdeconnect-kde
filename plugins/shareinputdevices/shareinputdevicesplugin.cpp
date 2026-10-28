@@ -70,7 +70,7 @@ ShareInputDevicesPlugin::ShareInputDevicesPlugin(QObject *parent, const QVariant
 {
     connect(m_inputCaptureSession, &InputCaptureSession::started, this, [this](const QLine &barrier, const QPointF &delta) {
         m_activatedBarrier = barrier;
-        NetworkPacket packet(PACKET_TYPE_SHAREINPUTDEVICES_REQUEST, {{u"startEdge"_s, configuredEdge()}, {u"deltax"_s, delta.x()}, {u"deltay"_s, delta.y()}});
+        NetworkPacket packet(PACKET_TYPE_SHAREINPUTDEVICES_REQUEST, {{u"exitEdge"_s, configuredEdge()}, {u"deltax"_s, delta.x()}, {u"deltay"_s, delta.y()}});
         sendPacket(packet);
     });
     connect(m_inputCaptureSession, &InputCaptureSession::mouseMove, this, [this](double x, double y) {
@@ -102,6 +102,10 @@ ShareInputDevicesPlugin::ShareInputDevicesPlugin(QObject *parent, const QVariant
         sendPacket(packet);
     });
     connect(m_inputCaptureSession, &InputCaptureSession::key, this, [this](Qt::Key key, Qt::KeyboardModifiers modifiers, const QString &text) {
+        if (key == Qt::Key_Backtab) {
+            key = Qt::Key_Tab;
+            modifiers |= Qt::ShiftModifier;
+        }
         qDebug() << "sending key" << text << modifiers << specialKeysMap.value(key);
         NetworkPacket packet(PACKET_TYPE_MOUSEPAD_REQUEST,
                              {

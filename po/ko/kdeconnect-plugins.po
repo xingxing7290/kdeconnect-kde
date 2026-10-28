@@ -1,29 +1,29 @@
 # Copyright (C) YEAR This_file_is_part_of_KDE
 # This file is distributed under the same license as the PACKAGE package.
-# SPDX-FileCopyrightText: 2015, 2017, 2018, 2019, 2020, 2021, 2023, 2025 Shinjo Park <kde@peremen.name>
+# SPDX-FileCopyrightText: 2015, 2017-2021, 2023, 2025-2026 Shinjo Park <kde@peremen.name>
 #
 msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: https://bugs.kde.org\n"
-"POT-Creation-Date: 2025-12-15 00:42+0000\n"
-"PO-Revision-Date: 2025-10-09 00:31+0200\n"
-"Last-Translator: Shinjo Park <kde@peremen.name>\n"
-"Language-Team: Korean <kde-kr@kde.org>\n"
+"POT-Creation-Date: 2026-10-28 01:00+0000\n"
+"PO-Revision-Date: 2026-09-21 23:11+0200\n"
+"Last-Translator: Shinjo Park <peremen@gmail.com>\n"
+"Language-Team: Korean\n"
 "Language: ko\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
-"X-Generator: Lokalize 24.12.3\n"
+"X-Generator: Lokalize 26.08.1\n"
 
-#: battery/batteryplugin.cpp:119
+#: battery/batteryplugin.cpp:106
 #, kde-format
 msgctxt "device name: low battery"
 msgid "%1: Low Battery"
 msgstr "%1: 배터리 부족"
 
-#: battery/batteryplugin.cpp:120
+#: battery/batteryplugin.cpp:107
 #, kde-format
 msgid "Battery at %1%"
 msgstr "배터리 %1%"
@@ -44,10 +44,9 @@ msgid "Max Clipboard File Size (MB)"
 msgstr "최대 클립보드 파일 크기(MB)"
 
 #: digitizer/linuxdigitizerimpl.cpp:72 digitizer/linuxdigitizerimpl.cpp:168
-#, fuzzy, kde-format
-#| msgid "KDE Connect"
+#, kde-format
 msgid "KDE Connect Error"
-msgstr "KDE Connect"
+msgstr "KDE Connect 오류"
 
 #: digitizer/linuxdigitizerimpl.cpp:73
 #, kde-format
@@ -55,6 +54,8 @@ msgid ""
 "Unable to create a virtual drawing tablet. If this error persists, file a "
 "bug report."
 msgstr ""
+"가상 그래픽 태블릿을 생성할 수 없습니다. 오류가 지속된다면 버그를 보고해 주십"
+"시오."
 
 #: digitizer/linuxdigitizerimpl.cpp:169
 #, kde-format
@@ -62,9 +63,12 @@ msgid ""
 "Unable to process one or more input events for the virtual device. If this "
 "error persists, file a bug report."
 msgstr ""
+"가상 장치의 하나 이상의 입력 이벤트를 처리할 수 없습니다. 오류가 지속된다면 "
+"버그를 보고해 주십시오."
 
 #: findthisdevice/kdeconnect_findthisdevice_config.qml:23
 #: share/kdeconnect_share_config.qml:22
+#: shareinputdevices/kdeconnect_shareinputdevices_config.qml:25
 #, kde-format
 msgid "Apply"
 msgstr "적용"
@@ -98,7 +102,8 @@ msgstr "원격 잠금 성공"
 msgid "Remote lock failed"
 msgstr "원격 잠금 실패"
 
-#: mpriscontrol/mpriscontrolplugin-win.cpp:26
+#: mpriscontrol/mpriscontrolplugin-macos.mm:23
+#: mpriscontrol/mpriscontrolplugin-win.cpp:30
 #, kde-format
 msgctxt ""
 "@title Users select this to control the current media player when we can't "
@@ -106,20 +111,26 @@ msgctxt ""
 msgid "Current Player"
 msgstr "현재 재생기"
 
-#: mpriscontrol/mpriscontrolplugin-win.cpp:93
 #: mpriscontrol/mpriscontrolplugin-win.cpp:94
 #: mpriscontrol/mpriscontrolplugin-win.cpp:95
+#: mpriscontrol/mpriscontrolplugin-win.cpp:96
 #, kde-format
 msgid "N/A"
 msgstr "없음"
 
-#: notifications/notification.cpp:108
+#: notifications/notification.cpp:120
 #, kde-format
 msgctxt "@action:button"
 msgid "Reply"
 msgstr "답장"
 
-#: notifications/notification.cpp:109
+#: notifications/notification.cpp:123
+#, kde-format
+msgctxt "@info:placeholder %1 is the name of a group chat"
+msgid "Reply in %1…"
+msgstr "%1에 답장…"
+
+#: notifications/notification.cpp:125
 #, kde-format
 msgctxt "@info:placeholder"
 msgid "Reply to %1…"
@@ -166,102 +177,139 @@ msgstr "통화 종료 이후 자동으로 다시 시작"
 msgid "Ping!"
 msgstr "핑!"
 
+#: presenter/kdeconnect_presenter_config.qml:23
+#, kde-format
+msgctxt "@action:label"
+msgid "Display:"
+msgstr "표시:"
+
+#: presenter/kdeconnect_presenter_config.qml:25
+#, kde-format
+msgid "Red Dot"
+msgstr "빨간 점"
+
+#: presenter/kdeconnect_presenter_config.qml:26
+#, kde-format
+msgid "Electric"
+msgstr "전기"
+
 #: runcommand/kdeconnect_runcommand_config.qml:21
 #, kde-format
 msgid "Add Command…"
 msgstr "명령 추가…"
 
-#: runcommand/kdeconnect_runcommand_config.qml:53
+#: runcommand/kdeconnect_runcommand_config.qml:65
+#, kde-format
+msgid "Edit"
+msgstr "편집"
+
+#: runcommand/kdeconnect_runcommand_config.qml:78
 #, kde-format
 msgid "Delete"
 msgstr "삭제"
 
-#: runcommand/kdeconnect_runcommand_config.qml:64
+#: runcommand/kdeconnect_runcommand_config.qml:93
 #, kde-format
 msgctxt "@info"
 msgid "No commands configured"
 msgstr "설정한 명령 없음"
 
-#: runcommand/kdeconnect_runcommand_config.qml:65
+#: runcommand/kdeconnect_runcommand_config.qml:94
 #, kde-format
 msgctxt "@info"
 msgid "Add commands to run them remotely from other devices"
 msgstr "명령을 추가하여 다른 장치에서 원격으로 실행"
 
-#: runcommand/kdeconnect_runcommand_config.qml:71
+#: runcommand/kdeconnect_runcommand_config.qml:100
 #, kde-format
 msgctxt "@title:window"
 msgid "Add Command"
 msgstr "명령 추가"
 
-#: runcommand/kdeconnect_runcommand_config.qml:77
+#: runcommand/kdeconnect_runcommand_config.qml:106
 #, kde-format
 msgctxt "@action:button"
 msgid "Add"
 msgstr "추가"
 
-#: runcommand/kdeconnect_runcommand_config.qml:86
+#: runcommand/kdeconnect_runcommand_config.qml:113
 #, kde-format
 msgctxt "@action:button accessible"
 msgid "Add command"
 msgstr "명령 추가"
 
-#: runcommand/kdeconnect_runcommand_config.qml:96
+#: runcommand/kdeconnect_runcommand_config.qml:122
+#: runcommand/kdeconnect_runcommand_config.qml:200
 #, kde-format
 msgid "Name:"
 msgstr "이름:"
 
-#: runcommand/kdeconnect_runcommand_config.qml:100
+#: runcommand/kdeconnect_runcommand_config.qml:126
+#: runcommand/kdeconnect_runcommand_config.qml:204
 #, kde-format
 msgid "Command:"
 msgstr "명령:"
 
-#: runcommand/kdeconnect_runcommand_config.qml:104
+#: runcommand/kdeconnect_runcommand_config.qml:130
 #, kde-format
 msgid "Sample commands:"
 msgstr "예제 명령:"
 
-#: runcommand/kdeconnect_runcommand_config.qml:110
-#, fuzzy, kde-format
-#| msgid "Suspend"
+#: runcommand/kdeconnect_runcommand_config.qml:148
+#: runcommand/kdeconnect_runcommand_config.qml:159
+#, kde-format
 msgctxt "Sample command"
 msgid "Suspend"
 msgstr "절전"
 
-#: runcommand/kdeconnect_runcommand_config.qml:114
-#, fuzzy, kde-format
-#| msgid "Maximum Brightness"
-msgctxt "Sample command"
-msgid "Maximum Brightness"
-msgstr "최대 밝기"
-
-#: runcommand/kdeconnect_runcommand_config.qml:118
-#, fuzzy, kde-format
-#| msgid "Lock Screen"
+#: runcommand/kdeconnect_runcommand_config.qml:152
+#: runcommand/kdeconnect_runcommand_config.qml:167
+#, kde-format
 msgctxt "Sample command"
 msgid "Lock Screen"
 msgstr "화면 잠그기"
 
-#: runcommand/kdeconnect_runcommand_config.qml:122
-#, fuzzy, kde-format
-#| msgid "Unlock Screen"
+#: runcommand/kdeconnect_runcommand_config.qml:163
+#, kde-format
+msgctxt "Sample command"
+msgid "Maximum Brightness"
+msgstr "최대 밝기"
+
+#: runcommand/kdeconnect_runcommand_config.qml:171
+#, kde-format
 msgctxt "Sample command"
 msgid "Unlock Screen"
 msgstr "화면 잠금 해제"
 
-#: runcommand/kdeconnect_runcommand_config.qml:126
-#, fuzzy, kde-format
-#| msgid "Close All Vaults"
+#: runcommand/kdeconnect_runcommand_config.qml:175
+#, kde-format
 msgctxt "Sample command"
 msgid "Close All Vaults"
 msgstr "모든 비밀 공간 닫기"
 
-#: runcommand/kdeconnect_runcommand_config.qml:130
-#, fuzzy, kde-format
-#| msgid "Forcefully Close All Vaults"
+#: runcommand/kdeconnect_runcommand_config.qml:179
+#, kde-format
 msgctxt "Sample command"
 msgid "Forcefully Close All Vaults"
 msgstr "강제로 모든 비밀 공간 닫기"
+
+#: runcommand/kdeconnect_runcommand_config.qml:192
+#, kde-format
+msgctxt "@title:window"
+msgid "Edit Command"
+msgstr "편집 명령"
+
+#: runcommand/kdeconnect_runcommand_config.qml:209
+#, kde-format
+msgctxt "@action:button"
+msgid "Confirm"
+msgstr "확인"
+
+#: runcommand/kdeconnect_runcommand_config.qml:216
+#, kde-format
+msgctxt "@action:button accessible"
+msgid "Confirm"
+msgstr "확인"
 
 #: screensaver-inhibit/screensaverinhibitplugin.cpp:24
 #, kde-format
@@ -318,49 +366,49 @@ msgstr ""
 "보내지 않을 알림의 정규 표현식입니다.\n"
 "이 패턴은 알림 요약과 선택한 경우 알림 내용에 적용됩니다."
 
-#: sftp/mounter.cpp:141
+#: sftp/mounter.cpp:153
 #, kde-format
 msgid "Failed to start sshfs"
 msgstr "sshfs를 시작할 수 없음"
 
-#: sftp/mounter.cpp:145
+#: sftp/mounter.cpp:157
 #, kde-format
 msgid "sshfs process crashed"
 msgstr "sshfs 프로세스 충돌함"
 
-#: sftp/mounter.cpp:149
+#: sftp/mounter.cpp:161
 #, kde-format
 msgid "Unknown error in sshfs"
 msgstr "sshfs의 알 수 없는 오류"
 
-#: sftp/mounter.cpp:160
+#: sftp/mounter.cpp:172
 #, kde-format
 msgid "Error when accessing filesystem. sshfs finished with exit code %0"
 msgstr ""
 "파일 시스템에 접근하는 중 오류가 발생했습니다. sshfs가 종료 코드 %0을(를) 반"
 "환했습니다"
 
-#: sftp/mounter.cpp:169
+#: sftp/mounter.cpp:181
 #, kde-format
 msgid "Failed to mount filesystem: device not responding"
 msgstr "파일 시스템을 마운트할 수 없음: 장치가 응답하지 않음"
 
-#: sftp/sftpplugin-win.cpp:93
+#: sftp/sftpplugin-win.cpp:97
 #, kde-format
 msgid "KDE Connect"
 msgstr "KDE Connect"
 
-#: sftp/sftpplugin-win.cpp:94
+#: sftp/sftpplugin-win.cpp:98
 #, kde-format
 msgid "Cannot handle SFTP protocol. Apologies for the inconvenience"
 msgstr "SFTP 프로토콜을 처리할 수 없습니다."
 
-#: sftp/sftpplugin.cpp:147
+#: sftp/sftpplugin.cpp:181
 #, kde-format
 msgid "All files"
 msgstr "모든 파일"
 
-#: sftp/sftpplugin.cpp:148
+#: sftp/sftpplugin.cpp:182
 #, kde-format
 msgid "Camera pictures"
 msgstr "카메라 사진"
@@ -375,72 +423,86 @@ msgstr "파일 저장 경로:"
 msgid "%1 in the path will be replaced with the specific device name"
 msgstr "경로 중 %1 문자열은 지정한 장치 이름으로 대체됩니다"
 
-#: share/shareplugin.cpp:161
+#: share/shareplugin.cpp:162
+#, kde-format
+msgctxt "@info Some piece of text was received from a connected device"
+msgid "Shared text copied to clipboard"
+msgstr "공유한 텍스트를 클립보드에 복사함"
+
+#: share/shareplugin.cpp:166
 #, kde-format
 msgctxt "@info Some piece of text was received from a connected device"
 msgid "Shared text from %1 copied to clipboard"
 msgstr "%1에서 공유한 텍스트를 클립보드에 복사함"
 
-#: share/shareplugin.cpp:201
+#: share/shareplugin.cpp:210
 #, kde-format
 msgctxt "@action:button Edit text with default text editor"
 msgid "Open in Text Editor"
 msgstr "텍스트 편집기에서 열기"
 
-#: share/shareplugin.cpp:205
+#: share/shareplugin.cpp:214
 #, kde-format
 msgctxt "@action:button Open URL with default app"
 msgid "Open Link"
 msgstr "링크 열기"
 
-#: share/shareplugin.cpp:247
+#: share/shareplugin.cpp:262 share/shareplugin.cpp:267
 #, kde-format
 msgid "Could not share file"
 msgstr "파일을 공유할 수 없음"
 
-#: share/shareplugin.cpp:247
+#: share/shareplugin.cpp:262
 #, kde-format
 msgid "%1 does not exist"
 msgstr "%1이(가) 없음"
 
-#: shareinputdevices/kdeconnect_shareinputdevices_config.qml:31
-#, fuzzy, kde-format
-#| msgid "Lock Screen"
-msgctxt "@label:listbox"
-msgid "Leave Screen at"
-msgstr "화면 잠그기"
+#: share/shareplugin.cpp:267
+#, kde-format
+msgid "Permission denied: %1"
+msgstr "권한 거부됨: %1"
 
-#: shareinputdevices/kdeconnect_shareinputdevices_config.qml:38
+#: shareinputdevices/kdeconnect_shareinputdevices_config.qml:43
+#, kde-format
+msgctxt ""
+"@label:listbox Forms a sentence: 'Leave the screen at the top/bottom/left/"
+"right edge', the pointer will switch to the connected device there"
+msgid "Leave Screen at"
+msgstr "다음에서 화면 떠나기:"
+
+#: shareinputdevices/kdeconnect_shareinputdevices_config.qml:51
 #, kde-format
 msgctxt "@item:inlistbox top edge of screen"
 msgid "Top"
-msgstr ""
+msgstr "위"
 
-#: shareinputdevices/kdeconnect_shareinputdevices_config.qml:42
+#: shareinputdevices/kdeconnect_shareinputdevices_config.qml:55
 #, kde-format
 msgctxt "@item:inlistbox left edge of screen"
 msgid "Left"
-msgstr ""
+msgstr "왼쪽"
 
-#: shareinputdevices/kdeconnect_shareinputdevices_config.qml:46
+#: shareinputdevices/kdeconnect_shareinputdevices_config.qml:59
 #, kde-format
 msgctxt "@item:inlistbox right edge of screen"
 msgid "Right"
-msgstr ""
+msgstr "오른쪽"
 
-#: shareinputdevices/kdeconnect_shareinputdevices_config.qml:50
+#: shareinputdevices/kdeconnect_shareinputdevices_config.qml:63
 #, kde-format
 msgctxt "@item:inlistbox top edge of screen"
 msgid "Bottom"
-msgstr ""
+msgstr "아래"
 
-#: shareinputdevices/kdeconnect_shareinputdevices_config.qml:58
+#: shareinputdevices/kdeconnect_shareinputdevices_config.qml:71
 #, kde-format
-msgctxt "@info:tooltip"
+msgctxt "@info:tooltip edge: screen edge"
 msgid ""
 "Another device already reserved this edge. This may lead to unexpected "
 "results when both are connected at the same time."
 msgstr ""
+"다른 장치에서 이 화면 경계를 사용하고 있습니다. 같은 장치가 동시에 연결되었"
+"을 때 예상하지 못한 결과가 발생할 수 있습니다."
 
 #: telephony/telephonyplugin.cpp:23
 #, kde-format
@@ -462,17 +524,17 @@ msgstr "부재 중 전화: %1"
 msgid "Mute Call"
 msgstr "통화 음소거"
 
-#: virtualmonitor/virtualmonitorplugin.cpp:183
+#: virtualmonitor/virtualmonitorplugin.cpp:184
 #, kde-format
 msgid "Remote device does not have a VNC or RDP client (eg. krdc) installed."
 msgstr "원격 장치에 VNC나 RDP 클라이언트(예: krdc)가 설치되어 있지 않습니다."
 
-#: virtualmonitor/virtualmonitorplugin.cpp:186
+#: virtualmonitor/virtualmonitorplugin.cpp:187
 #, kde-format
 msgid "The krdp package is required on the local device."
 msgstr "로컬 장치에 krdp 패키지가 설치되어 있어야 합니다."
 
-#: virtualmonitor/virtualmonitorplugin.cpp:189
+#: virtualmonitor/virtualmonitorplugin.cpp:190
 #, kde-format
 msgid "Cannot start a request without a resolution"
 msgstr "해상도를 지정하지 않고 요청을 시작할 수 없음"

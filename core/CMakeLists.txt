@@ -12,6 +12,9 @@ endif()
 option(LOOPBACK_ENABLED "Loopback backend enabled" OFF)
 
 add_library(kdeconnectcore)
+
+qt_extract_metatypes(kdeconnectcore)
+
 target_sources(kdeconnectcore PRIVATE
     ${backends_kdeconnect_SRCS}
 
@@ -38,7 +41,6 @@ target_sources(kdeconnectcore PRIVATE
 ecm_qt_declare_logging_category(kdeconnectcore
     HEADER kdeconnect_debug.h
     IDENTIFIER KDECONNECT_CORE CATEGORY_NAME kdeconnect.core
-    DEFAULT_SEVERITY Warning
     EXPORT kdeconnect-kde DESCRIPTION "kdeconnect (core)")
 
 
@@ -61,6 +63,9 @@ PRIVATE
 
 if(WIN32)
     target_link_libraries(kdeconnectcore PRIVATE ws2_32.lib) # winsock2
+    target_link_libraries(kdeconnectcore PRIVATE powrprof)
+elseif(APPLE)
+    target_link_libraries(kdeconnectcore PRIVATE "-framework IOKit" "-framework CoreFoundation")
 endif()
 
 if (BLUETOOTH_ENABLED)
@@ -84,4 +89,4 @@ set_target_properties(kdeconnectcore PROPERTIES
 
 generate_export_header(kdeconnectcore EXPORT_FILE_NAME kdeconnectcore_export.h BASE_NAME KDEConnectCore)
 
-install(TARGETS kdeconnectcore EXPORT kdeconnectLibraryTargets ${KDE_INSTALL_TARGETS_DEFAULT_ARGS} LIBRARY NAMELINK_SKIP)
+install(TARGETS kdeconnectcore EXPORT kdeconnectLibraryTargets ${KDECONNECT_INSTALL_TARGETS_DEFAULT_ARGS} LIBRARY NAMELINK_SKIP)

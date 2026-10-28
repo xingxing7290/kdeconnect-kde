@@ -5,7 +5,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: kdeconnect-core\n"
 "Report-Msgid-Bugs-To: https://bugs.kde.org\n"
-"POT-Creation-Date: 2025-12-26 00:42+0000\n"
+"POT-Creation-Date: 2026-10-25 00:50+0000\n"
 "PO-Revision-Date: 2017-05-26 11:26+0200\n"
 "Last-Translator: Chusslove Illich <caslav.ilic@gmx.net>\n"
 "Language-Team: Serbian <kde-i18n-sr@kde.org>\n"
@@ -20,68 +20,73 @@ msgstr ""
 "X-Text-Markup: kde4\n"
 "X-Environment: kde\n"
 
-#: backends/bluetooth/asynclinkprovider.cpp:39
-#, kde-format
-msgctxt "@info"
-msgid "Bluetooth"
-msgstr ""
-
-#: backends/lan/compositeuploadjob.cpp:78
+#: backends/lan/compositeuploadjob.cpp:83
 #, kde-format
 msgid "Couldn't find an available port"
 msgstr "Ne mogu da nađem dostupan port"
 
-#: backends/lan/compositeuploadjob.cpp:110
+#: backends/lan/compositeuploadjob.cpp:112
 #, kde-format
 msgid "Failed to send packet to %1"
 msgstr ""
 
-#: backends/lan/compositeuploadjob.cpp:256
+#: backends/lan/compositeuploadjob.cpp:303
+#, kde-format
+msgid "Timeout waiting for receiver to connect"
+msgstr ""
+
+#: backends/lan/compositeuploadjob.cpp:356
 #, kde-format
 msgid "Sending to %1"
 msgstr ""
 
-#: backends/lan/compositeuploadjob.cpp:256
+#: backends/lan/compositeuploadjob.cpp:356
 #, kde-format
 msgid "File"
 msgstr ""
 
-#: backends/pairinghandler.cpp:61
+#: backends/lan/uploadjob.cpp:102
+#, fuzzy, kde-format
+#| msgid "Could not store certificate file: %1"
+msgid "Could not open source file: %1"
+msgstr "Ne mogu da smestim fajl sertifikata: %1"
+
+#: backends/pairinghandler.cpp:57
 #, kde-format
 msgid "Device clocks are out of sync"
 msgstr ""
 
-#: backends/pairinghandler.cpp:80
+#: backends/pairinghandler.cpp:76
 #, kde-format
 msgid "Canceled by other peer"
 msgstr "Otkazala druga strana"
 
-#: backends/pairinghandler.cpp:96
-#, kde-format
-msgid "%1: Already paired"
-msgstr "%1: već upareno"
-
-#: backends/pairinghandler.cpp:105 backends/pairinghandler.cpp:124
+#: backends/pairinghandler.cpp:100 backends/pairinghandler.cpp:119
 #, fuzzy, kde-format
 #| msgid "Device not reachable"
 msgid "%1: Device not reachable"
 msgstr "Uređaj nije dostupan"
 
-#: backends/pairinghandler.cpp:139
+#: backends/pairinghandler.cpp:142
 #, kde-format
 msgid "Device not reachable"
 msgstr "Uređaj nije dostupan"
 
-#: backends/pairinghandler.cpp:150
+#: backends/pairinghandler.cpp:158
 #, fuzzy, kde-format
 #| msgid "Canceled by other peer"
 msgid "Cancelled by user"
 msgstr "Otkazala druga strana"
 
-#: backends/pairinghandler.cpp:166
+#: backends/pairinghandler.cpp:178
 #, kde-format
 msgid "Timed out"
 msgstr "Isteklo vrijeme"
+
+#: backends/pairinghandler.cpp:191
+#, kde-format
+msgid "Pairing is not in progress"
+msgstr ""
 
 #: compositefiletransferjob.cpp:47
 #, fuzzy, kde-format
@@ -106,60 +111,69 @@ msgctxt "The destination of a file operation"
 msgid "Destination"
 msgstr ""
 
-#: device.cpp:475
+#: device.cpp:496
 #, fuzzy, kde-format
 #| msgid "SHA1 fingerprint of your device certificate is: %1\n"
 msgid "SHA256 fingerprint of your device certificate is: %1\n"
 msgstr "SHA‑1 otisak sertifikata za vaš uređaj je: %1\n"
 
-#: device.cpp:481
+#: device.cpp:502
 #, fuzzy, kde-format
 #| msgid "SHA1 fingerprint of remote device certificate is: %1\n"
 msgid "SHA256 fingerprint of remote device certificate is: %1\n"
 msgstr "SHA‑1 otisak sertifikata udaljenog uređaja je: %1\n"
 
-#: device.cpp:483
+#: device.cpp:504
 #, kde-format
 msgid "Protocol version: %1\n"
 msgstr ""
 
-#: filetransferjob.cpp:53
+#: filetransferjob.cpp:54
 #, kde-format
 msgid "Filename already present"
 msgstr "Naziv fajla već postoji"
 
-#: filetransferjob.cpp:116
+#: filetransferjob.cpp:70
+#, fuzzy, kde-format
+#| msgid "Could not store certificate file: %1"
+msgid "Could not create destination file: %1"
+msgstr "Ne mogu da smestim fajl sertifikata: %1"
+
+#: filetransferjob.cpp:129
 #, fuzzy, kde-format
 #| msgid "Received incomplete file: %1"
 msgid "Received incomplete file from: %1"
 msgstr "Primljen nedovršen fajl: %1"
 
-#: kdeconnectconfig.cpp:348 kdeconnectconfig.cpp:382
+#: kdeconnectconfig.cpp:433 kdeconnectconfig.cpp:467
 #, kde-format
 msgid "KDE Connect failed to start"
 msgstr "Propalo pokretanje KDE‑konekcije"
 
-#: kdeconnectconfig.cpp:348
+#: kdeconnectconfig.cpp:433
 #, fuzzy, kde-format
 #| msgid "Could not store private key file: %1"
 msgid "Could not generate the private key."
 msgstr "Ne mogu da smestim fajl ličnog ključa: %1"
 
-#: kdeconnectconfig.cpp:367
+#: kdeconnectconfig.cpp:452
 #, kde-format
 msgid "Could not store private key file: %1"
 msgstr "Ne mogu da smestim fajl ličnog ključa: %1"
 
-#: kdeconnectconfig.cpp:382
+#: kdeconnectconfig.cpp:467
 #, fuzzy, kde-format
 #| msgid "Could not store certificate file: %1"
 msgid "Could not generate the device certificate."
 msgstr "Ne mogu da smestim fajl sertifikata: %1"
 
-#: kdeconnectconfig.cpp:398
+#: kdeconnectconfig.cpp:483
 #, kde-format
 msgid "Could not store certificate file: %1"
 msgstr "Ne mogu da smestim fajl sertifikata: %1"
+
+#~ msgid "%1: Already paired"
+#~ msgstr "%1: već upareno"
 
 #~ msgid "Received incomplete file: %1"
 #~ msgstr "Primljen nedovršen fajl: %1"

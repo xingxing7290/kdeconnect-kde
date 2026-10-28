@@ -165,6 +165,10 @@ void MprisControlPlugin::propertiesChanged(const QString & /*propertyInterface*/
         np.set(QStringLiteral("shuffle"), properties[QStringLiteral("Shuffle")].toBool());
         somethingToSend = true;
     }
+    if (properties.contains(QStringLiteral("Rate"))) {
+        np.set(QStringLiteral("rate"), properties[QStringLiteral("Rate")].toDouble());
+        somethingToSend = true;
+    }
     if (properties.contains(QStringLiteral("CanPause"))) {
         np.set(QStringLiteral("canPause"), properties[QStringLiteral("CanPause")].toBool());
         somethingToSend = true;
@@ -254,10 +258,6 @@ bool MprisControlPlugin::sendAlbumArt(const NetworkPacket &np)
 
 void MprisControlPlugin::receivePacket(const NetworkPacket &np)
 {
-    if (np.has(QStringLiteral("playerList"))) {
-        return; // Whoever sent this is an mpris client and not an mpris control!
-    }
-
     if (np.has(QStringLiteral("albumArtUrl"))) {
         sendAlbumArt(np);
         return;
@@ -342,6 +342,12 @@ void MprisControlPlugin::receivePacket(const NetworkPacket &np)
         if (mprisInterface.property("Shuffle").isValid()) {
             bool shuffle = mprisInterface.shuffle();
             answer.set(QStringLiteral("shuffle"), shuffle);
+        }
+
+        // Rate is an optional field (1.0 default)
+        if (mprisInterface.property("Rate").isValid()) {
+            double rate = mprisInterface.rate();
+            answer.set(QStringLiteral("rate"), rate);
         }
 
         somethingToSend = true;

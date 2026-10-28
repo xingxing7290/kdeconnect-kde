@@ -37,6 +37,7 @@ FormCard.FormCardPage {
         wrapMode: Text.WordWrap
 
         Layout.fillWidth: true
+        Layout.topMargin: Kirigami.Units.largeSpacing
     }
 
     FormCard.FormHeader {
@@ -65,12 +66,8 @@ FormCard.FormCardPage {
 
     FormCard.FormCard {
         FormCard.FormButtonDelegate {
-            text: i18n("Apple Store")
+            text: i18n("App Store")
             onClicked: Qt.openUrlExternally("https://apps.apple.com/us/app/kde-connect/id1580245991")
         }
-    }
-
-    FormCard.FormSectionText {
-        text: i18n("If you are having problems, visit the <a href=\"https://userbase.kde.org/KDEConnect\"><span style=\" text-decoration: underline;\">KDE Connect Community wiki</span></a> for help.")
     }
 }

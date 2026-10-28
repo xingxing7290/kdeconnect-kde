@@ -25,6 +25,20 @@ Item {
 
     signal messageCopyRequested(string message)
 
+    function linkify(text) {
+        let s = text.replace(/[&<>]/g, function(c) {
+            return {"&": "&amp;", "<": "&lt;", ">": "&gt;"}[c];
+        });
+
+        // Match http(s):// and www. URLs; allow () in paths but exclude trailing punctuation
+        s = s.replace(/(https?:\/\/[^\s<>]*[^\s<>.,;:!?\)\]"']|www\.[^\s<>]*[^\s<>.,;:!?\)\]"'])/gi, function(url) {
+            const href = url.startsWith("www.") ? "https://" + url : url;
+            return '<a href="' + href + '">' + url + '</a>';
+        });
+
+        return s.replace(/\n/g, "<br>");
+    }
+
     KirigamiComponents.Avatar {
         id: avatar
         width: visible ? Kirigami.Units.gridUnit * 2 : 0
@@ -101,7 +115,9 @@ Item {
                     width: parent.width
                     horizontalAlignment: root.sentByMe ? Text.AlignRight : Text.AlignLeft
                     wrapMode: Text.Wrap
-                    text: root.messageBody
+                    textFormat: Text.RichText
+                    text: root.linkify(root.messageBody)
+                    onLinkActivated: (link) => Qt.openUrlExternally(link)
                 }
 
                 Label {

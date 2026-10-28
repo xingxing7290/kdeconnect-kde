@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: kdeconnect-kde\n"
 "Report-Msgid-Bugs-To: https://bugs.kde.org\n"
-"POT-Creation-Date: 2025-12-26 00:42+0000\n"
-"PO-Revision-Date: 2025-11-26 03:25+0100\n"
+"POT-Creation-Date: 2026-10-25 00:50+0000\n"
+"PO-Revision-Date: 2026-09-14 04:44+0200\n"
 "Last-Translator: Temuri Doghonadze <temuri.doghonadze@gmail.com>\n"
 "Language-Team: Georgian <kde-i18n-doc@kde.org>\n"
 "Language: ka\n"
@@ -16,68 +16,72 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
-"X-Generator: Poedit 3.8\n"
+"X-Generator: Poedit 3.9\n"
 
-#: backends/bluetooth/asynclinkprovider.cpp:39
-#, kde-format
-msgctxt "@info"
-msgid "Bluetooth"
-msgstr "ბლუთუზი"
-
-#: backends/lan/compositeuploadjob.cpp:78
+#: backends/lan/compositeuploadjob.cpp:83
 #, kde-format
 msgid "Couldn't find an available port"
 msgstr "ხელმისაწვდომი პორტის მოძებნის შეცდომა"
 
-#: backends/lan/compositeuploadjob.cpp:110
+#: backends/lan/compositeuploadjob.cpp:112
 #, kde-format
 msgid "Failed to send packet to %1"
 msgstr "%1-თან პაკეტების გაგზავნის შეცდომა"
 
-#: backends/lan/compositeuploadjob.cpp:256
+#: backends/lan/compositeuploadjob.cpp:303
+#, kde-format
+msgid "Timeout waiting for receiver to connect"
+msgstr "მიმღების დაკავშირების მოლოდინის ვადა ამოიწურა"
+
+#: backends/lan/compositeuploadjob.cpp:356
 #, kde-format
 msgid "Sending to %1"
 msgstr "%1-თან გაგზავნა"
 
-#: backends/lan/compositeuploadjob.cpp:256
+#: backends/lan/compositeuploadjob.cpp:356
 #, kde-format
 msgid "File"
 msgstr "ფაილი"
 
-#: backends/pairinghandler.cpp:61
+#: backends/lan/uploadjob.cpp:102
+#, kde-format
+msgid "Could not open source file: %1"
+msgstr "წყარო ფაილის გახსნა შეუძლებელია: %1"
+
+#: backends/pairinghandler.cpp:57
 #, kde-format
 msgid "Device clocks are out of sync"
 msgstr "მოწყობილობის საათების სინქრონიზაცია დარღვეულია"
 
-#: backends/pairinghandler.cpp:80
+#: backends/pairinghandler.cpp:76
 #, kde-format
 msgid "Canceled by other peer"
 msgstr "გაუქმებულია პარტნიორის მიერ"
 
-#: backends/pairinghandler.cpp:96
-#, kde-format
-msgid "%1: Already paired"
-msgstr "%1: უკვე შეწყვილებულია"
-
-#: backends/pairinghandler.cpp:105 backends/pairinghandler.cpp:124
+#: backends/pairinghandler.cpp:100 backends/pairinghandler.cpp:119
 #, kde-format
 msgid "%1: Device not reachable"
 msgstr "%1: მოწყობილობა მიუწვდომელია"
 
-#: backends/pairinghandler.cpp:139
+#: backends/pairinghandler.cpp:142
 #, kde-format
 msgid "Device not reachable"
 msgstr "მოწყობილობა მიუწვდომელია"
 
-#: backends/pairinghandler.cpp:150
+#: backends/pairinghandler.cpp:158
 #, kde-format
 msgid "Cancelled by user"
 msgstr "შეწყვეტილია მომხმარებლის მიერ"
 
-#: backends/pairinghandler.cpp:166
+#: backends/pairinghandler.cpp:178
 #, kde-format
 msgid "Timed out"
 msgstr "ვადა გავიდა"
+
+#: backends/pairinghandler.cpp:191
+#, kde-format
+msgid "Pairing is not in progress"
+msgstr "დაწყვილება არ მიმდინარეობს"
 
 #: compositefiletransferjob.cpp:47
 #, kde-format
@@ -99,77 +103,64 @@ msgctxt "The destination of a file operation"
 msgid "Destination"
 msgstr "დანიშნულება"
 
-#: device.cpp:475
+#: device.cpp:496
 #, kde-format
 msgid "SHA256 fingerprint of your device certificate is: %1\n"
 msgstr "თქვენი მოწყობილობის სერტიფიკატის SHA256 ანაბეჭდია: %1\n"
 
-#: device.cpp:481
+#: device.cpp:502
 #, kde-format
 msgid "SHA256 fingerprint of remote device certificate is: %1\n"
 msgstr "დაშორებული მოწყობილობის სერტიფიკატის SHA256 ანაბეჭდია: %1\n"
 
-#: device.cpp:483
+#: device.cpp:504
 #, kde-format
 msgid "Protocol version: %1\n"
 msgstr "პროკოლის ვერსია: %1\n"
 
-#: filetransferjob.cpp:53
+#: filetransferjob.cpp:54
 #, kde-format
 msgid "Filename already present"
 msgstr "ფაილის სახელი უკვე არსებობს"
 
-#: filetransferjob.cpp:116
+#: filetransferjob.cpp:70
+#, kde-format
+msgid "Could not create destination file: %1"
+msgstr "სამიზნე ფაილის შექმნა ვერ მოხერხდა: %1"
+
+#: filetransferjob.cpp:129
 #, kde-format
 msgid "Received incomplete file from: %1"
 msgstr "მიღებულია დაუსრულებელი ფაილი წყაროდან: %1"
 
-#: kdeconnectconfig.cpp:348 kdeconnectconfig.cpp:382
+#: kdeconnectconfig.cpp:433 kdeconnectconfig.cpp:467
 #, kde-format
 msgid "KDE Connect failed to start"
 msgstr "KDE Connect -ის გაშვების შეცდომა"
 
-#: kdeconnectconfig.cpp:348
+#: kdeconnectconfig.cpp:433
 #, kde-format
 msgid "Could not generate the private key."
 msgstr "პირადი გასაღების გენერაციის შეცდომა."
 
-#: kdeconnectconfig.cpp:367
+#: kdeconnectconfig.cpp:452
 #, kde-format
 msgid "Could not store private key file: %1"
 msgstr "პირადი გასაღების დამახსოვრების შეცდომა: %1"
 
-#: kdeconnectconfig.cpp:382
+#: kdeconnectconfig.cpp:467
 #, kde-format
 msgid "Could not generate the device certificate."
 msgstr "მოწყობილობის სერტიფიკატის გენერაციის შეცდომა."
 
-#: kdeconnectconfig.cpp:398
+#: kdeconnectconfig.cpp:483
 #, kde-format
 msgid "Could not store certificate file: %1"
 msgstr "სერტიფიკატის ფაილის დამახსოვრების შეცდომა: %1"
 
-#~ msgid "Received incomplete file: %1"
-#~ msgstr "მიღებული ფაილი დაუსრულებელია: %1"
+#~ msgid "%1: Already paired"
+#~ msgstr "%1: უკვე შეწყვილებულია"
 
-#~ msgid ""
-#~ "Could not find support for RSA in your QCA installation. If your "
-#~ "distribution provides separate packets for QCA-ossl and QCA-gnupg, make "
-#~ "sure you have them installed and try again."
-#~ msgstr ""
-#~ "თქვენს QCA-ის აგებაში RSA-ის მხარდაჭერა ვერ ვიპოვე. თუ თქვენს "
-#~ "დისტრიბუტივს QCA-ossl და QCA-gnupg პაკეტები ცალ-ცალკე აქვს, დარწმუნდით, "
-#~ "რომ ისინი დაყენებულია და თავიდან სცადეთ."
-
-#~ msgid "%1: Pairing already requested for this device"
-#~ msgstr "%1: ამ მოწყობილობასთან დაწყვილების მოთხოვნა უკვე გაგზავნილია"
-
-#~ msgid ""
-#~ "This device cannot be paired because it is running an old version of KDE "
-#~ "Connect."
-#~ msgstr ""
-#~ "მასზე გაშვებული KDE Connect-ის ვერსიის სიძველის გამო მოწყობილობასთან "
-#~ "დაწყვილება შეუძლებელია."
-
-#~ msgid "Already paired"
-#~ msgstr "უკვე შეწყვილებულია"
+#~ msgctxt "@info"
+#~ msgid "Bluetooth (beta)"
+#~ msgstr "ბლუთუზი (ბეტა)"

@@ -3,13 +3,13 @@
 # This file is distributed under the license LGPL version 2.1 or
 # version 3 or later versions approved by the membership of KDE e.V.
 #
-# SPDX-FileCopyrightText: 2014, 2015, 2017, 2019, 2020, 2021, 2022, 2024, 2025 Josep M. Ferrer <txemaq@gmail.com>
-# SPDX-FileCopyrightText: 2014, 2015, 2016, 2017, 2018, 2019, 2021 Antoni Bella Pérez <antonibella5@yahoo.com>
+# SPDX-FileCopyrightText: 2014-2015, 2017, 2019-2022, 2024-2025 Josep M. Ferrer <txemaq@gmail.com>
+# SPDX-FileCopyrightText: 2014-2019, 2021 Antoni Bella Pérez <antonibella5@yahoo.com>
 msgid ""
 msgstr ""
 "Project-Id-Version: kdeconnect-kde\n"
 "Report-Msgid-Bugs-To: https://bugs.kde.org\n"
-"POT-Creation-Date: 2025-11-19 00:42+0000\n"
+"POT-Creation-Date: 2026-10-28 01:00+0000\n"
 "PO-Revision-Date: 2025-10-14 09:25+0200\n"
 "Last-Translator: Josep M. Ferrer <txemaq@gmail.com>\n"
 "Language-Team: Catalan <kde-i18n-ca@kde.org>\n"
@@ -37,19 +37,19 @@ msgctxt "Caption/title for attachment download/save window"
 msgid "Download attachment"
 msgstr "Baixa l'adjunt"
 
-#: conversationlistmodel.cpp:202
+#: conversationlistmodel.cpp:206
 #, kde-format
 msgctxt "Used as a text placeholder when the most-recent message is an image"
 msgid "Picture"
 msgstr "Imatge"
 
-#: conversationlistmodel.cpp:204
+#: conversationlistmodel.cpp:208
 #, kde-format
 msgctxt "Used as a text placeholder when the most-recent message is a video"
 msgid "Video"
 msgstr "Vídeo"
 
-#: conversationlistmodel.cpp:208
+#: conversationlistmodel.cpp:212
 #, kde-format
 msgctxt ""
 "Used as a text placeholder when the most-recent message is an arbitrary "
@@ -57,67 +57,67 @@ msgctxt ""
 msgid "%1 file"
 msgstr "Fitxer %1"
 
-#: conversationlistmodel.cpp:224
+#: conversationlistmodel.cpp:233
 #, kde-format
 msgid "You: %1"
 msgstr "Vós: %1"
 
-#: conversationlistmodel.cpp:230
+#: conversationlistmodel.cpp:239
 #, kde-format
 msgid "%1: %2"
 msgstr "%1: %2"
 
-#: conversationlistmodel.cpp:272 conversationlistmodel.cpp:294
+#: conversationlistmodel.cpp:281 conversationlistmodel.cpp:302
 #, kde-format
 msgid "%1"
 msgstr "%1"
 
-#: main.cpp:82 qml/Main.qml:73
+#: main.cpp:84 qml/Main.qml:73
 #, kde-format
 msgid "KDE Connect SMS"
 msgstr "SMS del KDE Connect"
 
-#: main.cpp:84
+#: main.cpp:86
 #, kde-format
 msgid "SMS Instant Messaging"
 msgstr "Missatgeria instantània d'SMS"
 
-#: main.cpp:86
+#: main.cpp:88
 #, kde-format
 msgid "© 2018–2025 KDE Connect Team"
 msgstr "© 2018–2025 KDE Connect Team"
 
-#: main.cpp:87
+#: main.cpp:89
 #, kde-format
 msgid "Simon Redman"
 msgstr "Simon Redman"
 
-#: main.cpp:88
+#: main.cpp:90
 #, kde-format
 msgid "Aleix Pol Gonzalez"
 msgstr "Aleix Pol Gonzalez"
 
-#: main.cpp:89
+#: main.cpp:91
 #, kde-format
 msgid "Nicolas Fella"
 msgstr "Nicolas Fella"
 
-#: main.cpp:116
+#: main.cpp:118
 #, kde-format
 msgid "Select a device"
 msgstr "Seleccioneu un dispositiu"
 
-#: main.cpp:116
+#: main.cpp:118
 #, kde-format
 msgid "id"
 msgstr "ID"
 
-#: main.cpp:117
+#: main.cpp:119
 #, kde-format
 msgid "Send a message"
 msgstr "Envia un missatge"
 
-#: main.cpp:117
+#: main.cpp:119
 #, kde-format
 msgid "message"
 msgstr "missatge"
@@ -132,12 +132,12 @@ msgstr "Obre amb la predeterminada"
 msgid "Download attachment…"
 msgstr "Baixa l'adjunt…"
 
-#: qml/ConversationList.qml:23
+#: qml/ConversationList.qml:24
 #, kde-format
 msgid "No devices available"
 msgstr "No hi ha disponible cap dispositiu"
 
-#: qml/ConversationList.qml:32
+#: qml/ConversationList.qml:33
 #, kde-format
 msgid ""
 "No new messages can be sent or received, but you can browse cached content"
@@ -145,7 +145,7 @@ msgstr ""
 "No es poden enviar ni rebre missatges nous, però podeu explorar el contingut "
 "a la memòria cau"
 
-#: qml/ConversationList.qml:48
+#: qml/ConversationList.qml:49
 #, kde-format
 msgid ""
 "Loading conversations from device. If this takes a long time, please wake up "
@@ -154,7 +154,7 @@ msgstr ""
 "S'estan carregant les converses del dispositiu. Si això triga massa, "
 "desperteu el dispositiu i feu clic a Actualitza."
 
-#: qml/ConversationList.qml:56
+#: qml/ConversationList.qml:57
 #, kde-format
 msgid ""
 "Tip: If you plug in your device, it should not go into doze mode and should "
@@ -163,38 +163,38 @@ msgstr ""
 "Consell: Si connecteu el dispositiu, no hauria d'entrar en mode migdiada i "
 "hauria de carregar ràpidament."
 
-#: qml/ConversationList.qml:64 qml/Main.qml:98
+#: qml/ConversationList.qml:65 qml/Main.qml:98
 #, kde-format
 msgid "Refresh"
 msgstr "Actualitza"
 
-#: qml/ConversationList.qml:83
+#: qml/ConversationList.qml:84
 #, kde-format
 msgid "Choose recipient"
 msgstr "Trieu el destinatari"
 
-#: qml/ConversationList.qml:88
+#: qml/ConversationList.qml:89
 #, kde-format
 msgid "Cancel"
 msgstr "Cancel·la"
 
-#: qml/ConversationList.qml:107
+#: qml/ConversationList.qml:108
 #, kde-format
 msgid "Search or start a conversation"
 msgstr "Cerca o inicia una conversa"
 
-#: qml/ConversationList.qml:143
+#: qml/ConversationList.qml:144
 #, kde-format
 msgid "Start new conversation"
 msgstr "Inicia una conversa nova"
 
-#: qml/ConversationList.qml:192
+#: qml/ConversationList.qml:194
 #, kde-format
 msgctxt "Placeholder message text when no messages are found"
 msgid "No Matches"
 msgstr "Sense coincidències"
 
-#: qml/ConversationList.qml:202
+#: qml/ConversationList.qml:204
 #, kde-format
 msgctxt "@info:placeholder"
 msgid "No Conversations"
@@ -230,24 +230,24 @@ msgstr "Ha fallat en enviar"
 msgid "Max message size limit exceeded."
 msgstr "S'ha superat el límit màxim de la mida del missatge."
 
-#: qml/SendingArea.qml:63
+#: qml/SendingArea.qml:68
 #, kde-format
 msgid "Send a message…"
 msgstr "Envia un missatge…"
 
-#: qml/SendingArea.qml:119
+#: qml/SendingArea.qml:124
 #, kde-format
 msgctxt "@info:tooltip"
 msgid "Attach an image or file"
 msgstr "Adjunta una imatge o un fitxer"
 
-#: qml/SendingArea.qml:144
+#: qml/SendingArea.qml:149
 #, kde-format
 msgctxt "@info:tooltip"
 msgid "Clear attachments"
 msgstr "Neteja els adjunts"
 
-#: qml/SendingArea.qml:173
+#: qml/SendingArea.qml:178
 #, kde-format
 msgctxt "@info:tooltip"
 msgid "Send message"

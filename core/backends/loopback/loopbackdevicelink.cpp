@@ -9,8 +9,8 @@
 #include "kdeconnectconfig.h"
 #include "loopbacklinkprovider.h"
 
-LoopbackDeviceLink::LoopbackDeviceLink(LoopbackLinkProvider *linkProvider)
-    : DeviceLink(linkProvider)
+LoopbackDeviceLink::LoopbackDeviceLink(LoopbackLinkProvider *parent)
+    : DeviceLink(KdeConnectConfig::instance().deviceId(), parent)
 {
 }
 
@@ -33,7 +33,9 @@ bool LoopbackDeviceLink::sendPacket(NetworkPacket &input)
 
 DeviceInfo LoopbackDeviceLink::deviceInfo() const
 {
-    return KdeConnectConfig::instance().deviceInfo();
+    DeviceInfo deviceInfo = KdeConnectConfig::instance().deviceInfo();
+    deviceInfo.incomingCapabilities.swap(deviceInfo.outgoingCapabilities);
+    return deviceInfo;
 }
 
 #include "moc_loopbackdevicelink.cpp"

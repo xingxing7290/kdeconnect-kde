@@ -10,6 +10,7 @@
 #include <KLocalizedString>
 #include <QObject>
 
+#include "deviceinfo.h"
 #include "networkpacket.h"
 #include "pairinghandler.h"
 
@@ -22,8 +23,8 @@ class KDECONNECTCORE_EXPORT LinkProvider : public QObject
 public:
     LinkProvider();
 
-    virtual QString name() = 0;
-    virtual QString displayName() = 0;
+    virtual QString id() const = 0;
+    virtual QString displayName() const = 0;
     virtual int priority() = 0;
 
     virtual void enable() = 0;
@@ -33,12 +34,14 @@ public Q_SLOTS:
     virtual void onStart() = 0;
     virtual void onStop() = 0;
     virtual void onNetworkChange() = 0;
-    virtual void deviceRemoved(const QString &deviceId) = 0;
+    virtual void onLinkDestroyed(const QString &deviceId, DeviceLink *oldPtr) = 0;
 
     void suspend(bool suspend);
 
 Q_SIGNALS:
-    void onConnectionReceived(DeviceLink *);
+    void connectionReceived(DeviceLink *);
+    // Emitted when we receive new DeviceInfo for an already linked device
+    void deviceInfoUpdated(const DeviceInfo &deviceInfo);
 };
 
 #endif

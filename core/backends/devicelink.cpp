@@ -8,12 +8,15 @@
 
 #include "linkprovider.h"
 
-DeviceLink::DeviceLink(LinkProvider *linkProvider)
-    : QObject()
+DeviceLink::DeviceLink(const QString &deviceId, LinkProvider *parent)
+    : QObject(parent)
 {
-    this->priorityFromProvider = linkProvider->priority();
-    this->displayNameFromProvider = linkProvider->displayName();
-    this->nameFromProvider = linkProvider->name();
+    connect(this, &QObject::destroyed, parent, [this, deviceId, parent]() {
+        parent->onLinkDestroyed(deviceId, this);
+    });
+    this->priorityFromProvider = parent->priority();
+    this->displayidFromProvider = parent->displayName();
+    this->idFromProvider = parent->id();
 }
 
 #include "moc_devicelink.cpp"

@@ -15,15 +15,15 @@ class LoopbackLinkProvider : public LinkProvider
 {
     Q_OBJECT
 public:
-    LoopbackLinkProvider();
+    LoopbackLinkProvider(bool disabled);
     ~LoopbackLinkProvider() override;
 
-    QString name() override
+    QString id() const override
     {
-        return QStringLiteral("LoopbackLinkProvider");
+        return QStringLiteral("loopback");
     }
 
-    QString displayName() override
+    QString displayName() const override
     {
         return i18nc("@info", "Loopback");
     }
@@ -35,21 +35,26 @@ public:
 
     void enable() override
     {
+        enabled = true;
+        onNetworkChange();
     }
 
     void disable() override
     {
+        enabled = false;
+        onNetworkChange();
     }
 
     void onStart() override;
     void onStop() override;
     void onNetworkChange() override;
-    void deviceRemoved(const QString & /*device*/) override
+    void onLinkDestroyed(const QString &, DeviceLink *) override
     {
     }
 
 private:
     QPointer<LoopbackDeviceLink> loopbackDeviceLink;
+    bool enabled;
 };
 
 #endif

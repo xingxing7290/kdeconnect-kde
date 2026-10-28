@@ -6,7 +6,6 @@ set_target_properties(kio_kdeconnect PROPERTIES OUTPUT_NAME "kdeconnect")
 ecm_qt_declare_logging_category(kio_kdeconnect
     HEADER kdeconnectkio_debug.h
     IDENTIFIER KDECONNECT_KIO CATEGORY_NAME kdeconnect.kio
-    DEFAULT_SEVERITY Warning
     EXPORT kdeconnect-kde DESCRIPTION "kdeconnect (kio)")
 
 
@@ -18,3 +17,6 @@ target_link_libraries(kio_kdeconnect
     KF6::KIOCore
     KF6::I18n
 )
+
+install(FILES kdeconnect-network.desktop  DESTINATION ${KDE_INSTALL_DATADIR}/remoteview)
+install(FILES solid_kdeconnect.desktop DESTINATION ${KDE_INSTALL_DATADIR}/solid/actions)

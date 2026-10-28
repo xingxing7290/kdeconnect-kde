@@ -10,7 +10,6 @@
 #include "mprisremoteplugin.h"
 #include "plugin_mprisremote_debug.h"
 
-// TODO: Not sure where to put such utils
 constexpr std::size_t operator""_MB(unsigned long long v)
 {
     return 1024u * 1024u * v;
@@ -99,6 +98,10 @@ void AlbumArtCache::handleAlbumArt(const NetworkPacket &np)
             }
         }
     }
+    if (!np.hasPayload()) {
+        qCWarning(KDECONNECT_PLUGIN_MPRISREMOTE) << "transferringAlbumArt was set but no payload was attached:" << player << remoteUrl;
+        return;
+    }
     // FIXME: better local file path
     auto filename = QStringLiteral("%1.jpg").arg(qHash(remoteUrl));
     auto localUrl = QUrl::fromLocalFile(m_cacheDir.filePath(filename));
@@ -110,7 +113,7 @@ void AlbumArtCache::handleAlbumArt(const NetworkPacket &np)
             return;
         }
         auto fileSize = static_cast<qsizetype>(job->totalAmount(KJob::Unit::Bytes));
-        qCInfo(KDECONNECT_PLUGIN_MPRISREMOTE) << "Finished art transfer! from" << remoteUrl << "to" << localUrl << "size" << fileSize;
+        qCDebug(KDECONNECT_PLUGIN_MPRISREMOTE) << "Finished art transfer! from" << remoteUrl << "to" << localUrl << "size" << fileSize;
         auto *indexItem = new IndexItem{localUrl};
         auto localPath = indexItem->file;
         QWriteLocker locker{&instance()->m_cacheLock};

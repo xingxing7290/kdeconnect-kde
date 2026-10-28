@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: kdeorg\n"
 "Report-Msgid-Bugs-To: https://bugs.kde.org\n"
-"POT-Creation-Date: 2025-12-26 00:42+0000\n"
+"POT-Creation-Date: 2026-10-25 00:50+0000\n"
 "PO-Revision-Date: 2024-04-22 15:59\n"
 "Last-Translator: \n"
 "Language-Team: Chinese Simplified\n"
@@ -17,66 +17,71 @@ msgstr ""
 "X-Crowdin-File: /kf6-trunk/messages/kdeconnect-kde/kdeconnect-core.pot\n"
 "X-Crowdin-File-ID: 49044\n"
 
-#: backends/bluetooth/asynclinkprovider.cpp:39
-#, kde-format
-msgctxt "@info"
-msgid "Bluetooth"
-msgstr "蓝牙"
-
-#: backends/lan/compositeuploadjob.cpp:78
+#: backends/lan/compositeuploadjob.cpp:83
 #, kde-format
 msgid "Couldn't find an available port"
 msgstr "无法找到可用端口"
 
-#: backends/lan/compositeuploadjob.cpp:110
+#: backends/lan/compositeuploadjob.cpp:112
 #, kde-format
 msgid "Failed to send packet to %1"
 msgstr "发送数据包给 %1 失败"
 
-#: backends/lan/compositeuploadjob.cpp:256
+#: backends/lan/compositeuploadjob.cpp:303
+#, kde-format
+msgid "Timeout waiting for receiver to connect"
+msgstr "等待接收器连接超时"
+
+#: backends/lan/compositeuploadjob.cpp:356
 #, kde-format
 msgid "Sending to %1"
 msgstr "正在发送给 %1"
 
-#: backends/lan/compositeuploadjob.cpp:256
+#: backends/lan/compositeuploadjob.cpp:356
 #, kde-format
 msgid "File"
 msgstr "文件"
 
-#: backends/pairinghandler.cpp:61
+#: backends/lan/uploadjob.cpp:102
+#, fuzzy, kde-format
+#| msgid "Could not store certificate file: %1"
+msgid "Could not open source file: %1"
+msgstr "无法保存证书文件：%1"
+
+#: backends/pairinghandler.cpp:57
 #, kde-format
 msgid "Device clocks are out of sync"
 msgstr "设备时钟不同步"
 
-#: backends/pairinghandler.cpp:80
+#: backends/pairinghandler.cpp:76
 #, kde-format
 msgid "Canceled by other peer"
 msgstr "被其他对等点取消"
 
-#: backends/pairinghandler.cpp:96
-#, kde-format
-msgid "%1: Already paired"
-msgstr "%1：设备已被配对过"
-
-#: backends/pairinghandler.cpp:105 backends/pairinghandler.cpp:124
+#: backends/pairinghandler.cpp:100 backends/pairinghandler.cpp:119
 #, kde-format
 msgid "%1: Device not reachable"
 msgstr "%1：设备无法连接"
 
-#: backends/pairinghandler.cpp:139
+#: backends/pairinghandler.cpp:142
 #, kde-format
 msgid "Device not reachable"
 msgstr "设备不可达"
 
-#: backends/pairinghandler.cpp:150
+#: backends/pairinghandler.cpp:158
 #, kde-format
 msgid "Cancelled by user"
 msgstr "已被用户取消"
 
-#: backends/pairinghandler.cpp:166
+#: backends/pairinghandler.cpp:178
 #, kde-format
 msgid "Timed out"
 msgstr "超时"
+
+#: backends/pairinghandler.cpp:191
+#, kde-format
+msgid "Pairing is not in progress"
+msgstr ""
 
 #: compositefiletransferjob.cpp:47
 #, kde-format
@@ -97,52 +102,60 @@ msgctxt "The destination of a file operation"
 msgid "Destination"
 msgstr "目标"
 
-#: device.cpp:475
+#: device.cpp:496
 #, kde-format
 msgid "SHA256 fingerprint of your device certificate is: %1\n"
 msgstr "您的设备证书的 SHA256 指纹是：%1\n"
 
-#: device.cpp:481
+#: device.cpp:502
 #, kde-format
 msgid "SHA256 fingerprint of remote device certificate is: %1\n"
 msgstr "远程设备证书的 SHA256 指纹是：%1\n"
 
-#: device.cpp:483
+#: device.cpp:504
 #, kde-format
 msgid "Protocol version: %1\n"
 msgstr "协议版本：%1\n"
 
-#: filetransferjob.cpp:53
+#: filetransferjob.cpp:54
 #, kde-format
 msgid "Filename already present"
 msgstr "文件名已存在"
 
-#: filetransferjob.cpp:116
+#: filetransferjob.cpp:70
+#, kde-format
+msgid "Could not create destination file: %1"
+msgstr "无法创建目标文件：%1"
+
+#: filetransferjob.cpp:129
 #, kde-format
 msgid "Received incomplete file from: %1"
 msgstr "收到不完整的文件自：%1"
 
-#: kdeconnectconfig.cpp:348 kdeconnectconfig.cpp:382
+#: kdeconnectconfig.cpp:433 kdeconnectconfig.cpp:467
 #, kde-format
 msgid "KDE Connect failed to start"
 msgstr "KDE Connect 启动失败"
 
-#: kdeconnectconfig.cpp:348
+#: kdeconnectconfig.cpp:433
 #, kde-format
 msgid "Could not generate the private key."
 msgstr "无法生成私钥。"
 
-#: kdeconnectconfig.cpp:367
+#: kdeconnectconfig.cpp:452
 #, kde-format
 msgid "Could not store private key file: %1"
 msgstr "无法保存私钥文件：%1"
 
-#: kdeconnectconfig.cpp:382
+#: kdeconnectconfig.cpp:467
 #, kde-format
 msgid "Could not generate the device certificate."
 msgstr "无法生成设备证书。"
 
-#: kdeconnectconfig.cpp:398
+#: kdeconnectconfig.cpp:483
 #, kde-format
 msgid "Could not store certificate file: %1"
 msgstr "无法保存证书文件：%1"
+
+#~ msgid "%1: Already paired"
+#~ msgstr "%1：设备已被配对过"

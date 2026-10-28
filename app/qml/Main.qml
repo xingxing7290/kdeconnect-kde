@@ -14,6 +14,10 @@ import org.kde.config as KConfig
 Kirigami.ApplicationWindow {
     id: root
     property int columnWidth: Kirigami.Units.gridUnit * 13
+
+    property string pendingDeviceId
+    property string pendingPluginConfig
+
     minimumWidth: Kirigami.Units.gridUnit * 15
     minimumHeight: Kirigami.Units.gridUnit * 15
     wideScreen: width > columnWidth * 5
@@ -24,12 +28,26 @@ Kirigami.ApplicationWindow {
         configGroupName: "MainWindow"
     }
 
+    Shortcut {
+        sequences: [StandardKey.Quit]
+        onActivated: root.close()
+    }
+
     Component {
         id: deviceComp
         DevicePage {}
     }
 
     function openDevice(deviceId, pluginConfig) {
+        if (devicesModel.busy) {
+            root.pendingDeviceId = deviceId;
+            root.pendingPluginConfig = pluginConfig;
+            return;
+        }
+
+        root.pendingDeviceId = "";
+        root.pendingPluginConfig = "";
+
         pageStack.clear();
         let device = devicesModel.deviceForId(deviceId);
         if (!device) {
@@ -48,6 +66,11 @@ Kirigami.ApplicationWindow {
 
     DevicesModel {
         id: devicesModel
+        onBusyChanged: (busy) => {
+            if (!busy && root.pendingDeviceId) {
+                root.openDevice(root.pendingDeviceId, root.pendingPluginConfig);
+            }
+        }
     }
 
     globalDrawer: Kirigami.OverlayDrawer {
@@ -67,6 +90,9 @@ Kirigami.ApplicationWindow {
 
         handleClosedIcon.source: modal ? null : "sidebar-expand-left"
         handleOpenIcon.source: modal ? null : "sidebar-collapse-left"
+        handleClosedToolTip: i18nc("@action:button", "Open device list")
+        handleOpenToolTip: i18nc("@action:button", "Close device list")
+        handle.Accessible.name: drawerOpen ? handleOpenToolTip : handleClosedToolTip
         handleVisible: modal
 
         leftPadding: 0
@@ -94,6 +120,7 @@ Kirigami.ApplicationWindow {
                     QQC2.ToolButton {
                         text: i18nc("@action:button", "Refresh")
                         icon.name: 'view-refresh-symbolic'
+                        display: QQC2.AbstractButton.IconOnly
                         Accessible.name: i18nc("@action:button accessible", "Refresh Devices")
 
                         QQC2.ToolTip.text: text
@@ -143,8 +170,14 @@ Kirigami.ApplicationWindow {
                         icon.name: 'edit-none-symbolic'
                         anchors.centerIn: parent
                         width: parent.width - (Kirigami.Units.largeSpacing * 4)
-                        visible: devices.count === 0
+                        visible: devices.count === 0 && !devicesModel.busy
                     }
+
+                    QQC2.BusyIndicator {
+                        anchors.centerIn: parent
+                        visible: devicesModel.busy
+                    }
+
                     model: DevicesSortProxyModel {
                         sourceModel: devicesModel
                     }
@@ -154,7 +187,7 @@ Kirigami.ApplicationWindow {
                         text: Kirigami.MnemonicData.richTextLabel
                         Accessible.name: Kirigami.MnemonicData.plainTextLabel ?? model.name // fallback needed for KF < 6.12
                         width: ListView.view.width
-                        highlighted: false
+                        highlighted: (pageStack.items[0] as DevicePage)?.currentDevice === device
                         Accessible.role: Accessible.PageTab
                         Accessible.description: toolTip
 
@@ -170,6 +203,7 @@ Kirigami.ApplicationWindow {
                         contentItem: Kirigami.IconTitleSubtitle {
                             title: delegate.text
                             subtitle: toolTip
+                            selected: delegate.highlighted
                             icon: icon.fromControlsIcon(delegate.icon)
                         }
 
@@ -206,12 +240,12 @@ Kirigami.ApplicationWindow {
                             id: announcedNameProperty
                             object: DaemonDbusInterface
                             read: "announcedName"
-                            defaultValue: "DeviceName"
+                            defaultValue: ""
                         }
                     }
 
                     QQC2.ToolButton {
-                        text: i18n("Settings")
+                        text: i18nc("@action:button", "Settings")
                         icon.name: "settings-configure"
                         display: QQC2.AbstractButton.IconOnly
 

@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: kdeconnect-kde\n"
 "Report-Msgid-Bugs-To: https://bugs.kde.org\n"
-"POT-Creation-Date: 2025-11-17 11:51+0000\n"
-"PO-Revision-Date: 2024-07-13 05:53+0200\n"
+"POT-Creation-Date: 2026-10-28 01:00+0000\n"
+"PO-Revision-Date: 2026-03-12 07:21+0100\n"
 "Last-Translator: Temuri Doghonadze <temuri.doghonadze@gmail.com>\n"
 "Language-Team: Georgian <kde-i18n-doc@kde.org>\n"
 "Language: ka\n"
@@ -16,19 +16,19 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
-"X-Generator: Poedit 3.3.2\n"
+"X-Generator: Poedit 3.9\n"
 
-#: package/contents/ui/Battery.qml:33
+#: package/contents/ui/Battery.qml:35
 #, kde-format
 msgid "%1% charging"
 msgstr "%1% დატენილია"
 
-#: package/contents/ui/Battery.qml:35
+#: package/contents/ui/Battery.qml:37
 #, kde-format
 msgid "%1%"
 msgstr "%1%"
 
-#: package/contents/ui/Battery.qml:38
+#: package/contents/ui/Battery.qml:40
 #, kde-format
 msgid "No info"
 msgstr "ინფორმაციის გარეშე"
@@ -38,153 +38,158 @@ msgstr "ინფორმაციის გარეშე"
 msgid "Unknown"
 msgstr "უცნობი"
 
-#: package/contents/ui/Connectivity.qml:54
+#: package/contents/ui/Connectivity.qml:55
 #, kde-format
 msgid "No signal"
 msgstr "სიგანალის გარეშე"
 
-#: package/contents/ui/DeviceDelegate.qml:82
+#: package/contents/ui/DeviceDelegate.qml:89
 #, kde-format
 msgid "Virtual Monitor is not available"
 msgstr "ვირტუალური მონიტორის ხელმისაწვდომი არაა"
 
-#: package/contents/ui/DeviceDelegate.qml:87
+#: package/contents/ui/DeviceDelegate.qml:94
 #, kde-format
 msgid "Please choose a file"
 msgstr "გთხოვთ, აირჩიოთ ფაილი"
 
-#: package/contents/ui/DeviceDelegate.qml:105
+#: package/contents/ui/DeviceDelegate.qml:111
 #, kde-format
 msgid "Share file"
 msgstr "ფაილის გაზიარება"
 
-#: package/contents/ui/DeviceDelegate.qml:113
+#: package/contents/ui/DeviceDelegate.qml:119
 #, kde-format
 msgid "Send Clipboard"
 msgstr "ბუფერის გაგზავნა"
 
-#: package/contents/ui/DeviceDelegate.qml:124
+#: package/contents/ui/DeviceDelegate.qml:130
 #, kde-format
 msgid "Ring my phone"
 msgstr "დარეკე ჩემს ტელეფონზე"
 
-#: package/contents/ui/DeviceDelegate.qml:135
+#: package/contents/ui/DeviceDelegate.qml:141
 #, kde-format
 msgid "Browse this device"
 msgstr "ამ მოწყობილობის დათვალიერება"
 
-#: package/contents/ui/DeviceDelegate.qml:146
+#: package/contents/ui/DeviceDelegate.qml:152
 #, kde-format
 msgid "SMS Messages"
 msgstr "SMS შეტყობინებები"
 
-#: package/contents/ui/DeviceDelegate.qml:170
+#: package/contents/ui/DeviceDelegate.qml:195
 #, kde-format
 msgid "File Transfer"
 msgstr "ფაილის მიმოცვლა"
 
-#: package/contents/ui/DeviceDelegate.qml:171
+#: package/contents/ui/DeviceDelegate.qml:196
 #, kde-format
 msgid "Drop a file to transfer it onto your phone."
 msgstr "დააგდეთ ფაილი მისი ტელეფონზე გადასატანად."
 
-#: package/contents/ui/DeviceDelegate.qml:193
+#: package/contents/ui/DeviceDelegate.qml:238
 #, kde-format
 msgid "Virtual Display"
 msgstr "ვირტუალური ეკრანი"
 
-#: package/contents/ui/DeviceDelegate.qml:254
+#: package/contents/ui/DeviceDelegate.qml:296
 #, kde-format
 msgctxt "Battery charge percentage"
 msgid "%1%"
 msgstr "%1%"
 
-#: package/contents/ui/DeviceDelegate.qml:280
-#, kde-format
-msgid "Remote Keyboard"
-msgstr "დაშორებული კლავიატურა"
-
-#: package/contents/ui/DeviceDelegate.qml:301
-#, kde-format
-msgid "Notifications:"
-msgstr "შეტყობინებები:"
-
 #: package/contents/ui/DeviceDelegate.qml:309
+#, kde-format
+msgid "More options…"
+msgstr "მეტი პარამეტრი…"
+
+#: package/contents/ui/DeviceDelegate.qml:348
+#, kde-format
+msgid "Notifications"
+msgstr "გაფრთხილებები"
+
+#: package/contents/ui/DeviceDelegate.qml:360
 #, kde-format
 msgid "Dismiss all notifications"
 msgstr "ყველა გაფრთხილების მოცილება"
 
-#: package/contents/ui/DeviceDelegate.qml:367
+#: package/contents/ui/DeviceDelegate.qml:378
+#, kde-format
+msgid "Remote Keyboard"
+msgstr "დაშორებული კლავიატურა"
+
+#: package/contents/ui/DeviceDelegate.qml:609
 #, kde-format
 msgid "Reply"
 msgstr "პასუხი"
 
-#: package/contents/ui/DeviceDelegate.qml:380
+#: package/contents/ui/DeviceDelegate.qml:626
 #, kde-format
 msgid "Dismiss"
 msgstr "მოსილება"
 
-#: package/contents/ui/DeviceDelegate.qml:393
+#: package/contents/ui/DeviceDelegate.qml:652
 #, kde-format
 msgid "Cancel"
 msgstr "შეწყვეტა"
 
-#: package/contents/ui/DeviceDelegate.qml:407
+#: package/contents/ui/DeviceDelegate.qml:667
 #, kde-format
 msgctxt "@info:placeholder"
 msgid "Reply to %1…"
 msgstr "%1-ისთვის პასუხი…"
 
-#: package/contents/ui/DeviceDelegate.qml:425
+#: package/contents/ui/DeviceDelegate.qml:685
 #, kde-format
 msgid "Send"
 msgstr "გაგზავნა"
 
-#: package/contents/ui/DeviceDelegate.qml:446
+#: package/contents/ui/DeviceDelegate.qml:717
 #, kde-format
 msgid "Run command"
 msgstr "ბრძანების გაშვება"
 
-#: package/contents/ui/DeviceDelegate.qml:453
+#: package/contents/ui/DeviceDelegate.qml:724
 #, kde-format
 msgid "Add command"
 msgstr "ბრძანების დამატება"
 
-#: package/contents/ui/FullRepresentation.qml:64
+#: package/contents/ui/FullRepresentation.qml:68
 #, kde-format
 msgid "No paired devices"
 msgstr "შეწყვილებული მოწყობილობების გარეშე"
 
-#: package/contents/ui/FullRepresentation.qml:64
+#: package/contents/ui/FullRepresentation.qml:68
 #, kde-format
 msgid "Paired device is unavailable"
 msgid_plural "All paired devices are unavailable"
 msgstr[0] "შეწყვილებული მოწყობილობა მიუწვდომელია"
 msgstr[1] "შეწყვილებული მოწყობილობები მიუწვდომელია"
 
-#: package/contents/ui/FullRepresentation.qml:66
+#: package/contents/ui/FullRepresentation.qml:70
 #, kde-format
 msgid "Install KDE Connect on your Android device to integrate it with Plasma!"
 msgstr ""
 "თქვენი Android მოწყობილობის Plasma-სთან ინტეგრირებისთვის დააყენეთ მასზე KDE "
 "Connect!"
 
-#: package/contents/ui/FullRepresentation.qml:70
+#: package/contents/ui/FullRepresentation.qml:74
 #, kde-format
 msgid "Pair a Device…"
 msgstr "მოწყობილობის დაწყვილება…"
 
-#: package/contents/ui/FullRepresentation.qml:82
+#: package/contents/ui/FullRepresentation.qml:86
 #, kde-format
 msgid "Install from Google Play"
 msgstr "Google Play-დან დაყენება"
 
-#: package/contents/ui/FullRepresentation.qml:92
+#: package/contents/ui/FullRepresentation.qml:96
 #, kde-format
 msgid "Install from F-Droid"
 msgstr "F-Droid-დან დაყენება"
 
-#: package/contents/ui/main.qml:54
+#: package/contents/ui/main.qml:55
 #, kde-format
 msgid "KDE Connect Settings…"
 msgstr "KDE Connect-ის მორგება…"

@@ -1,13 +1,13 @@
 # Copyright (C) 2024 This file is copyright:
 # This file is distributed under the same license as the kdeconnect-kde package.
-# SPDX-FileCopyrightText: 2020, 2021, 2022, 2024, 2025 Shinjo Park <kde@peremen.name>
+# SPDX-FileCopyrightText: 2020, 2021, 2022, 2024, 2025, 2026 Shinjo Park <kde@peremen.name>
 #
 msgid ""
 msgstr ""
 "Project-Id-Version: kdeconnect-kde\n"
 "Report-Msgid-Bugs-To: https://bugs.kde.org\n"
-"POT-Creation-Date: 2025-11-19 00:42+0000\n"
-"PO-Revision-Date: 2025-07-21 01:00+0200\n"
+"POT-Creation-Date: 2026-10-28 01:00+0000\n"
+"PO-Revision-Date: 2026-02-04 00:31+0100\n"
 "Last-Translator: Shinjo Park <kde@peremen.name>\n"
 "Language-Team: Korean <kde-kr@kde.org>\n"
 "Language: ko\n"
@@ -15,7 +15,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
-"X-Generator: Lokalize 24.12.3\n"
+"X-Generator: Lokalize 25.08.1\n"
 
 #, kde-format
 msgctxt "NAME OF TRANSLATORS"
@@ -28,26 +28,24 @@ msgid "Your emails"
 msgstr "kde@peremen.name"
 
 #: attachmentshelper.cpp:36
-#, fuzzy, kde-format
-#| msgctxt "@info:tooltip"
-#| msgid "Clear attachments"
+#, kde-format
 msgctxt "Caption/title for attachment download/save window"
 msgid "Download attachment"
-msgstr "첨부 파일 지우기"
+msgstr "첨부 파일 다운로드"
 
-#: conversationlistmodel.cpp:202
+#: conversationlistmodel.cpp:206
 #, kde-format
 msgctxt "Used as a text placeholder when the most-recent message is an image"
 msgid "Picture"
 msgstr "그림"
 
-#: conversationlistmodel.cpp:204
+#: conversationlistmodel.cpp:208
 #, kde-format
 msgctxt "Used as a text placeholder when the most-recent message is a video"
 msgid "Video"
 msgstr "비디오"
 
-#: conversationlistmodel.cpp:208
+#: conversationlistmodel.cpp:212
 #, kde-format
 msgctxt ""
 "Used as a text placeholder when the most-recent message is an arbitrary "
@@ -55,67 +53,67 @@ msgctxt ""
 msgid "%1 file"
 msgstr "%1 파일"
 
-#: conversationlistmodel.cpp:224
+#: conversationlistmodel.cpp:233
 #, kde-format
 msgid "You: %1"
 msgstr "나: %1"
 
-#: conversationlistmodel.cpp:230
+#: conversationlistmodel.cpp:239
 #, kde-format
 msgid "%1: %2"
 msgstr "%1: %2"
 
-#: conversationlistmodel.cpp:272 conversationlistmodel.cpp:294
+#: conversationlistmodel.cpp:281 conversationlistmodel.cpp:302
 #, kde-format
 msgid "%1"
 msgstr "%1"
 
-#: main.cpp:82 qml/Main.qml:73
+#: main.cpp:84 qml/Main.qml:73
 #, kde-format
 msgid "KDE Connect SMS"
 msgstr "KDE Connect SMS"
 
-#: main.cpp:84
+#: main.cpp:86
 #, kde-format
 msgid "SMS Instant Messaging"
 msgstr "SMS 인스턴트 메시징"
 
-#: main.cpp:86
+#: main.cpp:88
 #, kde-format
 msgid "© 2018–2025 KDE Connect Team"
 msgstr "© 2018–2025 KDE Connect Team"
 
-#: main.cpp:87
+#: main.cpp:89
 #, kde-format
 msgid "Simon Redman"
 msgstr "Simon Redman"
 
-#: main.cpp:88
+#: main.cpp:90
 #, kde-format
 msgid "Aleix Pol Gonzalez"
 msgstr "Aleix Pol Gonzalez"
 
-#: main.cpp:89
+#: main.cpp:91
 #, kde-format
 msgid "Nicolas Fella"
 msgstr "Nicolas Fella"
 
-#: main.cpp:116
+#: main.cpp:118
 #, kde-format
 msgid "Select a device"
 msgstr "장치 선택"
 
-#: main.cpp:116
+#: main.cpp:118
 #, kde-format
 msgid "id"
 msgstr "id"
 
-#: main.cpp:117
+#: main.cpp:119
 #, kde-format
 msgid "Send a message"
 msgstr "메시지 보내기"
 
-#: main.cpp:117
+#: main.cpp:119
 #, kde-format
 msgid "message"
 msgstr "메시지"
@@ -126,25 +124,23 @@ msgid "Open with default"
 msgstr "기본값으로 열기"
 
 #: qml/AttachmentViewer.qml:28
-#, fuzzy, kde-format
-#| msgctxt "@info:tooltip"
-#| msgid "Clear attachments"
+#, kde-format
 msgid "Download attachment…"
-msgstr "첨부 파일 지우기"
+msgstr "첨부 파일 다운로드…"
 
-#: qml/ConversationList.qml:23
+#: qml/ConversationList.qml:24
 #, kde-format
 msgid "No devices available"
 msgstr "장치가 없습니다"
 
-#: qml/ConversationList.qml:32
+#: qml/ConversationList.qml:33
 #, kde-format
 msgid ""
 "No new messages can be sent or received, but you can browse cached content"
 msgstr ""
 "새 메시지를 보내거나 받을 수 없지만 캐시에 저장된 내용을 볼 수 있습니다"
 
-#: qml/ConversationList.qml:48
+#: qml/ConversationList.qml:49
 #, kde-format
 msgid ""
 "Loading conversations from device. If this takes a long time, please wake up "
@@ -153,7 +149,7 @@ msgstr ""
 "장치에서 대화를 불러 오는 중입니다. 시간이 너무 오래 걸리면 전원을 켠 다음 새"
 "로 고치십시오."
 
-#: qml/ConversationList.qml:56
+#: qml/ConversationList.qml:57
 #, kde-format
 msgid ""
 "Tip: If you plug in your device, it should not go into doze mode and should "
@@ -162,38 +158,38 @@ msgstr ""
 "팁: 전원을 연결해 두면 절전 모드로 전환되지 않으며 더 빨리 불러올 수 있습니"
 "다."
 
-#: qml/ConversationList.qml:64 qml/Main.qml:98
+#: qml/ConversationList.qml:65 qml/Main.qml:98
 #, kde-format
 msgid "Refresh"
 msgstr "새로 고침"
 
-#: qml/ConversationList.qml:83
+#: qml/ConversationList.qml:84
 #, kde-format
 msgid "Choose recipient"
 msgstr "받는 사람 선택"
 
-#: qml/ConversationList.qml:88
+#: qml/ConversationList.qml:89
 #, kde-format
 msgid "Cancel"
 msgstr "취소"
 
-#: qml/ConversationList.qml:107
+#: qml/ConversationList.qml:108
 #, kde-format
 msgid "Search or start a conversation"
 msgstr "새 대화 시작 또는 검색"
 
-#: qml/ConversationList.qml:143
+#: qml/ConversationList.qml:144
 #, kde-format
 msgid "Start new conversation"
 msgstr "새 대화 시작하기"
 
-#: qml/ConversationList.qml:192
+#: qml/ConversationList.qml:194
 #, kde-format
 msgctxt "Placeholder message text when no messages are found"
 msgid "No Matches"
 msgstr "검색 결과 없음"
 
-#: qml/ConversationList.qml:202
+#: qml/ConversationList.qml:204
 #, kde-format
 msgctxt "@info:placeholder"
 msgid "No Conversations"
@@ -229,24 +225,24 @@ msgstr "보낼 수 없음"
 msgid "Max message size limit exceeded."
 msgstr "최대 메시지 크기 제한을 초과했습니다."
 
-#: qml/SendingArea.qml:63
+#: qml/SendingArea.qml:68
 #, kde-format
 msgid "Send a message…"
 msgstr "메시지 보내기…"
 
-#: qml/SendingArea.qml:119
+#: qml/SendingArea.qml:124
 #, kde-format
 msgctxt "@info:tooltip"
 msgid "Attach an image or file"
 msgstr "그림이나 파일 첨부"
 
-#: qml/SendingArea.qml:144
+#: qml/SendingArea.qml:149
 #, kde-format
 msgctxt "@info:tooltip"
 msgid "Clear attachments"
 msgstr "첨부 파일 지우기"
 
-#: qml/SendingArea.qml:173
+#: qml/SendingArea.qml:178
 #, kde-format
 msgctxt "@info:tooltip"
 msgid "Send message"

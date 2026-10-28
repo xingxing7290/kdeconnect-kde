@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: kdeconnect-kde\n"
 "Report-Msgid-Bugs-To: https://bugs.kde.org\n"
-"POT-Creation-Date: 2025-11-17 11:51+0000\n"
+"POT-Creation-Date: 2026-10-21 00:51+0000\n"
 "PO-Revision-Date: 2019-12-24 22:22-0800\n"
 "Last-Translator: Japanese KDE translation team <kde-jp@kde.org>\n"
 "Language-Team: Japanese <kde-jp@kde.org>\n"
@@ -24,38 +24,38 @@ msgctxt "EMAIL OF TRANSLATORS"
 msgid "Your emails"
 msgstr ""
 
-#: deviceindicator.cpp:53
+#: deviceindicator.cpp:56
 #, kde-format
 msgid "Browse device"
 msgstr ""
 
-#: deviceindicator.cpp:67
+#: deviceindicator.cpp:70
 #, kde-format
 msgid "Send clipboard"
 msgstr ""
 
-#: deviceindicator.cpp:81
+#: deviceindicator.cpp:84
 #, kde-format
 msgctxt "@action:inmenu play bell sound"
 msgid "Ring device"
 msgstr ""
 
-#: deviceindicator.cpp:95
+#: deviceindicator.cpp:98
 #, kde-format
 msgid "Send files"
 msgstr ""
 
-#: deviceindicator.cpp:117
+#: deviceindicator.cpp:124
 #, kde-format
 msgid "SMS Messages…"
 msgstr ""
 
-#: deviceindicator.cpp:130
+#: deviceindicator.cpp:137
 #, kde-format
 msgid "Run command"
 msgstr ""
 
-#: deviceindicator.cpp:132
+#: deviceindicator.cpp:139
 #, kde-format
 msgid "Add commands"
 msgstr ""
@@ -77,74 +77,74 @@ msgstr ""
 msgid "Cannot find kdeconnectd"
 msgstr ""
 
-#: main.cpp:57
+#: main.cpp:62
 #, kde-format
 msgid "KDE Connect Indicator"
 msgstr ""
 
-#: main.cpp:59
+#: main.cpp:64
 #, kde-format
 msgid "KDE Connect Indicator tool"
 msgstr ""
 
-#: main.cpp:61
+#: main.cpp:66
 #, kde-format
 msgid "© 2016–2025 KDE Connect Team"
 msgstr ""
 
-#: main.cpp:62
+#: main.cpp:67
 #, kde-format
 msgid "Aleix Pol Gonzalez"
 msgstr ""
 
-#: main.cpp:63
+#: main.cpp:68
 #, kde-format
 msgid "Albert Vaca Cintora"
 msgstr ""
 
-#: main.cpp:101
+#: main.cpp:113
 #, kde-format
 msgid "Open app"
 msgstr ""
 
-#: main.cpp:118
+#: main.cpp:130
 #, kde-format
 msgid "Pairing requests"
 msgstr ""
 
-#: main.cpp:123
+#: main.cpp:136
 #, kde-format
 msgctxt "Accept a pairing request"
 msgid "Pair"
 msgstr ""
 
-#: main.cpp:124
+#: main.cpp:137
 #, kde-format
 msgid "Reject"
 msgstr ""
 
-#: main.cpp:129 main.cpp:138
+#: main.cpp:142 main.cpp:155
 #, kde-format
 msgid "Quit"
 msgstr ""
 
-#: main.cpp:157 main.cpp:179
+#: main.cpp:172 main.cpp:194
 #, kde-format
 msgid "%1 device connected"
 msgid_plural "%1 devices connected"
 msgstr[0] ""
 
-#: systray_actions/battery_action.cpp:28
+#: systray_actions/battery_action.cpp:35
 #, kde-format
 msgid "No Battery"
 msgstr ""
 
-#: systray_actions/battery_action.cpp:30
+#: systray_actions/battery_action.cpp:37
 #, kde-format
 msgid "Battery: %1% (Charging)"
 msgstr ""
 
-#: systray_actions/battery_action.cpp:32
+#: systray_actions/battery_action.cpp:39
 #, kde-format
 msgid "Battery: %1%"
 msgstr ""

@@ -6,6 +6,9 @@
 
 #include "landevicelink.h"
 
+#include <QNetworkProxy>
+#include <QTimer>
+
 #include <KLocalizedString>
 
 #include "backends/linkprovider.h"
@@ -15,24 +18,36 @@
 #include "lanlinkprovider.h"
 #include "plugins/share/shareplugin.h"
 
-LanDeviceLink::LanDeviceLink(const DeviceInfo &deviceInfo, LanLinkProvider *linkProvider, QSslSocket *socket)
-    : DeviceLink(linkProvider)
+// This is a huge size for a single packet, but I'm being conservative given there wasn't a limit before and I don't want to break things
+static const int MAX_PACKET_SIZE = 32 * 1024 * 1024;
+
+LanDeviceLink::LanDeviceLink(const DeviceInfo &deviceInfo, LanLinkProvider *parent, QSslSocket *socket)
+    : DeviceLink(deviceInfo.id, parent)
     , m_socket(nullptr)
     , m_deviceInfo(deviceInfo)
 {
-    reset(socket);
+    reset(socket, deviceInfo);
 }
 
-void LanDeviceLink::reset(QSslSocket *socket)
+void LanDeviceLink::reset(QSslSocket *socket, const DeviceInfo &deviceInfo)
 {
+    m_deviceInfo = deviceInfo;
+
     if (m_socket) {
+        disconnect(m_socket, &QAbstractSocket::disconnected, this, nullptr);
         delete m_socket;
     }
 
     m_socket = socket;
     socket->setParent(this);
 
-    connect(socket, &QAbstractSocket::disconnected, this, &LanDeviceLink::disconnected);
+    connect(socket, &QAbstractSocket::disconnected, this, [this, socket]() {
+        QTimer::singleShot(0, this, [this, socket]() {
+            if (m_socket == socket) {
+                delete this;
+            }
+        });
+    });
     connect(socket, &QAbstractSocket::readyRead, this, &LanDeviceLink::dataReceived);
 }
 
@@ -55,28 +70,41 @@ QHostAddress LanDeviceLink::hostAddress() const
 
 bool LanDeviceLink::sendPacket(NetworkPacket &np)
 {
-    if (np.payload() && np.hasPayload()) {
+    // FIXME: Remove packet-type-specific logic from the link
+    if (np.type() == PACKET_TYPE_SHARE_REQUEST && np.payload()) {
+        // A new file to share (even one with no payload, like an empty file, which still has a
+        // payload device attached by SharePlugin::shareUrl() even though its size is 0). This
+        // goes through the composite job so it gets counted and sequenced with the others.
+        // Note: CompositeUploadJob strips the payload device before re-sending this packet as a
+        // header once it's this file's turn, so that re-send falls through to the plain write
+        // below instead of being mistaken for another new file and re-enqueued.
         Device *device = Daemon::instance()->getDevice(deviceId());
         if (device == nullptr) {
             qCWarning(KDECONNECT_CORE) << "Device disconnected" << deviceId();
             return false;
         }
-        // FIXME: Remove packet-type-specific logic from the link
-        if (np.type() == PACKET_TYPE_SHARE_REQUEST && np.payloadSize() >= 0) {
-            if (!m_compositeUploadJob || !m_compositeUploadJob->isRunning()) {
-                m_compositeUploadJob = new CompositeUploadJob(device, true);
-            }
 
-            m_compositeUploadJob->addSubjob(new UploadJob(np));
-
-            if (!m_compositeUploadJob->isRunning()) {
-                m_compositeUploadJob->start();
-            }
-        } else { // Infinite stream
-            CompositeUploadJob *fireAndForgetJob = new CompositeUploadJob(device, false);
-            fireAndForgetJob->addSubjob(new UploadJob(np));
-            fireAndForgetJob->start();
+        if (!m_compositeUploadJob || !m_compositeUploadJob->isRunning()) {
+            m_compositeUploadJob = new CompositeUploadJob(device, true);
         }
+
+        m_compositeUploadJob->addSubjob(new UploadJob(np));
+
+        if (!m_compositeUploadJob->isRunning()) {
+            m_compositeUploadJob->start();
+        }
+
+        return true;
+    } else if (np.payload() && np.hasPayload()) { // Infinite stream
+        Device *device = Daemon::instance()->getDevice(deviceId());
+        if (device == nullptr) {
+            qCWarning(KDECONNECT_CORE) << "Device disconnected" << deviceId();
+            return false;
+        }
+
+        CompositeUploadJob *fireAndForgetJob = new CompositeUploadJob(device, false);
+        fireAndForgetJob->addSubjob(new UploadJob(np));
+        fireAndForgetJob->start();
 
         return true;
     } else {
@@ -91,10 +119,18 @@ bool LanDeviceLink::sendPacket(NetworkPacket &np)
 
 void LanDeviceLink::dataReceived()
 {
+    if (!m_socket->canReadLine() && m_socket->bytesAvailable() > MAX_PACKET_SIZE) {
+        qCWarning(KDECONNECT_CORE) << "Discarding packet that's too large";
+        m_socket->readAll();
+    }
     while (m_socket->canReadLine()) {
         const QByteArray serializedPacket = m_socket->readLine();
         NetworkPacket packet;
-        NetworkPacket::unserialize(serializedPacket, &packet);
+        bool success = NetworkPacket::unserialize(serializedPacket, &packet);
+        if (!success) {
+            // unserialize already logs
+            continue;
+        }
 
         // qCDebug(KDECONNECT_CORE) << "LanDeviceLink dataReceived" << serializedPacket;
 
@@ -103,6 +139,7 @@ void LanDeviceLink::dataReceived()
             const QVariantMap transferInfo = packet.payloadTransferInfo();
 
             QSharedPointer<QSslSocket> socket(new QSslSocket);
+            socket->setProxy(QNetworkProxy::NoProxy);
 
             LanLinkProvider::configureSslSocket(socket.data(), deviceId(), true);
 

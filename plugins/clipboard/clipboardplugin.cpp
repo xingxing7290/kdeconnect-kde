@@ -14,6 +14,7 @@
 #include <KPluginFactory>
 #include <QBuffer>
 #include <QEventLoop>
+#include <QFileInfo>
 #include <QImage>
 #include <QMimeType>
 #include <QObject>
@@ -82,6 +83,13 @@ void ClipboardPlugin::sendClipboard()
 
 void ClipboardPlugin::sendClipboard(const QVariant &content)
 {
+    const bool isFile = content.typeId() == QMetaType::QUrl || content.typeId() == QMetaType::QImage;
+    const QSet<QString> remoteCapabilities = device()->incomingCapabilities();
+    if (isFile && !remoteCapabilities.isEmpty() && !remoteCapabilities.contains(PACKET_TYPE_CLIPBOARD_FILE)) {
+        qCDebug(KDECONNECT_PLUGIN_CLIPBOARD) << "Remote device doesn't support clipboard files, not syncing";
+        return;
+    }
+
     if (content.typeId() == QMetaType::QUrl) {
         NetworkPacket np{PACKET_TYPE_CLIPBOARD_FILE};
 
@@ -93,7 +101,7 @@ void ClipboardPlugin::sendClipboard(const QVariant &content)
 
         qCDebug(KDECONNECT_PLUGIN_CLIPBOARD) << fileSize << " " << configSize;
 
-        if (!ioFile->exists()) {
+        if (!QFileInfo(*ioFile).isFile()) {
             qCDebug(KDECONNECT_PLUGIN_CLIPBOARD) << "Could not open file " << url.toDisplayString();
             return;
         } else if (fileSize > configSize) {
@@ -158,8 +166,13 @@ void ClipboardPlugin::receivePacket(const NetworkPacket &np)
             QTemporaryDir tmpDir;
             tmpDir.setAutoRemove(false);
 
-            auto filename = np.get<QString>(QStringLiteral("filename"));
-            QUrl destination(tmpDir.path() + QStringLiteral("/") + filename);
+            const auto filename = np.get<QString>(QStringLiteral("filename"));
+            const QString filePath = QDir::cleanPath(tmpDir.filePath(filename));
+            if (!filePath.startsWith(tmpDir.path() + QStringLiteral("/"))) {
+                qCWarning(KDECONNECT_PLUGIN_CLIPBOARD) << "Directory traversal detected";
+                return;
+            }
+            const QUrl destination = QUrl::fromLocalFile(filePath);
 
             FileTransferJob *job = np.createPayloadTransferJob(destination);
             job->setProperty("destUrl", destination.toString());

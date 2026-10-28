@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: kdeconnect-kde\n"
 "Report-Msgid-Bugs-To: https://bugs.kde.org\n"
-"POT-Creation-Date: 2025-11-17 11:51+0000\n"
+"POT-Creation-Date: 2026-10-21 00:51+0000\n"
 "PO-Revision-Date: 2025-09-27 11:52+0100\n"
 "Last-Translator: Sergiu Bivol <sergiu@cip.md>\n"
 "Language-Team: Romanian <kde-i18n-ro@kde.org>\n"
@@ -28,38 +28,38 @@ msgctxt "EMAIL OF TRANSLATORS"
 msgid "Your emails"
 msgstr "sergiu@cip.md"
 
-#: deviceindicator.cpp:53
+#: deviceindicator.cpp:56
 #, kde-format
 msgid "Browse device"
 msgstr "Răsfoiește dispozitivul"
 
-#: deviceindicator.cpp:67
+#: deviceindicator.cpp:70
 #, kde-format
 msgid "Send clipboard"
 msgstr "Trimite clipboard"
 
-#: deviceindicator.cpp:81
+#: deviceindicator.cpp:84
 #, kde-format
 msgctxt "@action:inmenu play bell sound"
 msgid "Ring device"
 msgstr "Sună dispozitivul"
 
-#: deviceindicator.cpp:95
+#: deviceindicator.cpp:98
 #, kde-format
 msgid "Send files"
 msgstr "Trimite fișiere"
 
-#: deviceindicator.cpp:117
+#: deviceindicator.cpp:124
 #, kde-format
 msgid "SMS Messages…"
 msgstr "Mesaje SMS…"
 
-#: deviceindicator.cpp:130
+#: deviceindicator.cpp:137
 #, kde-format
 msgid "Run command"
 msgstr "Rulează comandă"
 
-#: deviceindicator.cpp:132
+#: deviceindicator.cpp:139
 #, kde-format
 msgid "Add commands"
 msgstr "Adaugă comenzi"
@@ -83,58 +83,58 @@ msgstr ""
 msgid "Cannot find kdeconnectd"
 msgstr "Nu s-a putut găsi kdeconnectd"
 
-#: main.cpp:57
+#: main.cpp:62
 #, kde-format
 msgid "KDE Connect Indicator"
 msgstr "Indicator KDE Connect"
 
-#: main.cpp:59
+#: main.cpp:64
 #, kde-format
 msgid "KDE Connect Indicator tool"
 msgstr "Unealtă de indicator KDE Connect"
 
-#: main.cpp:61
+#: main.cpp:66
 #, kde-format
 msgid "© 2016–2025 KDE Connect Team"
 msgstr "© 2016–2025 Echipa KDE Connect"
 
-#: main.cpp:62
+#: main.cpp:67
 #, kde-format
 msgid "Aleix Pol Gonzalez"
 msgstr "Aleix Pol Gonzalez"
 
-#: main.cpp:63
+#: main.cpp:68
 #, kde-format
 msgid "Albert Vaca Cintora"
 msgstr "Albert Vaca Cintora"
 
-#: main.cpp:101
+#: main.cpp:113
 #, kde-format
 msgid "Open app"
 msgstr "Deschide aplicația"
 
-#: main.cpp:118
+#: main.cpp:130
 #, kde-format
 msgid "Pairing requests"
 msgstr "Cereri de asociere"
 
-#: main.cpp:123
+#: main.cpp:136
 #, kde-format
 msgctxt "Accept a pairing request"
 msgid "Pair"
 msgstr "Asociază"
 
-#: main.cpp:124
+#: main.cpp:137
 #, kde-format
 msgid "Reject"
 msgstr "Refuză"
 
-#: main.cpp:129 main.cpp:138
+#: main.cpp:142 main.cpp:155
 #, kde-format
 msgid "Quit"
 msgstr "Termină"
 
-#: main.cpp:157 main.cpp:179
+#: main.cpp:172 main.cpp:194
 #, kde-format
 msgid "%1 device connected"
 msgid_plural "%1 devices connected"
@@ -142,17 +142,17 @@ msgstr[0] "%1 dispozitiv conectat"
 msgstr[1] "%1 dispozitive conectate"
 msgstr[2] "%1 de dispozitive conectate"
 
-#: systray_actions/battery_action.cpp:28
+#: systray_actions/battery_action.cpp:35
 #, kde-format
 msgid "No Battery"
 msgstr "Fără acumulator"
 
-#: systray_actions/battery_action.cpp:30
+#: systray_actions/battery_action.cpp:37
 #, kde-format
 msgid "Battery: %1% (Charging)"
 msgstr "Acumulator: %1% (se încarcă)"
 
-#: systray_actions/battery_action.cpp:32
+#: systray_actions/battery_action.cpp:39
 #, kde-format
 msgid "Battery: %1%"
 msgstr "Acumulator: %1%"

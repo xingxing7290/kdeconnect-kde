@@ -9,7 +9,6 @@
 #include <QIcon>
 #include <QProcess>
 #include <QQmlApplicationEngine>
-#include <QQmlContext>
 #include <QQuickStyle>
 #include <QStandardPaths>
 #include <QWindow>
@@ -19,14 +18,22 @@
 #include <KColorSchemeManager>
 #include <KCrash>
 #include <KDBusService>
-#include <KLocalizedContext>
+#include <KLocalizedQmlContext>
 #include <KLocalizedString>
 #include <KWindowSystem>
 
+#if defined(Q_OS_MAC)
+#include "macosforegroundapp.h"
+#endif
+
 static void raiseWindow(QWindow *window)
 {
+#if defined(Q_OS_MAC)
+    activateWindowForMacOS(window);
+#else
     KWindowSystem::updateStartupId(window);
     KWindowSystem::activateWindow(window);
+#endif
 }
 
 int main(int argc, char *argv[])
@@ -112,7 +119,7 @@ int main(int argc, char *argv[])
     }
     KDBusService dbusService(flags);
     QQmlApplicationEngine engine;
-    engine.rootContext()->setContextObject(new KLocalizedContext(&engine));
+    KLocalization::setupLocalizedContext(&engine);
     engine.loadFromModule("org.kde.kdeconnect.app", "Main");
 
     if (engine.rootObjects().isEmpty()) {
@@ -124,6 +131,7 @@ int main(int argc, char *argv[])
         auto mo = obj->metaObject();
         mo->invokeMethod(obj, "openDevice", Qt::QueuedConnection, Q_ARG(QVariant, device), Q_ARG(QVariant, config));
     }
+    raiseWindow(obj);
     QObject::connect(&dbusService, &KDBusService::activateRequested, obj, [obj](const QStringList & /*arguments*/, const QString & /*workingDirectory*/) {
         raiseWindow(obj);
     });

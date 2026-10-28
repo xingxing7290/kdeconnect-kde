@@ -75,7 +75,6 @@ target_sources(kdeconnectdbusinterfaces PRIVATE ${dbusinterfaces_SRC})
 ecm_qt_declare_logging_category(kdeconnectdbusinterfaces
     HEADER dbusinterfaces_debug.h
     IDENTIFIER KDECONNECT_DBUSINTERFACES CATEGORY_NAME kdeconnect.dbusinterfaces
-    DEFAULT_SEVERITY Warning
     EXPORT kdeconnect-kde DESCRIPTION "kdeconnect (dbus interfaces)")
 
 
@@ -91,4 +90,4 @@ LINK_PUBLIC
     Qt::DBus
 )
 
-install(TARGETS kdeconnectdbusinterfaces EXPORT kdeconnectLibraryTargets ${KDE_INSTALL_TARGETS_DEFAULT_ARGS} LIBRARY NAMELINK_SKIP)
+qt_extract_metatypes(kdeconnectdbusinterfaces)

@@ -7,6 +7,8 @@
 
 #include "conversationlistmodel.h"
 
+#include <QApplication>
+#include <QMessageBox>
 #include <QPainter>
 #include <QString>
 
@@ -17,6 +19,7 @@
 #include "models/conversationmessage.h"
 #include "sms_conversations_list_debug.h"
 #include "smshelper.h"
+#include "thumbnailsprovider.h"
 
 #define INVALID_THREAD_ID -1
 #define INVALID_DATE -1
@@ -68,6 +71,13 @@ void ConversationListModel::setDeviceId(const QString &deviceId)
     DeviceDbusInterface device(deviceId);
     if (!(device.isValid() && device.isReachable())) {
         return;
+    }
+
+    m_thumbnailsProvider = ThumbnailsProvider::getInContextForObject(this);
+    if (!m_thumbnailsProvider) {
+        // This is very unlikely to fail, so if it does, we ought to log a scary error!
+        qCritical("Failed to load thumbnails provider, something didn't get initialised properly!");
+        qCritical("Thumbnails will not be shown.");
     }
 
     m_deviceId = deviceId;
@@ -156,12 +166,6 @@ QStandardItem *ConversationListModel::getConversationForAddress(const QString &a
 
 void ConversationListModel::createRowFromMessage(const ConversationMessage &message)
 {
-    if (message.type() == -1) {
-        // The Android side currently hacks in -1 if something weird comes up
-        // TODO: Remove this hack when MMS support is implemented
-        return;
-    }
-
     /** The address of everyone involved in this conversation, which we should not display (check if they are known contacts first) */
     const QList<ConversationAddress> rawAddresses = message.addresses();
     if (rawAddresses.isEmpty()) {
@@ -211,9 +215,14 @@ void ConversationListModel::createRowFromMessage(const ConversationMessage &mess
     }
 
     // Get the preview from the attachment, if it exists
-    QIcon attachmentPreview;
     if (message.containsAttachment()) {
-        attachmentPreview = SmsHelper::getThumbnailForAttachment(message.attachments().last());
+        auto const attachment = message.attachments().last();
+        QIcon attachmentPreview = SmsHelper::getThumbnailForAttachment(attachment);
+
+        // ...and store it in the ThumbnailsProvider, if we have one
+        if (m_thumbnailsProvider) {
+            (*m_thumbnailsProvider)->addIcon(attachment.uniqueIdentifier(), attachmentPreview);
+        }
     }
 
     // For displaying single line subtitle out of the multiline messages to keep the ListItems consistent
@@ -242,8 +251,8 @@ void ConversationListModel::createRowFromMessage(const ConversationMessage &mess
         item->setData(displayBody, Qt::ToolTipRole);
         item->setData(message.date(), DateRole);
         item->setData(message.isMultitarget(), MultitargetRole);
-        if (!attachmentPreview.isNull()) {
-            item->setData(attachmentPreview, AttachmentPreview);
+        if (message.containsAttachment()) {
+            item->setData(message.attachments().last().uniqueIdentifier(), AttachmentPreview);
         }
     }
 
@@ -284,14 +293,13 @@ void ConversationListModel::displayContacts()
 void ConversationListModel::createConversationForAddress(const QString &address)
 {
     QStandardItem *item = new QStandardItem();
-    const QString canonicalizedAddress = SmsHelper::canonicalizePhoneNumber(address);
-    item->setText(canonicalizedAddress);
+    item->setText(address);
 
     QList<ConversationAddress> addresses;
-    addresses.append(ConversationAddress(canonicalizedAddress));
+    addresses.append(ConversationAddress(address));
     item->setData(QVariant::fromValue(addresses), AddressesRole);
 
-    QString displayBody = i18n("%1", canonicalizedAddress);
+    QString displayBody = i18n("%1", address);
     item->setData(displayBody, Qt::ToolTipRole);
     item->setData(false, MultitargetRole);
     item->setData(qint64(INVALID_THREAD_ID), ConversationIdRole);

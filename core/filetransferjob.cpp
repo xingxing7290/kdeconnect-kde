@@ -28,7 +28,8 @@ FileTransferJob::FileTransferJob(const NetworkPacket *np, const QUrl &destinatio
     , m_np(np)
     , m_autoRename(false)
 {
-    Q_ASSERT(m_origin);
+    // m_origin can be null when the packet has no payload (e.g. an empty file): we still want to
+    // go through the same job so it gets counted, auto-renamed and timestamped like any other file.
     // Disabled this assert: QBluetoothSocket doesn't report "->isReadable() == true" until it's connected
     // Q_ASSERT(m_origin->isReadable());
     if (m_destination.scheme().isEmpty()) {
@@ -47,7 +48,7 @@ void FileTransferJob::start()
             QFileInfo fileInfo(m_destination.toLocalFile());
             QString path = fileInfo.path();
             QString fileName = fileInfo.fileName();
-            m_destination.setPath(path + QStringLiteral("/") + KFileUtils::suggestName(QUrl(path), fileName), QUrl::DecodedMode);
+            m_destination.setPath(path + QStringLiteral("/") + KFileUtils::suggestName(QUrl::fromLocalFile(path), fileName), QUrl::DecodedMode);
         } else {
             setError(2);
             setErrorText(i18n("Filename already present"));
@@ -61,7 +62,18 @@ void FileTransferJob::start()
 
 void FileTransferJob::doStart()
 {
-    if (m_origin && m_origin->bytesAvailable())
+    if (!m_origin) {
+        // No payload to transfer (e.g. an empty file): just create the destination file.
+        QFile file(m_destination.toLocalFile());
+        if (!file.open(QIODevice::WriteOnly)) {
+            setError(1);
+            setErrorText(i18n("Could not create destination file: %1", m_destination.toLocalFile()));
+        }
+        emitResult();
+        return;
+    }
+
+    if (m_origin->bytesAvailable())
         startTransfer();
 
     connect(m_origin.data(), &QIODevice::readyRead, this, &FileTransferJob::startTransfer);
@@ -104,16 +116,23 @@ void FileTransferJob::transferFinished()
         setError(m_reply->error());
         setErrorText(m_reply->errorString());
     } else {
-        // TODO: MD5-check the file
-        if (m_size == m_written) {
-            qCDebug(KDECONNECT_CORE) << "Finished transfer" << m_destination;
-        } else {
+        // TODO: maybe hash-check the file?
+        // A payload size of -1 means the sender does not know how much it is going to send,
+        // and a sender can also announce less than it ends up sending, so only a file that
+        // stops short of the announced size is an incomplete one.
+        if (m_size >= 0 && m_written < m_size) {
             qCDebug(KDECONNECT_CORE) << "Received incomplete file (" << m_written << "/" << m_size << "bytes ), deleting";
 
             deleteDestinationFile();
 
             setError(3);
             setErrorText(i18n("Received incomplete file from: %1", m_from));
+        } else {
+            if (m_size >= 0 && m_written > m_size) {
+                qCInfo(KDECONNECT_CORE) << "Received" << (m_written - m_size) << "bytes more than the announced" << m_size
+                                        << "and keeping them, the sender announced a size it did not keep to";
+            }
+            qCDebug(KDECONNECT_CORE) << "Finished transfer" << m_destination;
         }
     }
     emitResult();

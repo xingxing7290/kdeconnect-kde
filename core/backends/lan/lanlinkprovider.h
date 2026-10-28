@@ -19,12 +19,8 @@
 #include "backends/linkprovider.h"
 #include "kdeconnectcore_export.h"
 #include "landevicelink.h"
+#include "mdnsdiscovery.h"
 #include "server.h"
-#ifdef KDECONNECT_USE_AVAHI
-#include "avahidiscovery.h"
-#else
-#include "mdnshdiscovery.h"
-#endif
 
 class KDECONNECTCORE_EXPORT LanLinkProvider : public LinkProvider
 {
@@ -37,12 +33,12 @@ public:
     LanLinkProvider(bool testMode = false, bool disabled = false);
     ~LanLinkProvider() override;
 
-    QString name() override
+    QString id() const override
     {
-        return QStringLiteral("LanLinkProvider");
+        return QStringLiteral("lan");
     }
 
-    QString displayName() override
+    QString displayName() const override
     {
         return i18nc("@info", "LAN");
     }
@@ -55,10 +51,18 @@ public:
     void enable() override;
     void disable() override;
 
-    void sendUdpIdentityPacket(const QList<QHostAddress> &addresses);
+    void deviceDiscovered(const QHostAddress &address, int port, const QString &deviceId, int protocolVersion);
 
     static void configureSslSocket(QSslSocket *socket, const QString &deviceId, bool isDeviceTrusted);
     static void configureSocket(QSslSocket *socket);
+
+#ifdef BUILD_TESTING
+    // Must be called before onStart()
+    void testSetLoopbackAddress(const QHostAddress &address)
+    {
+        m_testLoopbackAddress = address;
+    }
+#endif
 
     uint16_t tcpPort() const
     {
@@ -74,12 +78,12 @@ public:
 
 public Q_SLOTS:
     void onNetworkChange() override;
-    void deviceRemoved(const QString &deviceId) override;
+    void onLinkDestroyed(const QString &deviceId, DeviceLink *oldPtr) override;
     void onStart() override;
     void onStop() override;
-    void tcpSocketConnected(QSslSocket *socket, std::shared_ptr<NetworkPacket> receivedPacket, QHostAddress sender);
-    void encrypted(QSslSocket *socket, std::shared_ptr<NetworkPacket> identityPacket);
-    void connectError(QSslSocket *socket, QHostAddress sender, QAbstractSocket::SocketError socketError);
+    void tcpSocketConnected(QSslSocket *socket, const QString &deviceId, int protocolVersion);
+    void encrypted(QSslSocket *socket, const QString &deviceId, int protocolVersion);
+    void recoverConnectionError(QHostAddress address);
 
 private Q_SLOTS:
     void udpBroadcastReceived();
@@ -91,27 +95,30 @@ private Q_SLOTS:
 private:
     void addLink(QSslSocket *socket, const DeviceInfo &deviceInfo);
     QList<QHostAddress> getBroadcastAddresses();
-    void sendUdpIdentityPacket(QUdpSocket &socket, const QList<QHostAddress> &addresses);
-    void broadcastUdpIdentityPacket();
+    void sendUdpDiscoveryPacket(const QList<QHostAddress> &addresses);
+    void sendUdpDiscoveryPacket(QUdpSocket &socket, const QList<QHostAddress> &addresses);
+    void broadcastUdpDiscoveryPacket();
     bool isProtocolDowngrade(const QString &deviceId, int protocolVersion) const;
+    bool rateLimitByIp(const QHostAddress &address);
+    bool rateLimitByDeviceId(const QString &deviceId);
 
     Server *m_server;
     QUdpSocket m_udpSocket;
     quint16 m_tcpPort;
 
-    std::map<QString, std::unique_ptr<LanDeviceLink>> m_links;
+    QMap<QString, LanDeviceLink *> m_links;
 
-    QMap<QString, qint64> m_lastConnectionTime;
+    QMap<QString, qint64> m_lastConnectionTimeByDeviceId;
+    qint64 m_lastConnectionTimeByDeviceIdCleanup = 0;
+    QHash<QHostAddress, qint64> m_lastConnectionTimeByIp;
+    qint64 m_lastConnectionTimeByIpCleanup = 0;
     const bool m_testMode;
+    QHostAddress m_testLoopbackAddress = QHostAddress::LocalHost;
     QTimer m_combineNetworkChangeTimer;
 
     bool m_disabled;
 
-#ifdef KDECONNECT_USE_AVAHI
-    AvahiDiscovery m_mdnsDiscovery;
-#else
-    MdnshDiscovery m_mdnsDiscovery;
-#endif
+    MdnsDiscovery *m_mdnsDiscovery = nullptr;
 };
 
 #endif

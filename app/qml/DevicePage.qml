@@ -18,8 +18,26 @@ Kirigami.ScrollablePage {
     property QtObject currentDevice
     title: currentDevice.name
 
+    BatteryInfo {
+        id: batteryInfo
+        device: root.currentDevice
+    }
+
+    ConnectivityInfo {
+        id: connectivityInfo
+        device: root.currentDevice
+    }
+
     function openSettings()
     {
+        for (let index = 0; index < pageStack.depth; ++index) {
+            const page = pageStack.get(index);
+            if (page.isPluginSettingsPage && page.device === currentDevice.id()) {
+                pageStack.currentIndex = index;
+                return page;
+            }
+        }
+
         return pageStack.push(
             Qt.resolvedUrl("PluginSettings.qml"),
             {device: currentDevice.id()}
@@ -78,13 +96,13 @@ Kirigami.ScrollablePage {
                 DelegateModelGroup {name: "loadedPlugins"}
             ]
             filterOnGroup: "loadedPlugins"
-            property int numberPluginsLoaded: pluginsListView.plugins.filter(plugin => plugin.loaded || plugin.section === "info").length ?? 0
+            property int numberPluginsLoaded: pluginsListView.plugins.filter(plugin => !plugin.hidden && (plugin.loaded || plugin.section === "info")).length ?? 0
             onNumberPluginsLoadedChanged: update()
 
             function update() {
                 for (let i = 0; i < items.count; ++i) {
                     let item = items.get(i);
-                    item.inLoadedPlugins = item.model.loaded || item.model.section === "info"
+                    item.inLoadedPlugins = !item.model.hidden && (item.model.loaded || (item.model.section === "info" && root.currentDevice.isPaired))
                 }
             }
 
@@ -92,20 +110,36 @@ Kirigami.ScrollablePage {
                 id: pluginDelegate
                 text: Kirigami.MnemonicData.richTextLabel
                 Accessible.name: Kirigami.MnemonicData.plainTextLabel ?? modelData.name // fallback needed for KF < 6.12
+                Accessible.role: modelData.clickable ? Accessible.Button : Accessible.StaticText
                 icon.name: modelData.iconName
                 highlighted: false
                 icon.color: "transparent"
-                width: ListView.view.width
-                onClicked: modelData.onClick()
-                enabled: loaded
+                width: pluginsListView.width
+                enabled: true
+                hoverEnabled: modelData.clickable
+                focusPolicy: modelData.clickable ? Qt.StrongFocus : Qt.NoFocus
+                onClicked: {
+                    if (modelData.clickable) {
+                        modelData.onClick()
+                    }
+                }
 
-                Kirigami.MnemonicData.enabled: enabled && visible
+                Kirigami.MnemonicData.enabled: modelData.clickable && visible
                 Kirigami.MnemonicData.controlType: Kirigami.MnemonicData.MenuItem
                 Kirigami.MnemonicData.label: modelData.name
 
                 Shortcut {
                     sequence: pluginDelegate.Kirigami.MnemonicData.sequence
                     onActivated: clicked()
+                }
+
+                MouseArea {
+                    anchors.fill: parent
+                    visible: !modelData.clickable
+                    enabled: visible
+                    acceptedButtons: Qt.AllButtons
+                    hoverEnabled: true
+                    preventStealing: true
                 }
             }
         }
@@ -116,6 +150,14 @@ Kirigami.ScrollablePage {
                 interfaceFactory: MprisDbusInterfaceFactory
                 component: "mpris.qml"
                 pluginName: "mprisremote"
+                section: "control"
+                device: root.currentDevice
+            },
+            PluginItem {
+                name: i18nd("kdeconnect-app", "Notifications")
+                interfaceFactory: DeviceNotificationsDbusInterfaceFactory
+                component: "NotificationPanel.qml"
+                pluginName: "notifications"
                 section: "control"
                 device: root.currentDevice
             },
@@ -142,12 +184,21 @@ Kirigami.ScrollablePage {
                 pluginName: "remotecontrol"
                 section: "control"
                 device: root.currentDevice
+                hidden: root.currentDevice.type === "phone" || root.currentDevice.type === "tablet"
             },
             PluginItem {
                 name: i18nd("kdeconnect-app", "Volume control")
                 interfaceFactory: RemoteSystemVolumeDbusInterfaceFactory
                 component: "volume.qml"
                 pluginName: "remotesystemvolume"
+                section: "control"
+                device: root.currentDevice
+            },
+            PluginItem {
+                readonly property QtObject sms: SmsDbusInterfaceFactory.create(root.currentDevice.id())
+                pluginName: "sms"
+                name: i18n("SMS Messages")
+                onClick: () => sms.launchApp();
                 section: "control"
                 device: root.currentDevice
             },
@@ -208,7 +259,24 @@ Kirigami.ScrollablePage {
                 device: root.currentDevice
             },
             PluginItem {
+                pluginName: "battery"
+                name: batteryInfo.displayString
+                iconNameOverride: batteryInfo.iconName
+                hidden: !batteryInfo.hasBattery
+                section: "info"
+                device: root.currentDevice
+            },
+            PluginItem {
+                pluginName: "connectivity_report"
+                name: connectivityInfo.displayString
+                iconNameOverride: connectivityInfo.iconName
+                hidden: !connectivityInfo.available
+                section: "info"
+                device: root.currentDevice
+            },
+            PluginItem {
                 name: i18nd("kdeconnect-app", "Address: %1 via %2", root.currentDevice.reachableAddresses, root.currentDevice.activeProviderNames)
+                hidden: !root.currentDevice.isReachable
                 section: "info"
                 device: root.currentDevice
             }
@@ -270,6 +338,7 @@ Kirigami.ScrollablePage {
         readonly property var shareIface: root.currentDevice ? ShareDbusInterfaceFactory.create(root.currentDevice.id()) : null
         title: i18nd("kdeconnect-app", "Please choose a file")
         currentFolder: StandardPaths.standardLocations(StandardPaths.HomeLocation)[0]
-        onAccepted: shareIface.shareUrl(fileDialog.fileUrl)
+        fileMode: FileDialog.OpenFiles
+        onAccepted: shareIface.shareUrls(fileDialog.selectedFiles)
     }
 }

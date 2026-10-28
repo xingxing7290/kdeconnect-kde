@@ -15,12 +15,13 @@ set(models_SRC
 add_library(kdeconnectmodels STATIC)
 set_property(TARGET kdeconnectmodels PROPERTY POSITION_INDEPENDENT_CODE ON)
 
+qt_extract_metatypes(kdeconnectmodels)
+
 target_sources(kdeconnectmodels PRIVATE ${models_SRC})
 
 ecm_qt_declare_logging_category(kdeconnectmodels
     HEADER models_debug.h
     IDENTIFIER KDECONNECT_MODELS CATEGORY_NAME kdeconnect.models
-    DEFAULT_SEVERITY Warning
     EXPORT kdeconnect-kde DESCRIPTION "kdeconnect (models)")
 
 
@@ -42,5 +43,3 @@ LINK_PRIVATE
     kdeconnectdbusinterfaces
     KF6::CoreAddons
 )
-
-install(TARGETS kdeconnectmodels EXPORT kdeconnectLibraryTargets ${KDE_INSTALL_TARGETS_DEFAULT_ARGS} LIBRARY NAMELINK_SKIP)

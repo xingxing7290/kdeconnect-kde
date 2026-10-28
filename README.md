@@ -18,7 +18,7 @@ All this is done completely wirelessly, utilising TLS encryption.
 A user-focused wiki can be found on [KDE Userbase](https://userbase.kde.org/KDEConnect)
 
 ## Supported platforms
-- Computers running Linux with Plasma 5, Gnome 3, Elementary OS... any distro with Qt5 support :)
+- Computers running Linux with Plasma, GNOME, elementary OS… any distro with Qt 6 support :)
 - Android, by installing the KDE Connect app from the [Play Store](https://play.google.com/store/apps/details?id=org.kde.kdeconnect_tp) or [F-Droid](https://f-droid.org/repository/browse/?fdid=org.kde.kdeconnect_tp).
 - iPhone and iPad, by installing from the [App Store](https://apps.apple.com/us/app/kde-connect/id1580245991)
 - Computers running Windows, by installing from the [Microsoft Store](https://apps.microsoft.com/store/detail/kde-connect/9N93MRMSXBF0)
@@ -50,7 +50,7 @@ KDE Connect consists of a UI-agnostic "core" library that exposes a series of DB
 
 The basic structure of a NetworkPacket is the following:
 
-```
+```json
 {
   "id": 123456789,
   "type": "com.example.myplugin",

@@ -6,7 +6,6 @@ qt_add_resources(kdeconnect_custom_icons_SRCS ${CMAKE_SOURCE_DIR}/icons/custom_i
 
 add_executable(kdeconnect-handler kdeconnect-handler.cpp ${telhandler_SRCS} ${kdeconnect_custom_icons_SRCS})
 
-
 target_link_libraries(kdeconnect-handler
     kdeconnectdbusinterfaces
     kdeconnectmodels
@@ -18,11 +17,13 @@ target_link_libraries(kdeconnect-handler
     KF6::ColorScheme
     KF6::DBusAddons
     KF6::I18n
+    KF6::IconThemes
     KF6::KIOCore
     KF6::KIOFileWidgets
     KF6::KIOWidgets
     KF6::Crash
 )
 
-install(TARGETS kdeconnect-handler ${KDE_INSTALL_TARGETS_DEFAULT_ARGS})
+set_target_properties(kdeconnect-handler PROPERTIES MACOSX_BUNDLE FALSE)
+install(TARGETS kdeconnect-handler ${KDECONNECT_INSTALL_TARGETS_DEFAULT_ARGS})
 install(PROGRAMS org.kde.kdeconnect.handler.desktop DESTINATION ${KDE_INSTALL_APPDIR} )

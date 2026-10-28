@@ -2,19 +2,39 @@ cmake_minimum_required(VERSION 3.16)
 
 # KDE Release Service Version, managed by release script
 set (RELEASE_SERVICE_VERSION_MAJOR "26")
-set (RELEASE_SERVICE_VERSION_MINOR "03")
+set (RELEASE_SERVICE_VERSION_MINOR "11")
 set (RELEASE_SERVICE_VERSION_MICRO "70")
 set (RELEASE_SERVICE_VERSION "${RELEASE_SERVICE_VERSION_MAJOR}.${RELEASE_SERVICE_VERSION_MINOR}.${RELEASE_SERVICE_VERSION_MICRO}")
 
 project(kdeconnect VERSION ${RELEASE_SERVICE_VERSION})
 
-set(KF_MIN_VERSION "6.0.0")
+set(KF_MIN_VERSION "6.3.0")
 set(QT_MIN_VERSION "6.7.0")
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
 #set(CMAKE_COMPILE_WARNING_AS_ERROR TRUE)
+
+if(APPLE)
+    # The default install paths would create one bundle per executable, but we want a single app bundle
+    set(KDECONNECT_INSTALL_TARGETS_DEFAULT_ARGS
+        RUNTIME DESTINATION "Applications/KDE/KDE Connect.app/Contents/MacOS"
+        LIBRARY DESTINATION "Applications/KDE/KDE Connect.app/Contents/Frameworks"
+        ARCHIVE DESTINATION "Applications/KDE/KDE Connect.app/Contents/Frameworks"
+        OBJECTS DESTINATION "Applications/KDE/KDE Connect.app/Contents/Frameworks"
+    )
+    set(KDECONNECT_INSTALL_TARGETS_DEFAULT_ARGS_BUNDLE
+        BUNDLE DESTINATION "Applications/KDE/"
+    )
+else()
+    set(KDECONNECT_INSTALL_TARGETS_DEFAULT_ARGS
+        "${KDE_INSTALL_TARGETS_DEFAULT_ARGS}"
+    )
+    set(KDECONNECT_INSTALL_TARGETS_DEFAULT_ARGS_BUNDLE
+        "${KDE_INSTALL_TARGETS_DEFAULT_ARGS}"
+    )
+endif()
 
 find_package(ECM ${KF_MIN_VERSION} REQUIRED NO_MODULE)
 set(CMAKE_MODULE_PATH ${ECM_MODULE_PATH} ${CMAKE_SOURCE_DIR}/cmake)
@@ -28,7 +48,6 @@ include(ECMInstallIcons)
 include(ECMQtDeclareLoggingCategory)
 include(FeatureSummary)
 include(GenerateExportHeader)
-include(ECMGenerateQmlTypes)
 include(KDEClangFormat)
 include(KDEGitCommitHooks)
 include(ECMFindQmlModule)
@@ -80,6 +99,7 @@ endif()
 
 if(UNIX AND NOT APPLE)
     find_package(KF6Package REQUIRED)
+    find_package(KF6Solid ${KF_MIN_VERSION} REQUIRED)
     if (WITH_PULSEAUDIO)
         find_package(KF6PulseAudioQt REQUIRED)
     endif()
@@ -99,7 +119,7 @@ endif()
 #ecm_find_qmlmodule(org.kde.people 1.0) FIXME This results in KPeople code being called which triggers DBus calls which breaks the Windows CI
 ecm_find_qmlmodule(QtQuick.Particles 2.0)
 
-add_definitions(-DQT_NO_URL_CAST_FROM_STRING -DQT_NO_KEYWORDS -DQT_NO_CAST_FROM_ASCII)
+add_definitions(-DQT_NO_URL_CAST_FROM_STRING -DQT_NO_KEYWORDS -DQT_NO_CAST_FROM_ASCII -DQT_NO_CONTEXTLESS_CONNECT)
 
 find_package(Qt6 ${QT_MIN_VERSION} REQUIRED COMPONENTS DBus Quick QuickWidgets QuickControls2 Network Multimedia)
 
@@ -108,7 +128,7 @@ if (Qt6Gui_VERSION VERSION_GREATER_EQUAL "6.10.0")
 endif()
 
 find_package(KF6 ${KF_MIN_VERSION} REQUIRED COMPONENTS I18n DBusAddons IconThemes Notifications
-    KIO ColorScheme Service Solid Kirigami People WindowSystem GuiAddons Crash ItemModels WidgetsAddons)
+    KIO ColorScheme Service Kirigami People WindowSystem GuiAddons Crash ItemModels WidgetsAddons)
 
 if (WIN32)
     get_filename_component(WINDOWS_KITS_DIR
@@ -118,6 +138,8 @@ if (WIN32)
     string(REGEX MATCH "[0-9][0-9][0-9][0-9][0-9]" WIN_SDK_VERSION "${PLATFORM_IDENTITY}" )
     add_compile_definitions(WIN_SDK_VERSION=${WIN_SDK_VERSION})
 endif()
+
+configure_file(config-X11.h.cmake ${CMAKE_CURRENT_BINARY_DIR}/config-X11.h)
 
 add_subdirectory(core)
 add_subdirectory(plugins)
@@ -147,6 +169,7 @@ endif()
 ki18n_install(po)
 
 if(BUILD_TESTING)
+    add_compile_definitions(BUILD_TESTING)
     add_subdirectory(tests)
 endif()
 

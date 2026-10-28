@@ -1,0 +1,82 @@
+{
+  "schemaVersion": 1,
+  "revision": 7,
+  "mode": "pages",
+  "homePageId": "home",
+  "activePageId": "home",
+  "pages": [
+    {
+      "id": "home",
+      "name": "首页",
+      "application": "",
+      "slots": [
+        {
+          "id": "docs",
+          "kind": "website",
+          "name": "KDE 文档",
+          "icon": ""
+        },
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ]
+    },
+    {
+      "id": "editor",
+      "name": "编辑器",
+      "application": "notepad.exe",
+      "slots": [
+        null,
+        null,
+        {
+          "id": "save",
+          "kind": "shortcut",
+          "name": "保存",
+          "icon": ""
+        },
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ]
+    }
+  ],
+  "appearance": {
+    "background": "#F4F6FA",
+    "showLabels": true,
+    "showVolume": true,
+    "swipeDirection": "horizontal"
+  },
+  "idle": {
+    "enabled": true,
+    "timeoutMs": 5000,
+    "dialId": "digital",
+    "city": "长沙市",
+    "message": "今天也要保持专注"
+  }
+}

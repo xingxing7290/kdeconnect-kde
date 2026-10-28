@@ -1,5 +1,8 @@
 find_package(Qt6 ${QT_MIN_VERSION} REQUIRED COMPONENTS Test)
 
+ecm_add_test(paneldocumenttest.cpp LINK_LIBRARIES kdeconnectpanel Qt::Test)
+ecm_add_test(panelstoretest.cpp LINK_LIBRARIES kdeconnectpanel Qt::Test)
+
 set(kdeconnect_libraries
     kdeconnectcore
     kdeconnectdbusinterfaces

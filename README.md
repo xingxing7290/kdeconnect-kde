@@ -1,5 +1,16 @@
 # KDE Connect - desktop app
 
+## KDE 控制台开发分支
+
+本 fork 正在开发 Windows 控制面板编辑器及 Android 配套协议：固定 6 x 3 槽位、多页面、应用跟随、音量及空闲表盘。当前处于开发阶段，尚未完成交付或完整测试。
+
+- [需求与参考分析](docs/control-panel/REQUIREMENTS.zh-CN.md)
+- [技术方案](docs/control-panel/ARCHITECTURE.zh-CN.md)
+- [开发计划与验收进度](docs/control-panel/PLAN.zh-CN.md)
+- [配套 Android 端](https://github.com/xingxing7290/kdeconnect-android)
+
+原 KDE Connect 功能与上游说明保留如下。本项目修改发布到个人 fork，不向 KDE 上游自动提交 MR。
+
 KDE Connect is a multi-platform app that allows your devices to communicate (eg: your phone and your computer).
 
 ## (Some) Features

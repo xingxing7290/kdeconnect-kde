@@ -59,6 +59,9 @@ private Q_SLOTS:
         QCOMPARE(spy.count(), 0);
 
         announcer.startAnnouncing();
+        // Discovery sockets use ephemeral ports and receive unicast query replies.
+        // Query after the service starts instead of depending on a multicast announcement.
+        discoverer.sendQuery(serviceType);
         QVERIFY(spy.wait(2000));
         QVERIFY(spy.count() > 0);
 

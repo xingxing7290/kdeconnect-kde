@@ -1,4 +1,5 @@
 qt_add_resources(kdeconnect_custom_icons_SRCS ${CMAKE_SOURCE_DIR}/icons/custom_icons.qrc)
+find_package(KF6BreezeIcons ${KF_MIN_VERSION} REQUIRED)
 
 ecm_setup_version(${PROJECT_VERSION}
     VARIABLE_PREFIX KDECONNECT
@@ -32,6 +33,10 @@ ecm_add_qml_module(kdeconnect-app URI org.kde.kdeconnect.app)
 
 ecm_target_qml_sources(kdeconnect-app SOURCES
     qml/Main.qml
+    qml/DeviceManager.qml
+    qml/ControlDashboard.qml
+    qml/PanelButtonDialog.qml
+    qml/PanelDialGallery.qml
     qml/mpris.qml
     qml/mousepad.qml
     qml/presentationRemote.qml
@@ -49,6 +54,8 @@ ecm_target_qml_sources(kdeconnect-app SOURCES
 )
 
 target_link_libraries(kdeconnect-app PRIVATE
+    kdeconnectpanelactions
+    KF6::BreezeIcons
     Qt::Quick
     Qt::QuickControls2
     Qt::Widgets

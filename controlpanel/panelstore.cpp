@@ -55,6 +55,10 @@ PanelStore::PanelStore(const QString &directory, QObject *parent)
 
 QString PanelStore::defaultDirectory()
 {
+    const auto configured = qEnvironmentVariable("KDECONNECT_PANEL_CONFIG_DIR");
+    if (!configured.isEmpty() && QDir::isAbsolutePath(configured)) {
+        return QDir(configured).absolutePath();
+    }
     return QDir(QStandardPaths::writableLocation(QStandardPaths::GenericConfigLocation)).filePath(QStringLiteral("kdeconnect/controlpanel"));
 }
 

@@ -123,7 +123,8 @@ private Q_SLOTS:
 
         auto config = fixture();
         auto idle = config.value(QStringLiteral("idle")).toObject();
-        idle.insert(QStringLiteral("message"), QString(120, QLatin1Char('[')) + QStringLiteral("\\\""));
+        const QString quoted = QString(120, QLatin1Char('[')) + QStringLiteral("\\\"");
+        idle.insert(QStringLiteral("message"), quoted);
         config.insert(QStringLiteral("idle"), idle);
         QVERIFY(PanelDocument::fromJson(QJsonDocument(config).toJson()).has_value());
     }

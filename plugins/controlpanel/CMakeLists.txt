@@ -1,0 +1,2 @@
+kdeconnect_add_plugin(kdeconnect_controlpanel SOURCES controlpanelplugin.cpp)
+target_link_libraries(kdeconnect_controlpanel kdeconnectcore kdeconnectpanelactions)

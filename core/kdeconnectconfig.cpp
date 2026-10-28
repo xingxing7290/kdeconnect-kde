@@ -239,6 +239,10 @@ QSsl::KeyAlgorithm KdeConnectConfig::privateKeyAlgorithm()
 
 QDir KdeConnectConfig::baseConfigDir()
 {
+    const QString configured = qEnvironmentVariable("KDECONNECT_CONFIG_DIR");
+    if (!configured.isEmpty() && QDir::isAbsolutePath(configured)) {
+        return QDir(configured);
+    }
     QString configPath = QStandardPaths::writableLocation(QStandardPaths::GenericConfigLocation);
     QString kdeconnectConfigPath = QDir(configPath).absoluteFilePath(QStringLiteral("kdeconnect"));
     return QDir(kdeconnectConfigPath);

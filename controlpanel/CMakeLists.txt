@@ -1,4 +1,12 @@
-add_library(kdeconnectpanel STATIC paneldocument.cpp panelstore.cpp)
+add_library(kdeconnectpanel STATIC paneldocument.cpp panelstore.cpp panelruntime.cpp panelpeer.cpp)
 target_link_libraries(kdeconnectpanel PUBLIC Qt::Core)
 target_include_directories(kdeconnectpanel PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 set_target_properties(kdeconnectpanel PROPERTIES POSITION_INDEPENDENT_CODE ON AUTOMOC ON)
+
+add_library(kdeconnectpanelactions STATIC panelactions.cpp paneleditor.cpp)
+set_target_properties(kdeconnectpanelactions PROPERTIES AUTOMOC ON)
+set_target_properties(kdeconnectpanelactions PROPERTIES POSITION_INDEPENDENT_CODE ON)
+target_link_libraries(kdeconnectpanelactions PUBLIC kdeconnectpanel Qt::Gui)
+if(WIN32)
+    target_link_libraries(kdeconnectpanelactions PRIVATE user32 shell32)
+endif()

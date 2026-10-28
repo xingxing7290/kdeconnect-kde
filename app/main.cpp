@@ -7,13 +7,18 @@
 #include <QApplication>
 #include <QCommandLineParser>
 #include <QIcon>
+#include <QImage>
 #include <QProcess>
 #include <QQmlApplicationEngine>
+#include <QQmlContext>
 #include <QQuickStyle>
+#include <QQuickWindow>
 #include <QStandardPaths>
+#include <QTimer>
 #include <QWindow>
 
 #include "kdeconnect-version.h"
+#include <BreezeIcons>
 #include <KAboutData>
 #include <KColorSchemeManager>
 #include <KCrash>
@@ -21,6 +26,7 @@
 #include <KLocalizedQmlContext>
 #include <KLocalizedString>
 #include <KWindowSystem>
+#include <paneleditor.h>
 
 #if defined(Q_OS_MAC)
 #include "macosforegroundapp.h"
@@ -39,6 +45,7 @@ static void raiseWindow(QWindow *window)
 int main(int argc, char *argv[])
 {
     QApplication app(argc, argv);
+    BreezeIcons::initIcons();
     KLocalizedString::setApplicationDomain("kdeconnect-app");
     app.setWindowIcon(QIcon::fromTheme(QStringLiteral("kdeconnect")));
     KAboutData aboutData(QStringLiteral("kdeconnect.app"),
@@ -70,13 +77,14 @@ int main(int argc, char *argv[])
     QIcon::setFallbackThemeName(QStringLiteral("breeze"));
 #endif
 
-    // Default to org.kde.desktop style unless the user forces another style
+    // Keep the control panel and device manager styling consistent.
     if (qEnvironmentVariableIsEmpty("QT_QUICK_CONTROLS_STYLE")) {
-        QQuickStyle::setStyle(QStringLiteral("org.kde.desktop"));
+        QQuickStyle::setStyle(QStringLiteral("Basic"));
     }
 
     QString device;
     QString config;
+    QString screenshotPath;
     bool replace = false;
     {
         QCommandLineParser parser;
@@ -86,6 +94,10 @@ int main(int argc, char *argv[])
                                         i18nc("@info:shell", "Configuration module to show, requires --device to be set."),
                                         QStringLiteral("plugin-id"));
         parser.addOption(configOption);
+        QCommandLineOption screenshotOption(QStringLiteral("screenshot"),
+                                            i18nc("@info:shell", "Save a window image and exit for visual regression testing."),
+                                            QStringLiteral("png-path"));
+        parser.addOption(screenshotOption);
 
         QCommandLineOption replaceOption({QStringLiteral("replace")}, i18nc("command line description", "Replace an existing instance"));
         parser.addOption(replaceOption);
@@ -104,6 +116,7 @@ int main(int argc, char *argv[])
             }
         }
         replace = parser.isSet(replaceOption);
+        screenshotPath = parser.value(screenshotOption);
         if (parser.isSet(deviceOption)) {
             device = parser.value(deviceOption);
             replace = true;
@@ -118,7 +131,9 @@ int main(int argc, char *argv[])
         flags |= KDBusService::Replace;
     }
     KDBusService dbusService(flags);
+    ControlPanel::PanelEditor panelEditor;
     QQmlApplicationEngine engine;
+    engine.rootContext()->setContextProperty(QStringLiteral("panelEditor"), &panelEditor);
     KLocalization::setupLocalizedContext(&engine);
     engine.loadFromModule("org.kde.kdeconnect.app", "Main");
 
@@ -132,6 +147,13 @@ int main(int argc, char *argv[])
         mo->invokeMethod(obj, "openDevice", Qt::QueuedConnection, Q_ARG(QVariant, device), Q_ARG(QVariant, config));
     }
     raiseWindow(obj);
+    if (!screenshotPath.isEmpty()) {
+        QTimer::singleShot(2000, &app, [obj, screenshotPath] {
+            auto *window = qobject_cast<QQuickWindow *>(obj);
+            const bool saved = window && window->grabWindow().save(screenshotPath, "PNG");
+            QCoreApplication::exit(saved ? 0 : 3);
+        });
+    }
     QObject::connect(&dbusService, &KDBusService::activateRequested, obj, [obj](const QStringList & /*arguments*/, const QString & /*workingDirectory*/) {
         raiseWindow(obj);
     });

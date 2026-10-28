@@ -230,7 +230,8 @@ private Q_SLOTS:
         QVERIFY(temporaryFile.open());
         const QString missingFilePath = temporaryFile.fileName();
         temporaryFile.close();
-        QVERIFY(QFile::remove(missingFilePath));
+        QVERIFY(temporaryFile.remove());
+        QVERIFY(!QFileInfo::exists(missingFilePath));
 
         QSharedPointer<QFile> input(new QFile(missingFilePath));
         NetworkPacket packet(PACKET_TYPE_SHARE_REQUEST);

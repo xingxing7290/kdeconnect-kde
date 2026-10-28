@@ -2,6 +2,9 @@ find_package(Qt6 ${QT_MIN_VERSION} REQUIRED COMPONENTS Test)
 
 ecm_add_test(paneldocumenttest.cpp LINK_LIBRARIES kdeconnectpanel Qt::Test)
 ecm_add_test(panelstoretest.cpp LINK_LIBRARIES kdeconnectpanel Qt::Test)
+ecm_add_test(panelpeertest.cpp LINK_LIBRARIES kdeconnectpanel Qt::Test)
+ecm_add_test(panelactionstest.cpp LINK_LIBRARIES kdeconnectpanelactions Qt::Test)
+ecm_add_test(paneleditortest.cpp LINK_LIBRARIES kdeconnectpanelactions Qt::Test)
 
 set(kdeconnect_libraries
     kdeconnectcore
@@ -32,4 +35,4 @@ if (WIN32 OR APPLE)
 endif()
 
 # Do not touch the clipboard of the running session (and avoid a KSystemClipboard deadlock on exit under Wayland)
-set_tests_properties(notificationstest pluginloadtest PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
+set_property(TEST notificationstest pluginloadtest APPEND PROPERTY ENVIRONMENT "QT_QPA_PLATFORM=offscreen")

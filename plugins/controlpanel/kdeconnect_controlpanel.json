@@ -1,0 +1,15 @@
+{
+    "$schema": "../kdeconnect.schema.json",
+    "KPlugin": {
+        "Name": "Control Panel",
+        "Description": "Synchronize a configurable control panel with paired devices",
+        "EnabledByDefault": true,
+        "Icon": "view-grid"
+    },
+    "X-KdeConnect-SupportedPacketType": ["kdeconnect.controlpanel.request"],
+    "X-KdeConnect-OutgoingPacketType": [
+        "kdeconnect.controlpanel.config",
+        "kdeconnect.controlpanel.state",
+        "kdeconnect.controlpanel.result"
+    ]
+}

@@ -31,6 +31,8 @@ ecm_add_test(panelruntimetest.cpp LINK_LIBRARIES kdeconnectpanel Qt::Test)
 if(WIN32)
     add_executable(panelassetsintegration panelassetsintegration.cpp)
     target_link_libraries(panelassetsintegration PRIVATE kdeconnectpanelactions)
+    add_executable(panelemulatorintegration panelemulatorintegration.cpp)
+    target_link_libraries(panelemulatorintegration PRIVATE kdeconnectpanelactions)
     add_executable(volumeintegration volumeintegration.cpp)
     target_link_libraries(volumeintegration PRIVATE kdeconnectvolume)
     # Requires a desktop session and foreground activation permission; run manually.

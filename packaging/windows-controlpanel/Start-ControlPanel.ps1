@@ -100,6 +100,26 @@ function Start-PackageProcess([string]$Name, [string[]]$Arguments = @()) {
     $ownedProcesses.Add($process)
     return $process
 }
+function Wait-PackageIdentity {
+    param(
+        [Parameter(Mandatory = $true)][Diagnostics.Process]$Daemon,
+        [Parameter(Mandatory = $true)][ValidateCount(2, 2)][string[]]$IdentityPaths,
+        [ValidateRange(1, 20000)][int]$TimeoutMilliseconds = 20000
+    )
+    $timer = [Diagnostics.Stopwatch]::StartNew()
+    do {
+        if ($Daemon.HasExited) { throw 'Daemon exited before identity was ready' }
+        $complete = $true
+        foreach ($identityPath in $IdentityPaths) {
+            $identityFile = Get-Item -LiteralPath $identityPath -ErrorAction SilentlyContinue
+            if (!$identityFile -or $identityFile.PSIsContainer -or $identityFile.Length -le 0) { $complete = $false }
+        }
+        if ($complete) { return }
+        if ($timer.ElapsedMilliseconds -ge $TimeoutMilliseconds) { break }
+        Start-Sleep -Milliseconds 100
+    } while ($true)
+    throw 'Identity files did not become ready within the bounded wait'
+}
 try {
     try { $mutexHeld = $profileMutex.WaitOne(0) }
     catch [Threading.AbandonedMutexException] { $mutexHeld = $true }
@@ -131,6 +151,10 @@ try {
     }
     if (!$ready) { throw "KDE Connect daemon did not become ready; inspect $profileRoot/logs" }
     if ($SelfTest) {
+        # D-Bus registration precedes identity generation in the upstream daemon.
+        Wait-PackageIdentity -Daemon $daemon -IdentityPaths @(
+            (Join-Path $profileRoot 'kdeconnect/privateKey.pem'),
+            (Join-Path $profileRoot 'kdeconnect/certificate.pem'))
         $allowedSids = @([Security.Principal.WindowsIdentity]::GetCurrent().User.Value, 'S-1-5-18', 'S-1-5-32-544')
         foreach ($secretName in @('privateKey.pem', 'certificate.pem')) {
             $secretPath = Join-Path $profileRoot "kdeconnect/$secretName"

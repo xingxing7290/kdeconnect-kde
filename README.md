@@ -20,6 +20,7 @@
 - [Windows 独立目录候选包与验证边界](docs/control-panel/MILESTONE-07-PACKAGING.zh-CN.md)
 - [信息表盘、三日预报与最新检查](docs/control-panel/MILESTONE-07-INFO.zh-CN.md)
 - [按钮编辑、拖入保护与页面交互检查](docs/control-panel/MILESTONE-08-BUTTONS.zh-CN.md)
+- [Android 兼容修复、243 项回归与触摸测试](docs/control-panel/MILESTONE-09-COMPAT.zh-CN.md)
 - [Windows 智能跟随使用说明](docs/control-panel/FOLLOW.zh-CN.md)
 - [配套 Android 端](https://github.com/xingxing7290/kdeconnect-android)
 

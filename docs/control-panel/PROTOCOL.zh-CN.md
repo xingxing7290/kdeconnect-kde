@@ -1,6 +1,6 @@
 # 控制面板协议 v1
 
-此协议随个人 fork 发布，传输复用 KDE Connect 的已配对连接。配置、动作、结果和页状态已接入双端，Windows 跟随使用现有 state 包；音量复用既有 System Volume 包。阶段证据及边界见 MILESTONE-03.zh-CN.md、MILESTONE-04.zh-CN.md。资源和天气仍按 PLAN 继续实现。
+此协议随个人 fork 发布，传输复用 KDE Connect 的已配对连接。配置、动作、结果、页状态和图标已接入双端，Windows 跟随使用现有 state 包；音量复用既有 System Volume 包。阶段证据见 MILESTONE-03.zh-CN.md 至 MILESTONE-05.zh-CN.md，图标限制见 ASSETS.zh-CN.md。天气仍按 PLAN 继续实现。
 
 ## 配置
 
@@ -30,8 +30,8 @@
 | kdeconnect.controlpanel.result | requestId, success, error | 结果；error 为稳定机器码 |
 | kdeconnect.controlpanel.request | operation=page, sessionId, revision, pageId | 多页手动选择 |
 | kdeconnect.controlpanel.state | revision, activePageId, foregroundApplication | 活动页面；不改变配置 revision |
-| kdeconnect.controlpanel.request | operation=asset, assetId | 获取配置引用图标 |
-| kdeconnect.controlpanel.asset | assetId, mime, size + payload | 限量 PNG 内容，接收端校验 SHA-256 |
+| kdeconnect.controlpanel.request | operation=asset, sessionId, revision, assetId | 获取当前配置引用图标 |
+| kdeconnect.controlpanel.asset | sessionId, revision, assetId, mime, size, error + payload | 256 x 256 PNG，接收端校验哈希与实际解码；错误响应无附件 |
 | kdeconnect.controlpanel.dial | city, observedAt, fetchedAt, temperature, weatherCode, status | 天气快照；不得以伪造数据代替网络失败 |
 
 sessionId、requestId 使用小写 UUID。Android 每次重新建立插件会话生成新的 sessionId，配置重取沿用当前 sessionId；sequence 从 1 单调递增，最大为安全 JSON 整数上限。同一会话最近 256 个动作请求保留原始请求和结果：相同请求返回原结果，ID 冲突返回 invalid_request。结果缓存淘汰后仍保留最高 sequence，更早或乱序请求返回 request_expired，不能重新执行。每个连接最多记录 4096 个已退休会话 ID，退休会话不能通过重复握手复活。

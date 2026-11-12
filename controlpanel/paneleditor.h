@@ -2,6 +2,7 @@
  * SPDX-License-Identifier: GPL-2.0-only OR GPL-3.0-only OR LicenseRef-KDE-Accepted-GPL
  */
 #pragma once
+#include "panelassets.h"
 #include "panelforeground.h"
 #include "panelstore.h"
 #include <QUrl>
@@ -39,6 +40,9 @@ public:
     Q_INVOKABLE bool moveButton(int source, int destination);
     Q_INVOKABLE bool dropFile(int index, const QUrl &url);
     Q_INVOKABLE QVariantMap inspectFile(const QUrl &url) const;
+    Q_INVOKABLE QString importIcon(const QUrl &url);
+    Q_INVOKABLE QString programIcon(const QString &path);
+    Q_INVOKABLE QUrl assetUrl(const QString &id) const;
     Q_INVOKABLE bool setMode(const QString &mode);
     Q_INVOKABLE bool setAppearance(const QString &key, const QVariant &value);
     Q_INVOKABLE bool setIdle(const QString &key, const QVariant &value);
@@ -56,6 +60,7 @@ private:
     int pageIndex(const QJsonArray &pages) const;
     PanelStore m_store;
     PanelForeground m_foreground;
+    PanelAssets m_assets;
     QString m_currentPageId;
     QString m_error;
 };

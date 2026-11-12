@@ -3,10 +3,13 @@
  */
 #include "controlpanelplugin.h"
 #include <KPluginFactory>
+#include <QBuffer>
 #include <QCoreApplication>
+#include <QFileInfo>
 #include <QJsonDocument>
 #include <QPointer>
 #include <panelactions.h>
+#include <panelassets.h>
 #include <panelforeground.h>
 
 K_PLUGIN_CLASS_WITH_JSON(ControlPanelPlugin, "kdeconnect_controlpanel.json")
@@ -49,6 +52,27 @@ ControlPanelPlugin::ControlPanelPlugin(QObject *parent, const QVariantList &args
             NetworkPacket packet(type, body.toVariantMap());
             sendPacket(packet);
         }
+    });
+    connect(m_peer, &ControlPanel::PanelPeer::assetRequested, this, [this](const QString &id, qint64 revision, const QString &session) {
+        if (!device()->isPaired() || !device()->isReachable())
+            return;
+        const ControlPanel::PanelAssets assets(QFileInfo(runtime()->store()->filePath()).absolutePath());
+        const auto bytes = assets.read(id);
+        NetworkPacket packet(QStringLiteral("kdeconnect.controlpanel.asset"),
+                             {{QStringLiteral("protocolVersion"), 1},
+                              {QStringLiteral("sessionId"), session},
+                              {QStringLiteral("revision"), revision},
+                              {QStringLiteral("assetId"), id},
+                              {QStringLiteral("mime"), QStringLiteral("image/png")},
+                              {QStringLiteral("size"), bytes ? bytes->size() : 0},
+                              {QStringLiteral("error"), bytes ? QString() : QStringLiteral("asset_missing")}});
+        if (bytes) {
+            auto buffer = QSharedPointer<QBuffer>::create();
+            buffer->setData(*bytes);
+            buffer->open(QIODevice::ReadOnly);
+            packet.setPayload(buffer, buffer->size());
+        }
+        sendPacket(packet);
     });
 }
 

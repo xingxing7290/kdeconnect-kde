@@ -15,6 +15,7 @@ namespace ControlPanel
 PanelEditor::PanelEditor(const QString &directory, QObject *parent)
     : QObject(parent)
     , m_store(directory)
+    , m_assets(QFileInfo(m_store.filePath()).absolutePath())
 {
     connect(&m_store, &PanelStore::errorOccurred, this, [this](const QString &error) {
         fail(error);
@@ -195,6 +196,13 @@ bool PanelEditor::setButton(int index, const QVariantMap &value)
     button.insert(QStringLiteral("id"), oldId.isEmpty() ? QUuid::createUuid().toString(QUuid::WithoutBraces) : oldId);
     if (!button.contains(QStringLiteral("icon")))
         button.insert(QStringLiteral("icon"), QString());
+    if (button.value(QStringLiteral("icon")).toString().isEmpty() && button.value(QStringLiteral("kind")).toString() == QLatin1String("program")) {
+        button.insert(
+            QStringLiteral("icon"),
+            m_assets.importProgramIcon(QUrl::fromLocalFile(button.value(QStringLiteral("target")).toObject().value(QStringLiteral("path")).toString())));
+    }
+    if (!button.value(QStringLiteral("icon")).toString().isEmpty() && !m_assets.read(button.value(QStringLiteral("icon")).toString()))
+        return fail(QStringLiteral("icon_unavailable"));
     buttons[index] = button;
     page.insert(QStringLiteral("slots"), buttons);
     pages[pageNumber] = page;
@@ -268,6 +276,27 @@ bool PanelEditor::setMode(const QString &mode)
     auto config = m_store.document().privateConfig();
     config.insert(QStringLiteral("mode"), mode);
     return save(config);
+}
+
+QString PanelEditor::importIcon(const QUrl &url)
+{
+    QString error;
+    const auto id = m_assets.importImage(url, &error);
+    if (id.isEmpty())
+        fail(error);
+    return id;
+}
+QString PanelEditor::programIcon(const QString &path)
+{
+    QString error;
+    const auto id = m_assets.importProgramIcon(QUrl::fromLocalFile(path), &error);
+    if (id.isEmpty())
+        fail(error);
+    return id;
+}
+QUrl PanelEditor::assetUrl(const QString &id) const
+{
+    return m_assets.url(id);
 }
 
 bool PanelEditor::setAppearance(const QString &key, const QVariant &value)

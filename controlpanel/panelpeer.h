@@ -4,6 +4,7 @@
 #pragma once
 
 #include "panelruntime.h"
+#include <QElapsedTimer>
 #include <QHash>
 #include <QQueue>
 #include <QSet>
@@ -22,6 +23,7 @@ public:
 
 Q_SIGNALS:
     void packetReady(const QString &type, const QJsonObject &body);
+    void assetRequested(const QString &id, qint64 revision, const QString &sessionId);
 
 private:
     struct Completed {
@@ -37,5 +39,7 @@ private:
     qint64 m_sequence = 0;
     QHash<QString, Completed> m_completed;
     QQueue<QString> m_order;
+    QElapsedTimer m_assetWindow;
+    int m_assetRequests = 0;
 };
 }

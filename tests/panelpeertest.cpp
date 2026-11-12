@@ -61,6 +61,59 @@ private:
     }
 
 private Q_SLOTS:
+    void assetRequestsRequireSessionRevisionAndReferencedHash()
+    {
+        QTemporaryDir directory;
+        PanelStore store(directory.path());
+        initialize(store);
+        const QString icon(64, QLatin1Char('a'));
+        auto config = store.document().privateConfig();
+        auto pages = config.value(QStringLiteral("pages")).toArray();
+        auto page = pages[0].toObject();
+        auto buttons = page.value(QStringLiteral("slots")).toArray();
+        auto button = buttons[0].toObject();
+        button.insert(QStringLiteral("icon"), icon);
+        buttons[0] = button;
+        page.insert(QStringLiteral("slots"), buttons);
+        pages[0] = page;
+        config.insert(QStringLiteral("pages"), pages);
+        QVERIFY(store.save(config, store.document().revision()));
+        PanelRuntime runtime(&store);
+        PanelPeer peer(&runtime, [](const QJsonObject &) {
+            return QString();
+        });
+        QSignalSpy grants(&peer, &PanelPeer::assetRequested);
+        QSignalSpy packets(&peer, &PanelPeer::packetReady);
+        const auto session = uuid();
+        auto request = handshake(session);
+        request.insert(QStringLiteral("operation"), QStringLiteral("asset"));
+        request.insert(QStringLiteral("revision"), store.document().revision());
+        request.insert(QStringLiteral("assetId"), icon);
+        peer.receive(request);
+        QCOMPARE(grants.size(), 0);
+        peer.receive(handshake(session));
+        peer.receive(request);
+        QCOMPARE(grants.size(), 1);
+        QCOMPARE(grants[0][0].toString(), icon);
+        request.insert(QStringLiteral("assetId"), QString(64, QLatin1Char('b')));
+        peer.receive(request);
+        QCOMPARE(grants.size(), 1);
+        QCOMPARE(packets.last()[1].toJsonObject().value(QStringLiteral("error")).toString(), QStringLiteral("unknown_asset"));
+        request.insert(QStringLiteral("assetId"), QStringLiteral("../../private"));
+        peer.receive(request);
+        QCOMPARE(grants.size(), 1);
+        request.insert(QStringLiteral("assetId"), icon);
+        request.insert(QStringLiteral("revision"), 0);
+        peer.receive(request);
+        QCOMPARE(grants.size(), 1);
+        request.insert(QStringLiteral("revision"), store.document().revision());
+        for (int index = 0; index < 15; ++index)
+            peer.receive(request);
+        QCOMPARE(grants.size(), 16);
+        peer.receive(request);
+        QCOMPARE(grants.size(), 16);
+        QCOMPARE(packets.last()[1].toJsonObject().value(QStringLiteral("error")).toString(), QStringLiteral("asset_busy"));
+    }
     void configurationIsPublicAndRequiresVersion()
     {
         QTemporaryDir directory;

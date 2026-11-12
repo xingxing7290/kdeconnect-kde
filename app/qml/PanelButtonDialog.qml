@@ -8,10 +8,12 @@ import QtQuick.Dialogs
 
 C.Dialog {
     id: dialog
+    objectName: "panelButtonDialog"
     property var editor
     property var systemPresets
     property int slotIndex: 0
     property var original: ({})
+    property string iconId: ""
     readonly property var kinds: ["program", "website", "file", "folder", "shortcut", "system", "command"]
     readonly property string kind: kinds[typeBox.currentIndex]
     parent: C.Overlay.overlay
@@ -23,6 +25,7 @@ C.Dialog {
     function openAt(index, button) {
         slotIndex = index;
         original = button || {};
+        iconId = original.icon || "";
         typeBox.currentIndex = Math.max(0, kinds.indexOf(original.kind || "program"));
         nameField.text = original.name || "";
         targetField.text = original.target?.url || original.target?.path || original.target?.key || "";
@@ -57,7 +60,7 @@ C.Dialog {
             else if (kind === "system") name = systemPresets[systemBox.currentIndex].name;
             else name = targetField.text.replace(/\\/g, "/").split("/").pop().replace(/\.[^.]+$/, "");
         }
-        return editor.setButton(slotIndex, {kind: kind, name: name, icon: original.icon || "", target: target});
+        return editor.setButton(slotIndex, {kind: kind, name: name, icon: iconId, target: target});
     }
 
     ColumnLayout {
@@ -66,11 +69,20 @@ C.Dialog {
         C.Label { text: qsTr("按钮类型") }
         C.ComboBox { id: typeBox; model: [qsTr("程序"), qsTr("网站"), qsTr("文件"), qsTr("文件夹"), qsTr("快捷键"), qsTr("系统功能"), qsTr("KDE 远程命令")]; Layout.fillWidth: true }
         C.Label { text: qsTr("名称（留空时自动填写）") }
-        C.TextField { id: nameField; maximumLength: 120; Layout.fillWidth: true }
+        C.TextField { id: nameField; objectName: "panelButtonName"; maximumLength: 120; Layout.fillWidth: true }
+        RowLayout {
+            Layout.fillWidth: true
+            Image { source: dialog.iconId ? editor.assetUrl(dialog.iconId) : ""; Layout.preferredWidth: 48; Layout.preferredHeight: 48; fillMode: Image.PreserveAspectFit }
+            C.Button { text: qsTr("选择 JPG / PNG 图标"); onClicked: iconPicker.open() }
+            C.Button { text: dialog.kind === "program" ? qsTr("读取程序图标") : qsTr("恢复默认图标"); onClicked: {
+                if (dialog.kind === "program") { const id = editor.programIcon(targetField.text); if (id) dialog.iconId = id; }
+                else dialog.iconId = "";
+            } }
+        }
         RowLayout {
             visible: dialog.kind !== "shortcut" && dialog.kind !== "system"
             C.TextField { id: targetField; Layout.fillWidth: true; placeholderText: dialog.kind === "website" ? "https://example.com/path?query=1" : qsTr("目标路径 / 命令标识") }
-            C.Button { visible: ["program", "file", "folder"].indexOf(dialog.kind) >= 0; text: qsTr("浏览…"); onClicked: dialog.kind === "folder" ? folderPicker.open() : filePicker.open() }
+            C.Button { visible: ["program", "file", "folder"].indexOf(dialog.kind) >= 0; text: qsTr("浏览..."); onClicked: dialog.kind === "folder" ? folderPicker.open() : filePicker.open() }
         }
         RowLayout {
             visible: dialog.kind === "shortcut"
@@ -86,9 +98,14 @@ C.Dialog {
             Layout.fillWidth: true
             C.Button { text: qsTr("删除按钮"); enabled: !!dialog.original.id; onClicked: if (editor.clearButton(slotIndex)) dialog.close() }
             Item { Layout.fillWidth: true }
-            C.Button { text: qsTr("取消"); onClicked: dialog.close() }
-            C.Button { text: qsTr("保存"); highlighted: true; onClicked: if (dialog.saveButton()) dialog.close() }
+            C.Button { objectName: "panelButtonCancel"; text: qsTr("取消"); onClicked: dialog.close() }
+            C.Button { objectName: "panelButtonSave"; text: qsTr("保存"); highlighted: true; onClicked: if (dialog.saveButton()) dialog.close() }
         }
+    }
+    FileDialog {
+        id: iconPicker
+        nameFilters: [qsTr("图片 (*.png *.jpg *.jpeg)")]
+        onAccepted: { const id = editor.importIcon(selectedFile); if (id) dialog.iconId = id; }
     }
     FileDialog {
         id: filePicker

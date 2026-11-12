@@ -99,7 +99,8 @@ Item {
                                             border.width: drop.containsDrag ? 2 : 0; border.color: "#4988f1"
                                             Column {
                                                 anchors.centerIn: parent; width: parent.width - 8; spacing: 4
-                                                Kirigami.Icon { visible: cell.button !== null; source: root.kindIcon(cell.button?.kind); width: Math.min(32, cell.width * 0.5); height: width; anchors.horizontalCenter: parent.horizontalCenter }
+                                                Image { id: slotImage; visible: status === Image.Ready; source: cell.button?.icon ? editor.assetUrl(cell.button.icon) : ""; width: Math.min(40, cell.width * 0.6); height: visible ? width : 0; fillMode: Image.PreserveAspectFit; anchors.horizontalCenter: parent.horizontalCenter }
+                                                Kirigami.Icon { visible: cell.button !== null && slotImage.status !== Image.Ready; source: root.kindIcon(cell.button?.kind); width: Math.min(32, cell.width * 0.5); height: visible ? width : 0; anchors.horizontalCenter: parent.horizontalCenter }
                                                 C.Label { visible: !cell.button; text: "+"; font.pixelSize: 27; color: "#99a3b1"; anchors.horizontalCenter: parent.horizontalCenter }
                                                 C.Label { visible: config.appearance.showLabels && cell.button !== null; text: cell.button?.name || ""; width: parent.width; elide: Text.ElideRight; horizontalAlignment: Text.AlignHCenter; font.pixelSize: 11; color: "#344158" }
                                             }

@@ -2,6 +2,7 @@
  * SPDX-License-Identifier: GPL-2.0-only OR GPL-3.0-only OR LicenseRef-KDE-Accepted-GPL
  */
 #include "panelpeer.h"
+#include <QJsonArray>
 #include <QJsonDocument>
 #include <QRegularExpression>
 #include <QSet>
@@ -79,6 +80,8 @@ void PanelPeer::receive(const QJsonObject &request)
     QSet<QString> allowed{QStringLiteral("protocolVersion"), QStringLiteral("operation"), QStringLiteral("sessionId")};
     if (operation == QLatin1String("action")) {
         allowed.unite({QStringLiteral("requestId"), QStringLiteral("sequence"), QStringLiteral("revision"), QStringLiteral("buttonId")});
+    } else if (operation == QLatin1String("asset")) {
+        allowed.unite({QStringLiteral("revision"), QStringLiteral("assetId")});
     } else if (operation == QLatin1String("page")) {
         allowed.unite({QStringLiteral("revision"), QStringLiteral("pageId")});
     } else if (operation != QLatin1String("config")) {
@@ -118,6 +121,45 @@ void PanelPeer::receive(const QJsonObject &request)
     }
     if (!integer(request.value(QStringLiteral("revision")), 0, PanelDocument::MaxRevision)) {
         sendResult(id, QStringLiteral("invalid_request"));
+        return;
+    }
+    if (operation == QLatin1String("asset")) {
+        const auto asset = request.value(QStringLiteral("assetId")).toString();
+        const auto revision = request.value(QStringLiteral("revision")).toInteger();
+        auto *store = m_runtime->store();
+        QString error;
+        bool referenced = false;
+        for (const auto &page : store->document().privateConfig().value(QStringLiteral("pages")).toArray()) {
+            for (const auto &button : page.toObject().value(QStringLiteral("slots")).toArray()) {
+                if (!asset.isEmpty() && button.toObject().value(QStringLiteral("icon")).toString() == asset)
+                    referenced = true;
+            }
+        }
+        static const QRegularExpression hash(QStringLiteral("\\A[a-f0-9]{64}\\z"));
+        if (!m_assetWindow.isValid() || m_assetWindow.elapsed() >= 1000) {
+            m_assetWindow.start();
+            m_assetRequests = 0;
+        }
+        if (!store->isUsable())
+            error = QStringLiteral("config_unavailable");
+        else if (revision != store->document().revision())
+            error = QStringLiteral("stale_revision");
+        else if (!request.value(QStringLiteral("assetId")).isString() || !hash.match(asset).hasMatch() || !referenced)
+            error = QStringLiteral("unknown_asset");
+        else if (++m_assetRequests > 16)
+            error = QStringLiteral("asset_busy");
+        if (error.isEmpty())
+            Q_EMIT assetRequested(asset, revision, session);
+        else
+            Q_EMIT packetReady(QStringLiteral("kdeconnect.controlpanel.asset"),
+                               {{QStringLiteral("protocolVersion"), 1},
+                                {QStringLiteral("sessionId"), session},
+                                {QStringLiteral("revision"), revision},
+                                {QStringLiteral("assetId"), asset},
+                                {QStringLiteral("size"), 0},
+                                {QStringLiteral("error"), error}});
+        if (error == QLatin1String("stale_revision"))
+            sendConfiguration();
         return;
     }
     if (operation == QLatin1String("page")) {

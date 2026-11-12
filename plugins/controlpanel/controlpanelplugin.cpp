@@ -68,7 +68,8 @@ ControlPanelPlugin::ControlPanelPlugin(QObject *parent, const QVariantList &args
     connect(m_peer, &ControlPanel::PanelPeer::packetReady, this, [this](const QString &type, const QJsonObject &body) {
         if (device()->isPaired() && device()->isReachable()) {
             NetworkPacket packet(type, body.toVariantMap());
-            sendPacket(packet);
+            if (sendPacket(packet) && type == QLatin1String("kdeconnect.controlpanel.config"))
+                publishWeather();
         }
     });
     connect(m_peer, &ControlPanel::PanelPeer::assetRequested, this, [this](const QString &id, qint64 revision, const QString &session) {
@@ -98,7 +99,6 @@ void ControlPanelPlugin::connected()
 {
     if (device()->isPaired()) {
         m_peer->sendConfiguration();
-        publishWeather();
     }
 }
 
@@ -120,8 +120,6 @@ void ControlPanelPlugin::receivePacket(const NetworkPacket &packet)
 {
     if (device()->isPaired() && device()->isReachable() && packet.type() == QLatin1String("kdeconnect.controlpanel.request") && !packet.hasPayload()) {
         m_peer->receive(QJsonObject::fromVariantMap(packet.body()));
-        if (packet.get<QString>(QStringLiteral("operation")) == QLatin1String("config"))
-            publishWeather();
     }
 }
 

@@ -48,8 +48,16 @@ int main(int argc, char **argv)
             return 8;
         return 0;
     }
-    if (args[1] == QLatin1String("--unified-direction")) {
-        if (args.size() != 4 || (args[3] != QLatin1String("horizontal") && args[3] != QLatin1String("vertical")))
+    if (args[1] == QLatin1String("--unified-direction") || args[1] == QLatin1String("--unified-dial")) {
+        const bool dialOperation = args[1] == QLatin1String("--unified-dial");
+        const QStringList allowed = dialOperation ? QStringList{QStringLiteral("digital"),
+                                                                QStringLiteral("analog"),
+                                                                QStringLiteral("weather"),
+                                                                QStringLiteral("info"),
+                                                                QStringLiteral("car"),
+                                                                QStringLiteral("disabled")}
+                                                  : QStringList{QStringLiteral("horizontal"), QStringLiteral("vertical")};
+        if (args.size() != 4 || !allowed.contains(args[3]))
             return 32;
         ControlPanel::PanelEditor editor(profile.filePath(QStringLiteral("panel")));
         const auto pages = editor.config().value(QStringLiteral("pages")).toList();
@@ -81,12 +89,19 @@ int main(int argc, char **argv)
                 }
             }
         }
-        if (!editor.setAppearance(QStringLiteral("swipeDirection"), args[3]))
+        const bool saved = dialOperation
+            ? editor.setIdleOptions({{QStringLiteral("enabled"), args[3] != QLatin1String("disabled")},
+                                     {QStringLiteral("timeoutMs"), 5000},
+                                     {QStringLiteral("dialId"), args[3] == QLatin1String("disabled") ? QStringLiteral("digital") : args[3]},
+                                     {QStringLiteral("city"), args[3] == QLatin1String("disabled") ? QString() : QStringLiteral("长沙市")},
+                                     {QStringLiteral("message"), args[3] == QLatin1String("disabled") ? QString() : QStringLiteral("E2E 表盘唤醒验证")}})
+            : editor.setAppearance(QStringLiteral("swipeDirection"), args[3]);
+        if (!saved)
             return 38;
         QFile output;
         if (!output.open(stdout, QIODevice::WriteOnly))
             return 39;
-        output.write(QJsonDocument(QJsonObject{{QStringLiteral("direction"), args[3]},
+        output.write(QJsonDocument(QJsonObject{{dialOperation ? QStringLiteral("dial") : QStringLiteral("direction"), args[3]},
                                                {QStringLiteral("revision"), QJsonValue::fromVariant(editor.config().value(QStringLiteral("revision")))}})
                          .toJson(QJsonDocument::Compact));
         output.flush();

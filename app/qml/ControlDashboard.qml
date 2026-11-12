@@ -154,6 +154,7 @@ Item {
             model: [qsTr("表盘选择"), qsTr("桌面控制"), qsTr("开启连接"), qsTr("关于")]
             delegate: C.ItemDelegate {
                 id: navigation
+                objectName: "panelNavigation-" + index
                 required property int index
                 required property string modelData
                 text: modelData; Layout.fillWidth: true; highlighted: root.section === index
@@ -453,7 +454,7 @@ Item {
         ColumnLayout {
             C.Label { text: qsTr("开启连接"); font.pixelSize: 26; font.bold: true; color: "#273448" }
             C.Label { text: qsTr("在 Android 和电脑上打开 KDE Connect，连接同一网络，在设备管理中配对。\n配对完成后，手机打开“控制面板”即可读取电脑配置。"); wrapMode: Text.WordWrap; Layout.fillWidth: true; color: "#69778b"; lineHeight: 1.6 }
-            C.Button { text: qsTr("打开设备管理与配对"); highlighted: true; palette.dark: "#286fe0"; palette.mid: "#205ab8"; palette.brightText: "white"; onClicked: root.openConnections() }
+            C.Button { objectName: "panelOpenConnections"; text: qsTr("打开设备管理与配对"); highlighted: true; palette.dark: "#286fe0"; palette.mid: "#205ab8"; palette.brightText: "white"; onClicked: root.openConnections() }
             Item { Layout.fillHeight: true }
         }
         ColumnLayout {
@@ -461,7 +462,7 @@ Item {
             C.Label { text: "KDE Connect 控制面板"; font.pixelSize: 22 }
             C.Label { text: qsTr("Android 与 Windows 控制面板开发分支\n基于 KDE Connect 开源项目，使用 GPL 许可证。"); color: "#69778b"; lineHeight: 1.6 }
             C.Button { text: qsTr("查看源代码"); onClicked: Qt.openUrlExternally("https://github.com/xingxing7290/kdeconnect-kde") }
-            C.Button { text: qsTr("KDE Connect 原有设备功能"); onClicked: root.openConnections() }
+            C.Button { objectName: "panelOriginalFeatures"; text: qsTr("KDE Connect 原有设备功能"); onClicked: root.openConnections() }
             Item { Layout.fillHeight: true }
         }
     }

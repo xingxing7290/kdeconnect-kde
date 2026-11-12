@@ -2,7 +2,7 @@
 
 ## KDE 控制台开发分支
 
-当前 master 继续统一验证：[阶段十七](docs/control-panel/MILESTONE-17-E2E-FONT.zh-CN.md) 完成隔离通道的当前包图标传输、十页切换、桌面重启和 Android 离线新进程恢复，并修复已加载图标在大字体下裁切名称的问题。Android 全量 271 项、Windows 21/21 通过；Lint 仍有 493 项错误。普通 LAN、真实平台动作、完整视觉、多设备长时及发行仍待完成。下方已发布体验版保持原标签和附件，不等同当前 master。
+当前 master 继续统一验证：[阶段十八](docs/control-panel/MILESTONE-18-VISUAL-DIALS.zh-CN.md) 补四入口/弹窗的两尺寸截图、真实五表盘空闲与首次触摸唤醒，并修复信息表盘温度范围裁切。Android 全量 273 项、Windows 21/21 通过；Lint 仍有 493 项错误。天气缓存重推时序、全部视觉/无障碍、普通 LAN、原生平台动作、多设备长时及发行仍待完成；[视觉对照](docs/control-panel/VISUAL-18-COMPARISON.zh-CN.md) 明确列出设计差异与边界。下方体验版标签和附件保持不变。
 
 现提供 [0.1.0-alpha.1 功能体验版](docs/control-panel/PREVIEW-0.1.0-alpha.1.zh-CN.md)：按用户要求先输出阶段性小版本，当时仅完成打包所需编译与最小核验，不是完整测试或正式发行。Android 调试 APK 见预发布；Windows 为本地内部包，GitHub 提供对应源码，公开二进制发行材料仍待收口。后续开发与验证进度以上方当前 master 记录为准。
 
@@ -34,6 +34,8 @@
 - [完整功能代码覆盖复核与统一验证入口](docs/control-panel/DEVELOPMENT-GATE-16.zh-CN.md)
 - [统一验证第一批结果、269 项及 21/21 与未通过项](docs/control-panel/MILESTONE-16-UNIFIED.zh-CN.md)
 - [当前包图标/十页/离线联调与大字体裁切修复](docs/control-panel/MILESTONE-17-E2E-FONT.zh-CN.md)
+- [参考视觉、五表盘联调及信息区裁切修复](docs/control-panel/MILESTONE-18-VISUAL-DIALS.zh-CN.md)
+- [参考图视觉对照、设计差异及未验收项](docs/control-panel/VISUAL-18-COMPARISON.zh-CN.md)
 - [Windows 智能跟随使用说明](docs/control-panel/FOLLOW.zh-CN.md)
 - [配套 Android 端](https://github.com/xingxing7290/kdeconnect-android)
 

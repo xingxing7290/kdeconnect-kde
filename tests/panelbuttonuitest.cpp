@@ -147,6 +147,7 @@ private Q_SLOTS:
         editor = std::make_unique<ControlPanel::PanelEditor>(QDir(directory->path()).filePath(QStringLiteral("config")));
         volume = std::make_unique<SystemVolume::VolumeController>(nullptr, std::make_unique<ButtonTestAudio>(), false);
         view = std::make_unique<QQuickView>();
+        view->setColor(QColor(QStringLiteral("#f5f7fb")));
         view->engine()->rootContext()->setContextProperty(QStringLiteral("panelEditor"), editor.get());
         view->engine()->rootContext()->setContextProperty(QStringLiteral("localVolume"), volume.get());
         view->setResizeMode(QQuickView::SizeRootObjectToView);
@@ -181,6 +182,81 @@ private Q_SLOTS:
         QTest::newRow("shortcut") << 4 << QStringLiteral("shortcut");
         QTest::newRow("system") << 5 << QStringLiteral("system");
         QTest::newRow("command") << 6 << QStringLiteral("command");
+    }
+    void referenceNavigationAndDialogsStayReachable_data()
+    {
+        QTest::addColumn<QSize>("size");
+        QTest::newRow("normal") << QSize(1240, 800);
+        QTest::newRow("minimum") << QSize(980, 640);
+    }
+    void referenceNavigationAndDialogsStayReachable()
+    {
+        QFETCH(QSize, size);
+        view->resize(size);
+        const auto suffix = QStringLiteral("-%1x%2").arg(size.width()).arg(size.height());
+        const auto insideWindow = [&](QQuickItem *item) {
+            if (!item || !item->isVisible() || item->width() <= 0 || item->height() <= 0)
+                return false;
+            const auto bounds = item->mapRectToScene(QRectF(0, 0, item->width(), item->height()));
+            return QRectF(QPointF(), QSizeF(size)).adjusted(-1, -1, 1, 1).contains(bounds);
+        };
+        const auto popupInsideWindow = [&](QObject *popup) {
+            return popup && insideWindow(popup->property("background").value<QQuickItem *>());
+        };
+        QSignalSpy connections(view->rootObject(), SIGNAL(openConnections()));
+        QVERIFY(connections.isValid());
+        for (int section = 0; section < 4; ++section) {
+            auto *navigation = find(QStringLiteral("panelNavigation-%1").arg(section));
+            QVERIFY(insideWindow(navigation));
+            QVERIFY(click(navigation->objectName()));
+            QTRY_COMPARE(view->rootObject()->property("section").toInt(), section);
+            QVERIFY(saveEvidence(QStringLiteral("navigation-%1").arg(section) + suffix));
+            if (section == 0) {
+                for (const auto &dial : {"digital", "analog", "weather", "info", "car"}) {
+                    QVERIFY(editor->setIdle(QStringLiteral("dialId"), QString::fromLatin1(dial)));
+                    auto *current = find(QStringLiteral("panelDialCurrent"));
+                    QTRY_COMPARE(current->property("dialId").toString(), QString::fromLatin1(dial));
+                    QVERIFY(insideWindow(current));
+                    QVERIFY(saveEvidence(QStringLiteral("gallery-%1").arg(QString::fromLatin1(dial)) + suffix));
+                }
+                const auto before = editor->config();
+                QVERIFY(click(QStringLiteral("panelDialSettingsGear")));
+                auto *settings = view->rootObject()->findChild<QObject *>(QStringLiteral("panelDialSettings"));
+                QVERIFY(settings);
+                QTRY_VERIFY(settings->property("visible").toBool());
+                QVERIFY(popupInsideWindow(settings));
+                QVERIFY(saveEvidence(QStringLiteral("dial-settings") + suffix));
+                QVERIFY(click(QStringLiteral("panelDialSettingsCancel")));
+                QCOMPARE(editor->config(), before);
+                QVERIFY(click(QStringLiteral("panelDialFeatured")));
+                auto *confirmation = view->rootObject()->findChild<QObject *>(QStringLiteral("panelDialConfirmation"));
+                QVERIFY(confirmation);
+                QTRY_VERIFY(confirmation->property("visible").toBool());
+                QVERIFY(popupInsideWindow(confirmation));
+                QVERIFY(saveEvidence(QStringLiteral("dial-confirmation") + suffix));
+                QVERIFY(click(QStringLiteral("panelDialSelectCancel")));
+                QCOMPARE(editor->config(), before);
+            } else if (section == 1) {
+                auto *phone = find(QStringLiteral("panelPhonePreview"));
+                QVERIFY(insideWindow(phone));
+                QVERIFY(qAbs(phone->width() / phone->height() - 2.1) < 0.01);
+                for (int index = 0; index < 18; ++index)
+                    QVERIFY(insideWindow(find(QStringLiteral("panelSlot-%1").arg(index))));
+                QVERIFY(click(QStringLiteral("panelSlot-0")));
+                QTRY_VERIFY(dialog->property("visible").toBool());
+                QVERIFY(popupInsideWindow(dialog));
+                QVERIFY(saveEvidence(QStringLiteral("button-form") + suffix));
+                QVERIFY(click(QStringLiteral("panelButtonCancel")));
+            } else if (section == 2) {
+                QVERIFY(insideWindow(find(QStringLiteral("panelOpenConnections"))));
+                QVERIFY(click(QStringLiteral("panelOpenConnections")));
+                QCOMPARE(connections.count(), 1);
+            } else {
+                QVERIFY(insideWindow(find(QStringLiteral("panelOriginalFeatures"))));
+                QVERIFY(click(QStringLiteral("panelOriginalFeatures")));
+                QCOMPARE(connections.count(), 2);
+            }
+        }
     }
     void themedDefaultsAreAssetsAndBackfillPreservesCustomIcons()
     {

@@ -14,6 +14,7 @@ public:
     void receivePacket(const NetworkPacket &packet) override;
 
 private:
+    void publishWeather();
     QString executeButton(const QJsonObject &button);
     ControlPanel::PanelPeer *m_peer;
 };

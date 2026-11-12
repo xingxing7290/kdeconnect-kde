@@ -11,6 +11,7 @@
         "kdeconnect.controlpanel.config",
         "kdeconnect.controlpanel.state",
         "kdeconnect.controlpanel.asset",
+        "kdeconnect.controlpanel.dial",
         "kdeconnect.controlpanel.result"
     ]
 }

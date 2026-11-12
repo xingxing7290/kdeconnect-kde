@@ -12,10 +12,11 @@
 
 namespace ControlPanel
 {
-PanelEditor::PanelEditor(const QString &directory, QObject *parent)
+PanelEditor::PanelEditor(const QString &directory, QObject *parent, bool weatherNetworking)
     : QObject(parent)
     , m_store(directory)
     , m_assets(QFileInfo(m_store.filePath()).absolutePath())
+    , m_weather(QFileInfo(m_store.filePath()).absolutePath(), this, nullptr, weatherNetworking)
 {
     connect(&m_store, &PanelStore::errorOccurred, this, [this](const QString &error) {
         fail(error);
@@ -31,9 +32,21 @@ PanelEditor::PanelEditor(const QString &directory, QObject *parent)
         Q_EMIT changed();
     });
     connect(&m_foreground, &PanelForeground::applicationChanged, this, &PanelEditor::foregroundChanged);
+    connect(&m_weather, &PanelWeather::changed, this, &PanelEditor::weatherChanged);
+    const auto updateWeather = [this] {
+        m_weather.configure(m_store.isUsable() ? m_store.document().privateConfig().value(QStringLiteral("idle")).toObject() : QJsonObject());
+    };
+    connect(&m_store, &PanelStore::changed, this, updateWeather);
+    connect(&m_store, &PanelStore::errorOccurred, this, updateWeather);
     m_store.load();
+    updateWeather();
     if (m_currentPageId.isEmpty())
         m_currentPageId = m_store.document().privateConfig().value(QStringLiteral("homePageId")).toString();
+}
+
+QVariantMap PanelEditor::weather() const
+{
+    return m_weather.state().toVariantMap();
 }
 
 QVariantMap PanelEditor::config() const

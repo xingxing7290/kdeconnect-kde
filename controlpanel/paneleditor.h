@@ -5,6 +5,7 @@
 #include "panelassets.h"
 #include "panelforeground.h"
 #include "panelstore.h"
+#include "panelweather.h"
 #include <QUrl>
 #include <QVariantList>
 #include <QVariantMap>
@@ -21,8 +22,10 @@ class PanelEditor : public QObject
     Q_PROPERTY(QStringList keyNames READ keyNames CONSTANT)
     Q_PROPERTY(QString foregroundApplication READ foregroundApplication NOTIFY foregroundChanged)
     Q_PROPERTY(bool foregroundSupported READ foregroundSupported CONSTANT)
+    Q_PROPERTY(QVariantMap weather READ weather NOTIFY weatherChanged)
 public:
-    explicit PanelEditor(const QString &directory = {}, QObject *parent = nullptr);
+    explicit PanelEditor(const QString &directory = {}, QObject *parent = nullptr, bool weatherNetworking = false);
+    QVariantMap weather() const;
     QVariantMap config() const;
     QVariantMap currentPage() const;
     QString currentPageId() const;
@@ -53,6 +56,7 @@ Q_SIGNALS:
     void changed();
     void errorChanged();
     void foregroundChanged();
+    void weatherChanged();
 
 private:
     bool save(const QJsonObject &config);
@@ -61,6 +65,7 @@ private:
     PanelStore m_store;
     PanelForeground m_foreground;
     PanelAssets m_assets;
+    PanelWeather m_weather;
     QString m_currentPageId;
     QString m_error;
 };

@@ -1,6 +1,6 @@
 # 控制面板协议 v1
 
-此协议随个人 fork 发布，传输复用 KDE Connect 的已配对连接。配置、动作、结果、页状态和图标已接入双端，Windows 跟随使用现有 state 包；音量复用既有 System Volume 包。阶段证据见 MILESTONE-03.zh-CN.md 至 MILESTONE-05.zh-CN.md，图标限制见 ASSETS.zh-CN.md。天气仍按 PLAN 继续实现。
+此协议随个人 fork 发布，传输复用 KDE Connect 的已配对连接。配置、动作、结果、页状态、图标和天气快照已接入双端；跟随使用 state 包，音量复用 System Volume 包。阶段证据见 MILESTONE-03.zh-CN.md 至 MILESTONE-06.zh-CN.md；资源及天气限制分别见 ASSETS.zh-CN.md、DIALS.zh-CN.md。
 
 ## 配置
 
@@ -32,7 +32,7 @@
 | kdeconnect.controlpanel.state | revision, activePageId, foregroundApplication | 活动页面；不改变配置 revision |
 | kdeconnect.controlpanel.request | operation=asset, sessionId, revision, assetId | 获取当前配置引用图标 |
 | kdeconnect.controlpanel.asset | sessionId, revision, assetId, mime, size, error + payload | 256 x 256 PNG，接收端校验哈希与实际解码；错误响应无附件 |
-| kdeconnect.controlpanel.dial | city, observedAt, fetchedAt, temperature, weatherCode, status | 天气快照；不得以伪造数据代替网络失败 |
+| kdeconnect.controlpanel.dial | revision, city, source, status；可选 resolvedCity, observedAt, fetchedAt, temperature, weatherCode | 当前配置的模型天气快照；不得以伪造数据代替网络失败 |
 
 sessionId、requestId 使用小写 UUID。Android 每次重新建立插件会话生成新的 sessionId，配置重取沿用当前 sessionId；sequence 从 1 单调递增，最大为安全 JSON 整数上限。同一会话最近 256 个动作请求保留原始请求和结果：相同请求返回原结果，ID 冲突返回 invalid_request。结果缓存淘汰后仍保留最高 sequence，更早或乱序请求返回 request_expired，不能重新执行。每个连接最多记录 4096 个已退休会话 ID，退休会话不能通过重复握手复活。
 
@@ -50,6 +50,12 @@ sessionId、requestId 使用小写 UUID。Android 每次重新建立插件会话
 - command：key 引用该设备既有 Run Command 插件中的已配置命令；输出和停止继续使用原插件。
 
 动作 success 表示已提交给操作系统或既有命令插件，不表示目标程序已经退出或完成其业务任务。Windows 快捷键和系统动作通过平台 API 执行；其他平台返回明确的不支持错误。
+
+## 天气快照
+
+天气包无二进制附件，protocolVersion=1、revision 为当前配置修订，city 必须匹配配置的去首尾空白城市名，source 固定为 open-meteo。status 为 ready/loading/unavailable/disabled/no_city。完整数值组 resolvedCity、observedAt、fetchedAt、temperature、weatherCode 要么全部存在且合法，要么全部缺省；ready 不允许缺省。observedAt 表示模型时刻，不代表传感器实测。
+
+时间为 Unix 秒，接收端检查整数/范围和明显未来值；温度必须是有限 JSON 数值，范围 -100..70，代码必须是支持的整数 WMO 码。UTF-8 主体不超过 16 KiB、JSON 容器不超过 64 层。修订/城市不符、乱序或类型错误不能替换有效快照；天气错误也不能把动作会话置为失败。加载或不可用消息可保留同城已知快照，但不制造新的获取时间，显示时仍检查过期。来源、缓存、过期和隐私详见 DIALS.zh-CN.md。
 
 ## 音量复用包
 

@@ -7,73 +7,104 @@ import QtQuick.Layouts
 
 ColumnLayout {
     id: root
+    objectName: "panelDialGallery"
     property var editor
     property var now: new Date()
     readonly property var config: editor.config
+    readonly property var dials: [{id: "digital", name: qsTr("数字时钟")}, {id: "analog", name: qsTr("经典指针")}, {id: "weather", name: qsTr("时钟与天气")}, {id: "info", name: qsTr("信息表盘")}, {id: "car", name: qsTr("汽车视觉")}]
+    spacing: 12
     Timer { interval: 1000; running: root.visible; repeat: true; onTriggered: root.now = new Date() }
     C.Label { text: qsTr("表盘选择"); font.pixelSize: 26; font.bold: true; color: "#273448" }
-    C.Label { text: qsTr("选择空闲时显示的表盘，并设置城市和个性化文本。"); color: "#7b8799" }
-    GridLayout {
-        columns: 2; rowSpacing: 18; columnSpacing: 18; Layout.fillWidth: true; Layout.fillHeight: true
-        Repeater {
-            model: [{id: "digital", name: qsTr("数字时钟")}, {id: "analog", name: qsTr("经典指针")}, {id: "weather", name: qsTr("时钟与天气")}, {id: "info", name: qsTr("信息表盘")}, {id: "car", name: qsTr("驾驶风格")}]
-            delegate: Rectangle {
-                id: card
-                required property var modelData
-                Layout.fillWidth: true; Layout.fillHeight: true; Layout.minimumHeight: 100
-                radius: 20; color: modelData.id === "info" ? "#e8e9e5" : "#151b27"
-                border.color: config.idle.dialId === modelData.id ? "#4988f1" : "transparent"; border.width: 3
-                RowLayout {
-                    anchors.centerIn: parent; spacing: 20
-                    Canvas {
-                        id: clockCanvas
-                        visible: card.modelData.id === "analog" || card.modelData.id === "weather" || card.modelData.id === "car"
-                        Layout.preferredWidth: 82; Layout.preferredHeight: 82
-                        onPaint: {
-                            const ctx = getContext("2d");
-                            ctx.reset();
-                            ctx.translate(width / 2, height / 2);
-                            const radius = width * 0.45;
-                            ctx.strokeStyle = card.modelData.id === "car" ? "#58b5f5" : "#b9c7da";
-                            ctx.lineWidth = 2;
-                            ctx.beginPath(); ctx.arc(0, 0, radius, 0, Math.PI * 2); ctx.stroke();
-                            for (let index = 0; index < 12; ++index) {
-                                const angle = index * Math.PI / 6;
-                                ctx.beginPath(); ctx.moveTo(Math.sin(angle) * radius * 0.86, -Math.cos(angle) * radius * 0.86); ctx.lineTo(Math.sin(angle) * radius, -Math.cos(angle) * radius); ctx.stroke();
-                            }
-                            const hours = root.now.getHours() % 12 + root.now.getMinutes() / 60;
-                            const minutes = root.now.getMinutes() + root.now.getSeconds() / 60;
-                            ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(Math.sin(hours * Math.PI / 6) * radius * 0.52, -Math.cos(hours * Math.PI / 6) * radius * 0.52); ctx.stroke();
-                            ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(Math.sin(minutes * Math.PI / 30) * radius * 0.78, -Math.cos(minutes * Math.PI / 30) * radius * 0.78); ctx.stroke();
-                        }
-                        Connections { target: root; function onNowChanged() { clockCanvas.requestPaint(); } }
-                    }
-                    ColumnLayout {
-                        C.Label { text: Qt.formatTime(root.now, "hh:mm"); color: card.modelData.id === "info" ? "#242931" : "white"; font.pixelSize: 32; font.weight: Font.Light }
-                        C.Label { text: card.modelData.id === "weather" ? (config.idle.city || qsTr("未设置城市")) + " · " + qsTr("天气暂不可用") : card.modelData.id === "info" ? Qt.formatDate(root.now, "yyyy/MM/dd dddd") : card.modelData.name; color: card.modelData.id === "info" ? "#555d68" : "#aab9d1"; font.pixelSize: 12 }
+    C.Label { text: qsTr("空闲后自动显示；首次触摸只唤醒，不执行按钮。"); color: "#7b8799"; wrapMode: Text.WordWrap; Layout.fillWidth: true }
+    C.ScrollView {
+        Layout.fillWidth: true; Layout.fillHeight: true
+        contentWidth: availableWidth
+        C.ScrollBar.horizontal.policy: C.ScrollBar.AlwaysOff
+        ColumnLayout {
+            width: parent.width
+            spacing: 12
+            RowLayout {
+                Layout.fillWidth: true; spacing: 18
+                ColumnLayout {
+                    Layout.fillWidth: true
+                    C.Label { text: qsTr("精选推荐"); font.bold: true; color: "#273448" }
+                    PanelDialPreview {
+                        objectName: "panelDialFeatured"
+                        Layout.fillWidth: true; Layout.preferredHeight: Math.max(160, width / 2.2)
+                        dialId: "analog"; city: config.idle.city; message: config.idle.message; now: root.now; weather: editor.weather
+                        TapHandler { onTapped: { confirmation.dialId = "analog"; confirmation.open(); } }
                     }
                 }
-                TapHandler { onTapped: { confirmation.dialId = card.modelData.id; confirmation.open(); } }
+                ColumnLayout {
+                    Layout.fillWidth: true
+                    C.Label { text: qsTr("当前表盘"); font.bold: true; color: "#273448" }
+                    PanelDialPreview {
+                        objectName: "panelDialCurrent"
+                        Layout.fillWidth: true; Layout.preferredHeight: Math.max(160, width / 2.2)
+                        dialId: config.idle.dialId; city: config.idle.city; message: config.idle.message; now: root.now; weather: editor.weather
+                        border.color: "#4988f1"; border.width: 2
+                    }
+                }
             }
+            C.Label { text: qsTr("更多表盘"); font.bold: true; color: "#273448" }
+            GridLayout {
+                columns: 2; uniformCellWidths: true; rowSpacing: 12; columnSpacing: 18; Layout.fillWidth: true
+                Repeater {
+                    model: root.dials
+                    delegate: ColumnLayout {
+                        id: card
+                        required property var modelData
+                        Layout.fillWidth: true
+                        PanelDialPreview {
+                            objectName: "panel-dial-card-" + card.modelData.id
+                            Layout.fillWidth: true; Layout.preferredHeight: Math.max(160, width / 2.2)
+                            dialId: card.modelData.id; city: config.idle.city; message: config.idle.message; now: root.now; weather: editor.weather
+                            border.color: config.idle.dialId === dialId ? "#4988f1" : "transparent"; border.width: 2
+                            TapHandler { onTapped: { confirmation.dialId = card.modelData.id; confirmation.open(); } }
+                        }
+                        C.Label { text: card.modelData.name; color: "#69778b"; font.pixelSize: 12 }
+                    }
+                }
+            }
+            C.Label { text: qsTr("汽车视觉不代表车辆实时数据。天气为 Open-Meteo 模型数据，显示解析后的城市、来源与时间；失败不伪造数据。"); color: "#7b8799"; font.pixelSize: 11; wrapMode: Text.WordWrap; Layout.fillWidth: true }
         }
     }
     RowLayout {
-        C.CheckBox { text: qsTr("空闲自动进入表盘"); checked: config.idle.enabled; onClicked: editor.setIdle("enabled", checked) }
-        C.Label { text: qsTr("空闲时长（毫秒）") }
-        C.SpinBox { from: 1000; to: 86400000; stepSize: 1000; editable: true; value: config.idle.timeoutMs; onValueModified: editor.setIdle("timeoutMs", value) }
-        C.Button { text: qsTr("城市与文本"); onClicked: { cityField.text = config.idle.city; messageField.text = config.idle.message; settings.open(); } }
+        Layout.fillWidth: true
+        C.CheckBox { objectName: "panelIdleEnabled"; text: qsTr("空闲自动进入表盘"); checked: config.idle.enabled; onClicked: editor.setIdle("enabled", checked) }
+        C.Label { text: qsTr("时长（毫秒）") }
+        C.SpinBox { objectName: "panelIdleTimeout"; from: 1000; to: 86400000; stepSize: 1000; editable: true; value: config.idle.timeoutMs; onValueModified: editor.setIdle("timeoutMs", value) }
+        C.Button { objectName: "panelDialSettingsButton"; text: qsTr("城市与文本"); onClicked: { cityField.text = config.idle.city; messageField.text = config.idle.message; settings.open(); } }
     }
     C.Dialog {
-        id: confirmation; property string dialId; parent: C.Overlay.overlay; anchors.centerIn: parent; modal: true; title: qsTr("使用这个表盘？"); standardButtons: C.Dialog.Ok | C.Dialog.Cancel
+        id: confirmation
+        objectName: "panelDialConfirmation"
+        property string dialId
+        parent: C.Overlay.overlay; anchors.centerIn: parent; modal: true
+        title: qsTr("使用这个表盘？")
         onAccepted: editor.setIdle("dialId", dialId)
+        ColumnLayout {
+            C.Label { text: qsTr("手机空闲后将显示所选表盘。"); color: "#69778b" }
+            RowLayout {
+                C.Button { objectName: "panelDialSelectCancel"; text: qsTr("取消"); onClicked: confirmation.reject() }
+                C.Button { objectName: "panelDialSelectSave"; text: qsTr("使用表盘"); highlighted: true; onClicked: confirmation.accept() }
+            }
+        }
     }
     C.Dialog {
-        id: settings; parent: C.Overlay.overlay; anchors.centerIn: parent; width: 440; modal: true; title: qsTr("表盘参数")
+        id: settings
+        objectName: "panelDialSettings"
+        parent: C.Overlay.overlay; anchors.centerIn: parent; width: 440; modal: true
+        title: qsTr("表盘参数")
         ColumnLayout {
             width: parent.width
-            C.TextField { id: cityField; placeholderText: qsTr("天气城市"); maximumLength: 120; Layout.fillWidth: true }
-            C.TextField { id: messageField; placeholderText: qsTr("个性化文本"); maximumLength: 240; Layout.fillWidth: true }
-            C.Button { text: qsTr("保存"); onClicked: if (editor.setIdleOptions({city: cityField.text, message: messageField.text})) settings.close() }
+            C.Label { text: qsTr("城市名将发送给 Open-Meteo 查询天气，不读取 GPS。重名城市可写“Paris, France”等限定名称。免费接口仅限非商业用途。"); wrapMode: Text.WordWrap; Layout.fillWidth: true; color: "#69778b" }
+            C.TextField { id: cityField; objectName: "panelDialCity"; placeholderText: qsTr("天气城市"); maximumLength: 120; Layout.fillWidth: true }
+            C.TextField { id: messageField; objectName: "panelDialMessage"; placeholderText: qsTr("个性化文本"); maximumLength: 240; Layout.fillWidth: true }
+            RowLayout {
+                C.Button { objectName: "panelDialSettingsCancel"; text: qsTr("取消"); onClicked: settings.close() }
+                C.Button { objectName: "panelDialSettingsSave"; text: qsTr("保存"); highlighted: true; onClicked: if (editor.setIdleOptions({city: cityField.text, message: messageField.text})) settings.close() }
+            }
         }
     }
 }

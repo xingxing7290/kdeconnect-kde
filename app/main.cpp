@@ -132,7 +132,7 @@ int main(int argc, char *argv[])
         flags |= KDBusService::Replace;
     }
     KDBusService dbusService(flags);
-    ControlPanel::PanelEditor panelEditor;
+    ControlPanel::PanelEditor panelEditor({}, nullptr, true);
     QQmlApplicationEngine engine;
     engine.rootContext()->setContextProperty(QStringLiteral("panelEditor"), &panelEditor);
     engine.rootContext()->setContextProperty(QStringLiteral("localVolume"), SystemVolume::VolumeController::instance());

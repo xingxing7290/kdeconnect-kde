@@ -15,6 +15,8 @@
 - [双端音量使用及验证边界](docs/control-panel/VOLUME.zh-CN.md)
 - [图标导入、同步及离线缓存](docs/control-panel/ASSETS.zh-CN.md)
 - [图标阶段实现与验证](docs/control-panel/MILESTONE-05.zh-CN.md)
+- [空闲表盘与天气说明](docs/control-panel/DIALS.zh-CN.md)
+- [基础表盘与天气阶段记录](docs/control-panel/MILESTONE-06.zh-CN.md)
 - [Windows 智能跟随使用说明](docs/control-panel/FOLLOW.zh-CN.md)
 - [配套 Android 端](https://github.com/xingxing7290/kdeconnect-android)
 

@@ -11,6 +11,7 @@
 #include <panelactions.h>
 #include <panelassets.h>
 #include <panelforeground.h>
+#include <panelweather.h>
 
 K_PLUGIN_CLASS_WITH_JSON(ControlPanelPlugin, "kdeconnect_controlpanel.json")
 
@@ -36,6 +37,22 @@ ControlPanel::PanelRuntime *runtime()
     }
     return shared;
 }
+ControlPanel::PanelWeather *weather()
+{
+    static QPointer<ControlPanel::PanelWeather> shared;
+    if (!shared) {
+        auto *store = runtime()->store();
+        shared = new ControlPanel::PanelWeather(QFileInfo(store->filePath()).absolutePath(), store, nullptr, true);
+        auto *service = shared.data();
+        const auto configure = [store, service] {
+            service->configure(store->isUsable() ? store->document().privateConfig().value(QStringLiteral("idle")).toObject() : QJsonObject());
+        };
+        QObject::connect(store, &ControlPanel::PanelStore::changed, service, configure);
+        QObject::connect(store, &ControlPanel::PanelStore::errorOccurred, service, configure);
+        configure();
+    }
+    return shared;
+}
 }
 
 ControlPanelPlugin::ControlPanelPlugin(QObject *parent, const QVariantList &args)
@@ -47,6 +64,7 @@ ControlPanelPlugin::ControlPanelPlugin(QObject *parent, const QVariantList &args
           },
           this))
 {
+    connect(weather(), &ControlPanel::PanelWeather::changed, this, &ControlPanelPlugin::publishWeather);
     connect(m_peer, &ControlPanel::PanelPeer::packetReady, this, [this](const QString &type, const QJsonObject &body) {
         if (device()->isPaired() && device()->isReachable()) {
             NetworkPacket packet(type, body.toVariantMap());
@@ -78,14 +96,30 @@ ControlPanelPlugin::ControlPanelPlugin(QObject *parent, const QVariantList &args
 
 void ControlPanelPlugin::connected()
 {
-    if (device()->isPaired())
+    if (device()->isPaired()) {
         m_peer->sendConfiguration();
+        publishWeather();
+    }
+}
+
+void ControlPanelPlugin::publishWeather()
+{
+    auto *store = runtime()->store();
+    if (!device()->isPaired() || !device()->isReachable() || !store->isUsable())
+        return;
+    auto data = weather()->state();
+    data.insert(QStringLiteral("protocolVersion"), 1);
+    data.insert(QStringLiteral("revision"), store->document().revision());
+    NetworkPacket packet(QStringLiteral("kdeconnect.controlpanel.dial"), data.toVariantMap());
+    sendPacket(packet);
 }
 
 void ControlPanelPlugin::receivePacket(const NetworkPacket &packet)
 {
     if (device()->isPaired() && device()->isReachable() && packet.type() == QLatin1String("kdeconnect.controlpanel.request") && !packet.hasPayload()) {
         m_peer->receive(QJsonObject::fromVariantMap(packet.body()));
+        if (packet.get<QString>(QStringLiteral("operation")) == QLatin1String("config"))
+            publishWeather();
     }
 }
 

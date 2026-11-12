@@ -22,6 +22,7 @@
 - [按钮编辑、拖入保护与页面交互检查](docs/control-panel/MILESTONE-08-BUTTONS.zh-CN.md)
 - [Android 兼容修复、243 项回归与触摸测试](docs/control-panel/MILESTONE-09-COMPAT.zh-CN.md)
 - [隔离模拟器双端配对、执行与重连验证](docs/control-panel/MILESTONE-10-EMULATOR.zh-CN.md)
+- [离线进程恢复、图标附件与多页联调](docs/control-panel/MILESTONE-11-RESTORE.zh-CN.md)
 - [Windows 智能跟随使用说明](docs/control-panel/FOLLOW.zh-CN.md)
 - [配套 Android 端](https://github.com/xingxing7290/kdeconnect-android)
 

@@ -1,0 +1,42 @@
+{
+  "version": "0.1.0-alpha.1",
+  "tag": "controlpanel-v0.1.0-alpha.1",
+  "date": "2026-11-12",
+  "prerelease": true,
+  "runtimeSources": {
+    "android": "cada7270a6e35bfdc861dac266d5b5a2bb1af968",
+    "windows": "dc44cf77806e190054998c634a8b1cf87d50c5b3"
+  },
+  "artifacts": [
+    {
+      "name": "kdeconnect-controlpanel-0.1.0-alpha.1-android-debug.apk",
+      "bytes": 30871561,
+      "sha256": "2cbfe0ba9a15a08c5973702410a4c5ccaf0c415be23bbdc9865587044a1279b6",
+      "githubBinaryUpload": true,
+      "applicationId": "org.kde.kdeconnect_tp.debug",
+      "applicationVersion": "1.37.0-debug",
+      "minSdk": 23,
+      "signing": "repository debug key; APK v1 and v2 verified"
+    },
+    {
+      "name": "kdeconnect-controlpanel-0.1.0-alpha.1-win64-internal.zip",
+      "bytes": 140363900,
+      "sha256": "a5dc491f128cf45723d00eade206e27db81a180bd3d4d85ecd900b3bd1782aa6",
+      "githubBinaryUpload": false,
+      "distribution": "local internal preview only; third-party release materials pending"
+    }
+  ],
+  "checks": {
+    "androidBuildExit": 0,
+    "windowsBuildExit": 0,
+    "windowsPackageExit": 0,
+    "windowsOffscreenSelfTestExit": 0,
+    "windowsZipIntegrityExit": 0,
+    "remainingPackageProcesses": 0,
+    "fullRegressionRun": false,
+    "androidRuntimeTested": false,
+    "audioWritesTested": false,
+    "phoneInstalled": false
+  },
+  "goalComplete": false
+}

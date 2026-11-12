@@ -38,6 +38,31 @@ Item {
         const empty = page.slots.findIndex(item => !item);
         if (empty >= 0) editor.setButton(empty, preset);
     }
+    function applyDrop(index, event) {
+        let saved = false;
+        let action = Qt.CopyAction;
+        if (event.hasUrls) {
+            if (event.urls.length !== 1 || !(event.supportedActions & Qt.CopyAction)) return;
+            saved = editor.dropFile(index, event.urls[0]);
+        } else if (event.formats.indexOf("application/x-kdeconnect-slot") >= 0) {
+            if (!(event.supportedActions & Qt.MoveAction)) return;
+            let context;
+            try { context = JSON.parse(event.getDataAsString("application/x-kdeconnect-slot")); }
+            catch (_) { return; }
+            if (!context || typeof context !== "object" || !Number.isInteger(context.slotIndex)) return;
+            saved = editor.moveButtonChecked(context.slotIndex, index, context);
+            action = Qt.MoveAction;
+        } else if (event.formats.indexOf("application/x-kdeconnect-preset") >= 0) {
+            if (!(event.supportedActions & Qt.CopyAction)) return;
+            let preset;
+            try { preset = JSON.parse(event.getDataAsString("application/x-kdeconnect-preset")); }
+            catch (_) { return; }
+            if (!preset || typeof preset !== "object" || Array.isArray(preset)) return;
+            saved = editor.setButton(index, preset);
+        }
+        // External files and presets create references, never filesystem moves.
+        if (saved) event.accept(action);
+    }
 
     Rectangle { width: 190; height: parent.height; color: "#eef1f6" }
     ColumnLayout {
@@ -92,8 +117,10 @@ Item {
                                         model: 18
                                         delegate: Rectangle {
                                             id: cell
+                                            objectName: "panelSlot-" + index
                                             required property int index
                                             property var button: page.slots?.[index] || null
+                                            property var dragContext: ({})
                                             Layout.fillWidth: true; Layout.fillHeight: true; Layout.preferredWidth: 70; Layout.preferredHeight: 75
                                             radius: 10; color: drop.containsDrag ? "#dceaff" : button ? "#eef3fa" : "#dfe3e9"
                                             border.width: drop.containsDrag ? 2 : 0; border.color: "#4988f1"
@@ -102,23 +129,17 @@ Item {
                                                 Image { id: slotImage; visible: status === Image.Ready; source: cell.button?.icon ? editor.assetUrl(cell.button.icon) : ""; width: Math.min(40, cell.width * 0.6); height: visible ? width : 0; fillMode: Image.PreserveAspectFit; anchors.horizontalCenter: parent.horizontalCenter }
                                                 Kirigami.Icon { visible: cell.button !== null && slotImage.status !== Image.Ready; source: root.kindIcon(cell.button?.kind); width: Math.min(32, cell.width * 0.5); height: visible ? width : 0; anchors.horizontalCenter: parent.horizontalCenter }
                                                 C.Label { visible: !cell.button; text: "+"; font.pixelSize: 27; color: "#99a3b1"; anchors.horizontalCenter: parent.horizontalCenter }
-                                                C.Label { visible: config.appearance.showLabels && cell.button !== null; text: cell.button?.name || ""; width: parent.width; elide: Text.ElideRight; horizontalAlignment: Text.AlignHCenter; font.pixelSize: 11; color: "#344158" }
+                                                C.Label { visible: config.appearance.showLabels && cell.button !== null; text: cell.button?.name || ""; textFormat: Text.PlainText; width: parent.width; elide: Text.ElideRight; horizontalAlignment: Text.AlignHCenter; font.pixelSize: 11; color: "#344158" }
                                             }
-                                            Drag.active: drag.active
+                                            Drag.active: drag.active && !!cell.dragContext.pageId
                                             Drag.dragType: Drag.Automatic
                                             Drag.supportedActions: Qt.MoveAction
-                                            Drag.mimeData: {"application/x-kdeconnect-slot": String(index)}
-                                            DragHandler { id: drag; target: null; enabled: cell.button !== null }
+                                            Drag.mimeData: {"application/x-kdeconnect-slot": JSON.stringify(cell.dragContext)}
+                                            DragHandler { id: drag; target: null; enabled: cell.button !== null; onActiveChanged: if (active) cell.dragContext = editor.editContext(index) }
                                             TapHandler { onTapped: buttonDialog.openAt(index, cell.button) }
                                             DropArea {
                                                 id: drop; anchors.fill: parent
-                                                onDropped: event => {
-                                                    if (event.hasUrls) editor.dropFile(index, event.urls[0]);
-                                                    else if (event.formats.indexOf("application/x-kdeconnect-slot") >= 0) editor.moveButton(Number(event.getDataAsString("application/x-kdeconnect-slot")), index);
-                                                    else if (event.formats.indexOf("application/x-kdeconnect-preset") >= 0) editor.setButton(index, JSON.parse(event.getDataAsString("application/x-kdeconnect-preset")));
-                                                    else return;
-                                                    event.acceptProposedAction();
-                                                }
+                                                onDropped: event => root.applyDrop(index, event)
                                             }
                                         }
                                     }
@@ -191,25 +212,30 @@ Item {
                 Repeater {
                     model: config.pages
                     delegate: C.Button {
+                        objectName: "panelPage-" + index
                         required property var modelData
                         required property int index
                         text: String(index + 1); highlighted: editor.currentPageId === modelData.id
+                        visible: config.mode !== "single"
+                        enabled: config.mode !== "single"
+                        hoverEnabled: true
                         onClicked: editor.selectPage(modelData.id)
                         onHoveredChanged: if (hovered) editor.selectPage(modelData.id)
                         C.ToolTip.visible: hovered
                         C.ToolTip.text: modelData.name
                     }
                 }
-                C.Button { text: "+"; enabled: config.pages.length < 10; onClicked: editor.addPage() }
-                C.Button { text: qsTr("删除页"); enabled: config.pages.length > 1; onClicked: deletePageDialog.open() }
-                C.Button { text: qsTr("页面名称 / 应用绑定"); onClicked: { pageName.text = page.name; applicationField.text = page.application || ""; pageDialog.open(); } }
+                C.Button { objectName: "panelAddPage"; text: "+"; visible: config.mode !== "single"; enabled: config.pages.length < 10; onClicked: editor.addPage() }
+                C.Button { objectName: "panelDeletePage"; text: qsTr("删除页"); visible: config.mode !== "single"; enabled: config.pages.length > 1; onClicked: deletePageDialog.open() }
+                C.Label { visible: config.mode === "single" && config.pages.length > 1; text: qsTr("单页显示首页，其他页面仍保留"); color: "#69778b" }
+                C.Button { objectName: "panelPageSettings"; text: qsTr("页面名称 / 应用绑定"); onClicked: { pageName.text = page.name; applicationField.text = page.application || ""; pageDialog.open(); } }
                 Item { Layout.fillWidth: true }
             }
             Rectangle { Layout.fillWidth: true; height: 1; color: "#e1e6ef" }
             RowLayout {
                 Layout.fillWidth: true; spacing: 14
                 C.Label { text: qsTr("页面模式") }
-                C.ComboBox { model: [qsTr("默认单页"), qsTr("多页面"), qsTr("智能跟随")]; currentIndex: ["single", "pages", "follow"].indexOf(config.mode); onActivated: editor.setMode(["single", "pages", "follow"][currentIndex]) }
+                C.ComboBox { objectName: "panelPageMode"; model: [qsTr("默认单页"), qsTr("多页面"), qsTr("智能跟随")]; currentIndex: ["single", "pages", "follow"].indexOf(config.mode); onActivated: editor.setMode(["single", "pages", "follow"][currentIndex]) }
                 C.Button { text: qsTr("识别当前程序"); visible: config.mode === "follow"; onClicked: foregroundDialog.open() }
                 C.CheckBox { text: qsTr("音量控制"); checked: config.appearance.showVolume; onClicked: editor.setAppearance("showVolume", checked) }
                 C.CheckBox { text: qsTr("显示名称"); checked: config.appearance.showLabels; onClicked: editor.setAppearance("showLabels", checked) }
@@ -290,7 +316,10 @@ Item {
     }
     Connections {
         target: editor
-        function onErrorChanged() { if (editor.error) { errorMessage.text = qsTr("无法保存配置：") + editor.error; errorMessage.open(); } }
+        function onErrorChanged() { if (editor.error) {
+            if (buttonDialog.visible) buttonDialog.reportError(editor.error);
+            else { errorMessage.text = qsTr("无法保存配置：") + editor.error; errorMessage.open(); }
+        } }
     }
     MessageDialog { id: errorMessage; title: qsTr("配置需要检查"); buttons: MessageDialog.Ok }
 }

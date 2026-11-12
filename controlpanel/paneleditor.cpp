@@ -24,11 +24,12 @@ PanelEditor::PanelEditor(const QString &directory, QObject *parent, bool weather
     connect(&m_store, &PanelStore::changed, this, [this] {
         const auto root = m_store.document().privateConfig();
         m_foreground.setEnabled(root.value(QStringLiteral("mode")).toString() == QLatin1String("follow"));
-        if (pageIndex(root.value(QStringLiteral("pages")).toArray()) < 0) {
+        if (root.value(QStringLiteral("mode")).toString() == QLatin1String("single") || pageIndex(root.value(QStringLiteral("pages")).toArray()) < 0) {
             m_currentPageId = root.value(QStringLiteral("homePageId")).toString();
         }
         m_error.clear();
         Q_EMIT errorChanged();
+        Q_EMIT configChanged();
         Q_EMIT changed();
     });
     connect(&m_foreground, &PanelForeground::applicationChanged, this, &PanelEditor::foregroundChanged);
@@ -109,13 +110,55 @@ bool PanelEditor::fail(const QString &error)
 
 bool PanelEditor::save(const QJsonObject &config)
 {
-    return m_store.save(config, m_store.document().revision());
+    return m_store.save(config, config.value(QStringLiteral("revision")).toInteger(-1));
+}
+
+QVariantMap PanelEditor::editContext(int index) const
+{
+    if (index < 0 || index >= PanelDocument::SlotCount)
+        return {};
+    const auto slots = currentPage().value(QStringLiteral("slots")).toList();
+    if (slots.size() != PanelDocument::SlotCount)
+        return {};
+    return {{QStringLiteral("pageId"), m_currentPageId},
+            {QStringLiteral("revision"), m_store.document().revision()},
+            {QStringLiteral("slotIndex"), index},
+            {QStringLiteral("buttonId"), slots[index].toMap().value(QStringLiteral("id")).toString()}};
+}
+
+bool PanelEditor::matchesContext(int index, const QVariantMap &context) const
+{
+    const auto expected = editContext(index);
+    const auto json = QJsonObject::fromVariantMap(context);
+    return !expected.isEmpty() && json.value(QStringLiteral("pageId")).isString() && json.value(QStringLiteral("buttonId")).isString()
+        && json.value(QStringLiteral("revision")).isDouble() && json.value(QStringLiteral("slotIndex")).isDouble()
+        && json.value(QStringLiteral("pageId")).toString() == expected.value(QStringLiteral("pageId")).toString()
+        && json.value(QStringLiteral("buttonId")).toString() == expected.value(QStringLiteral("buttonId")).toString()
+        && json.value(QStringLiteral("revision")).toDouble() == expected.value(QStringLiteral("revision")).toDouble()
+        && json.value(QStringLiteral("slotIndex")).toDouble() == index;
+}
+
+bool PanelEditor::setButtonChecked(int index, const QVariantMap &button, const QVariantMap &context)
+{
+    return matchesContext(index, context) ? setButton(index, button) : fail(QStringLiteral("edit_conflict"));
+}
+
+bool PanelEditor::clearButtonChecked(int index, const QVariantMap &context)
+{
+    return matchesContext(index, context) ? clearButton(index) : fail(QStringLiteral("edit_conflict"));
+}
+
+bool PanelEditor::moveButtonChecked(int source, int destination, const QVariantMap &context)
+{
+    return matchesContext(source, context) ? moveButton(source, destination) : fail(QStringLiteral("edit_conflict"));
 }
 
 bool PanelEditor::selectPage(const QString &pageId)
 {
     for (const auto &page : m_store.document().privateConfig().value(QStringLiteral("pages")).toArray()) {
         if (page.toObject().value(QStringLiteral("id")).toString() == pageId) {
+            if (m_currentPageId == pageId)
+                return true;
             m_currentPageId = pageId;
             Q_EMIT changed();
             return true;
@@ -278,9 +321,11 @@ QVariantMap PanelEditor::inspectFile(const QUrl &url) const
     const bool program =
         file.suffix().compare(QLatin1String("exe"), Qt::CaseInsensitive) == 0 || file.suffix().compare(QLatin1String("lnk"), Qt::CaseInsensitive) == 0;
     const auto kind = file.isDir() ? QStringLiteral("folder") : program ? QStringLiteral("program") : QStringLiteral("file");
-    const auto name = file.isDir() ? file.fileName() : file.completeBaseName();
+    auto name = file.isDir() ? file.fileName() : file.completeBaseName();
+    if (name.isEmpty())
+        name = file.fileName().isEmpty() ? tr("Root folder") : file.fileName();
     return {{QStringLiteral("kind"), kind},
-            {QStringLiteral("name"), name.isEmpty() ? file.absoluteFilePath() : name},
+            {QStringLiteral("name"), name},
             {QStringLiteral("target"), QVariantMap{{QStringLiteral("path"), file.absoluteFilePath()}}}};
 }
 

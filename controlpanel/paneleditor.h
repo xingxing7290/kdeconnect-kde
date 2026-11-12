@@ -15,7 +15,7 @@ namespace ControlPanel
 class PanelEditor : public QObject
 {
     Q_OBJECT
-    Q_PROPERTY(QVariantMap config READ config NOTIFY changed)
+    Q_PROPERTY(QVariantMap config READ config NOTIFY configChanged)
     Q_PROPERTY(QVariantMap currentPage READ currentPage NOTIFY changed)
     Q_PROPERTY(QString currentPageId READ currentPageId NOTIFY changed)
     Q_PROPERTY(QString error READ error NOTIFY errorChanged)
@@ -39,8 +39,12 @@ public:
     Q_INVOKABLE bool deletePage(const QString &pageId);
     Q_INVOKABLE bool renamePage(const QString &pageId, const QString &name, const QString &application);
     Q_INVOKABLE bool setButton(int index, const QVariantMap &button);
+    Q_INVOKABLE QVariantMap editContext(int index) const;
+    Q_INVOKABLE bool setButtonChecked(int index, const QVariantMap &button, const QVariantMap &context);
+    Q_INVOKABLE bool clearButtonChecked(int index, const QVariantMap &context);
     Q_INVOKABLE bool clearButton(int index);
     Q_INVOKABLE bool moveButton(int source, int destination);
+    Q_INVOKABLE bool moveButtonChecked(int source, int destination, const QVariantMap &context);
     Q_INVOKABLE bool dropFile(int index, const QUrl &url);
     Q_INVOKABLE QVariantMap inspectFile(const QUrl &url) const;
     Q_INVOKABLE QString importIcon(const QUrl &url);
@@ -53,6 +57,7 @@ public:
     Q_INVOKABLE bool restoreBackup();
 
 Q_SIGNALS:
+    void configChanged();
     void changed();
     void errorChanged();
     void foregroundChanged();
@@ -62,6 +67,7 @@ private:
     bool save(const QJsonObject &config);
     bool fail(const QString &error);
     int pageIndex(const QJsonArray &pages) const;
+    bool matchesContext(int index, const QVariantMap &context) const;
     PanelStore m_store;
     PanelForeground m_foreground;
     PanelAssets m_assets;

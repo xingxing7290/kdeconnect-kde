@@ -25,6 +25,96 @@ private:
         return editor.currentPage().value(QStringLiteral("slots")).toList();
     }
 private Q_SLOTS:
+    void checkedEditsRejectChangedRevisionPageSlotAndIdentity()
+    {
+        QTemporaryDir directory;
+        PanelEditor editor(directory.path());
+        QVERIFY(editor.setMode(QStringLiteral("pages")));
+        QVERIFY(editor.setButton(0, website(QStringLiteral("First"))));
+        const auto initial = editor.editContext(0);
+        QVERIFY(editor.setButtonChecked(0, website(QStringLiteral("Renamed")), initial));
+        const auto saved = editor.config();
+        QVERIFY(!editor.clearButtonChecked(0, initial));
+        QCOMPARE(editor.error(), QStringLiteral("edit_conflict"));
+        QCOMPARE(editor.config(), saved);
+        auto context = editor.editContext(0);
+        QVERIFY(!editor.setButtonChecked(1, website(QStringLiteral("Wrong slot")), context));
+        context.insert(QStringLiteral("buttonId"), QStringLiteral("wrong-id"));
+        QVERIFY(!editor.clearButtonChecked(0, context));
+        context = editor.editContext(0);
+        context.insert(QStringLiteral("revision"), context.value(QStringLiteral("revision")).toString());
+        QVERIFY(!editor.clearButtonChecked(0, context));
+        QCOMPARE(editor.config(), saved);
+        const auto home = editor.currentPageId();
+        QVERIFY(editor.addPage());
+        const auto secondPage = editor.currentPageId();
+        context = editor.editContext(0);
+        QVERIFY(editor.selectPage(home));
+        QVERIFY(!editor.clearButtonChecked(0, context));
+        QVERIFY(editor.selectPage(secondPage));
+        QVERIFY(editor.setButtonChecked(0, website(QStringLiteral("Second page")), context));
+        QVERIFY(editor.clearButtonChecked(0, editor.editContext(0)));
+        QVERIFY(editor.editContext(-1).isEmpty());
+        QVERIFY(editor.editContext(18).isEmpty());
+    }
+    void checkedMoveRejectsStaleDragAndKeepsSourceIdentity()
+    {
+        QTemporaryDir directory;
+        PanelEditor editor(directory.path());
+        QVERIFY(editor.setButton(0, website(QStringLiteral("Source"))));
+        auto context = editor.editContext(0);
+        QVERIFY(editor.setButton(1, website(QStringLiteral("Destination"))));
+        const auto saved = editor.config();
+        QVERIFY(!editor.moveButtonChecked(0, 1, context));
+        QCOMPARE(editor.config(), saved);
+        context = editor.editContext(0);
+        const auto before = buttons(editor);
+        QVERIFY(editor.moveButtonChecked(0, 1, context));
+        QCOMPARE(buttons(editor)[1], before[0]);
+        QCOMPARE(buttons(editor)[0], before[1]);
+    }
+    void secondEditorCannotOverwriteDiskRevisionWithOldForm()
+    {
+        QTemporaryDir directory;
+        PanelEditor first(directory.path());
+        QVERIFY(first.setButton(0, website(QStringLiteral("Original"))));
+        PanelEditor second(directory.path());
+        const auto context = first.editContext(0);
+        QVERIFY(second.setButton(0, website(QStringLiteral("New content"))));
+        QVERIFY(!first.setButtonChecked(0, website(QStringLiteral("Stale form")), context));
+        PanelEditor restored(directory.path());
+        QCOMPARE(restored.config(), second.config());
+    }
+    void singleModeReturnsToHomeWithoutDeletingOtherPages()
+    {
+        QTemporaryDir directory;
+        PanelEditor editor(directory.path());
+        const auto home = editor.currentPageId();
+        QVERIFY(editor.setMode(QStringLiteral("pages")));
+        QVERIFY(editor.addPage());
+        const auto second = editor.currentPageId();
+        QVERIFY(editor.setButton(0, website(QStringLiteral("Retained"))));
+        QVERIFY(editor.setMode(QStringLiteral("single")));
+        QCOMPARE(editor.currentPageId(), home);
+        QCOMPARE(editor.config().value(QStringLiteral("pages")).toList().size(), 2);
+        QVERIFY(editor.setMode(QStringLiteral("pages")));
+        QVERIFY(editor.selectPage(second));
+        QCOMPARE(buttons(editor)[0].toMap().value(QStringLiteral("name")).toString(), QStringLiteral("Retained"));
+    }
+    void automaticFileNamesNeverContainPrivateParentPath()
+    {
+        QTemporaryDir directory;
+        PanelEditor editor(QDir(directory.path()).filePath(QStringLiteral("config")));
+        const auto path = QDir(directory.path()).filePath(QStringLiteral(".env"));
+        QFile file(path);
+        QVERIFY(file.open(QIODevice::WriteOnly));
+        file.close();
+        const auto info = editor.inspectFile(QUrl::fromLocalFile(path));
+        QCOMPARE(info.value(QStringLiteral("name")).toString(), QStringLiteral(".env"));
+        const auto folder = QDir(directory.path()).filePath(QStringLiteral("folder.with.dots"));
+        QVERIFY(QDir().mkpath(folder));
+        QCOMPARE(editor.inspectFile(QUrl::fromLocalFile(folder)).value(QStringLiteral("name")).toString(), QStringLiteral("folder.with.dots"));
+    }
     void applicationBindingIsNormalizedWithoutChangingPageDisplayName()
     {
         QTemporaryDir directory;

@@ -67,6 +67,7 @@ ColumnLayout {
                 }
             }
             C.Label { text: qsTr("汽车视觉不代表车辆实时数据。天气为 Open-Meteo 模型数据，显示解析后的城市、来源与时间；失败不伪造数据。"); color: "#7b8799"; font.pixelSize: 11; wrapMode: Text.WordWrap; Layout.fillWidth: true }
+            C.Label { text: qsTr("信息表盘的电量来自手机本机，电脑预览不假设某一部手机的电量。预报日期按天气城市时区显示。"); color: "#7b8799"; font.pixelSize: 11; wrapMode: Text.WordWrap; Layout.fillWidth: true }
         }
     }
     RowLayout {

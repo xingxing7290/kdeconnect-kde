@@ -14,6 +14,7 @@
 #include <QSaveFile>
 #include <QSet>
 #include <QSharedPointer>
+#include <QTimeZone>
 #include <QUrlQuery>
 #include <algorithm>
 #include <cmath>
@@ -70,7 +71,35 @@ bool PanelWeather::validObservation(const QJsonObject &object, qint64 now, qint6
         && number(object.value(QStringLiteral("fetchedAt")), now - maximumAge, now + 600, true)
         && object.value(QStringLiteral("observedAt")).toInteger() <= object.value(QStringLiteral("fetchedAt")).toInteger() + 600
         && number(object.value(QStringLiteral("temperature")), -100, 70) && number(object.value(QStringLiteral("weatherCode")), 0, 99, true)
-        && validCode(object.value(QStringLiteral("weatherCode")).toInt());
+        && validCode(object.value(QStringLiteral("weatherCode")).toInt()) && validForecast(object);
+}
+bool PanelWeather::validForecast(const QJsonObject &object)
+{
+    const auto value = object.value(QStringLiteral("forecast"));
+    if (value.isUndefined())
+        return true; // Older peers and caches contain current conditions only.
+    if (!value.isArray())
+        return false;
+    const auto days = value.toArray();
+    if (days.isEmpty())
+        return true;
+    if (days.size() != 3 || !number(object.value(QStringLiteral("utcOffsetSeconds")), -43200, 50400, true)
+        || !text(object.value(QStringLiteral("timezone")), 80) || !number(object.value(QStringLiteral("fetchedAt")), 0, 4102444800, true))
+        return false;
+    const auto first =
+        QDateTime::fromSecsSinceEpoch(object.value(QStringLiteral("fetchedAt")).toInteger() + object.value(QStringLiteral("utcOffsetSeconds")).toInteger(),
+                                      QTimeZone::UTC)
+            .date();
+    for (qsizetype index = 0; index < days.size(); ++index) {
+        const auto day = days[index].toObject();
+        const auto date = day.value(QStringLiteral("date"));
+        if (!date.isString() || date.toString() != first.addDays(index).toString(Qt::ISODate) || !number(day.value(QStringLiteral("minimum")), -100, 70)
+            || !number(day.value(QStringLiteral("maximum")), -100, 70)
+            || day.value(QStringLiteral("minimum")).toDouble() > day.value(QStringLiteral("maximum")).toDouble()
+            || !number(day.value(QStringLiteral("weatherCode")), 0, 99, true) || !validCode(day.value(QStringLiteral("weatherCode")).toInt()))
+            return false;
+    }
+    return true;
 }
 QJsonObject PanelWeather::cached() const
 {
@@ -84,6 +113,9 @@ QJsonObject PanelWeather::cached() const
     QJsonObject result;
     for (const auto &key : {"city", "resolvedCity", "source", "observedAt", "fetchedAt", "temperature", "weatherCode", "status"})
         result.insert(QLatin1String(key), object.value(QLatin1String(key)));
+    for (const auto &key : {"forecast", "timezone", "utcOffsetSeconds"})
+        if (object.contains(QLatin1String(key)))
+            result.insert(QLatin1String(key), object.value(QLatin1String(key)));
     return result;
 }
 void PanelWeather::configure(const QJsonObject &idle)
@@ -110,7 +142,8 @@ void PanelWeather::configure(const QJsonObject &idle)
         if (!stored.isEmpty())
             m_state = stored;
         const auto now = QDateTime::currentSecsSinceEpoch();
-        if (!stored.isEmpty() && validObservation(stored, now) && now - stored.value(QStringLiteral("fetchedAt")).toInteger() < 900) {
+        if (!stored.isEmpty() && validObservation(stored, now) && now - stored.value(QStringLiteral("fetchedAt")).toInteger() < 900
+            && (!m_networking || stored.value(QStringLiteral("forecast")).toArray().size() == 3)) {
             if (m_networking)
                 m_timer.start(static_cast<int>(std::clamp<qint64>(900 - now + stored.value(QStringLiteral("fetchedAt")).toInteger(), 1, 900) * 1000));
             Q_EMIT changed();
@@ -159,14 +192,43 @@ void PanelWeather::locate(const QString &name, bool fallback)
         parameters.addQueryItem(QStringLiteral("latitude"), QString::number(place.value(QStringLiteral("latitude")).toDouble(), 'f', 6));
         parameters.addQueryItem(QStringLiteral("longitude"), QString::number(place.value(QStringLiteral("longitude")).toDouble(), 'f', 6));
         parameters.addQueryItem(QStringLiteral("current"), QStringLiteral("temperature_2m,weather_code"));
+        parameters.addQueryItem(QStringLiteral("daily"), QStringLiteral("weather_code,temperature_2m_max,temperature_2m_min"));
         parameters.addQueryItem(QStringLiteral("temperature_unit"), QStringLiteral("celsius"));
         parameters.addQueryItem(QStringLiteral("timeformat"), QStringLiteral("unixtime"));
-        parameters.addQueryItem(QStringLiteral("timezone"), QStringLiteral("GMT"));
-        parameters.addQueryItem(QStringLiteral("forecast_days"), QStringLiteral("1"));
+        parameters.addQueryItem(QStringLiteral("timezone"), QStringLiteral("auto"));
+        parameters.addQueryItem(QStringLiteral("forecast_days"), QStringLiteral("3"));
         forecast.setQuery(parameters);
         request(forecast, [this, resolved](const QJsonObject &forecastObject) {
             const auto current = forecastObject.value(QStringLiteral("current")).toObject();
             const auto units = forecastObject.value(QStringLiteral("current_units")).toObject();
+            const auto daily = forecastObject.value(QStringLiteral("daily")).toObject();
+            const auto dailyUnits = forecastObject.value(QStringLiteral("daily_units")).toObject();
+            const auto dates = daily.value(QStringLiteral("time")).toArray();
+            const auto codes = daily.value(QStringLiteral("weather_code")).toArray();
+            const auto minimums = daily.value(QStringLiteral("temperature_2m_min")).toArray();
+            const auto maximums = daily.value(QStringLiteral("temperature_2m_max")).toArray();
+            const auto offset = forecastObject.value(QStringLiteral("utc_offset_seconds"));
+            if (dates.size() != 3 || codes.size() != 3 || minimums.size() != 3 || maximums.size() != 3 || !number(offset, -43200, 50400, true)
+                || dailyUnits.value(QStringLiteral("time")).toString() != QLatin1String("unixtime")
+                || dailyUnits.value(QStringLiteral("temperature_2m_min")).toString() != QStringLiteral("°C")
+                || dailyUnits.value(QStringLiteral("temperature_2m_max")).toString() != QStringLiteral("°C")
+                || dailyUnits.value(QStringLiteral("weather_code")).toString() != QLatin1String("wmo code")) {
+                unavailable(QStringLiteral("invalid_forecast"));
+                return;
+            }
+            QJsonArray days;
+            for (qsizetype index = 0; index < dates.size(); ++index) {
+                if (!number(dates[index], 0, 4102444800, true) || (dates[index].toInteger() + offset.toInteger()) % 86400 != 0) {
+                    unavailable(QStringLiteral("invalid_forecast_date"));
+                    return;
+                }
+                days.append(
+                    QJsonObject{{QStringLiteral("date"),
+                                 QDateTime::fromSecsSinceEpoch(dates[index].toInteger() + offset.toInteger(), QTimeZone::UTC).date().toString(Qt::ISODate)},
+                                {QStringLiteral("weatherCode"), codes[index]},
+                                {QStringLiteral("minimum"), minimums[index]},
+                                {QStringLiteral("maximum"), maximums[index]}});
+            }
             QJsonObject result{{QStringLiteral("city"), m_city},
                                {QStringLiteral("resolvedCity"), resolved},
                                {QStringLiteral("source"), QStringLiteral("open-meteo")},
@@ -174,7 +236,10 @@ void PanelWeather::locate(const QString &name, bool fallback)
                                {QStringLiteral("observedAt"), current.value(QStringLiteral("time"))},
                                {QStringLiteral("fetchedAt"), QDateTime::currentSecsSinceEpoch()},
                                {QStringLiteral("temperature"), current.value(QStringLiteral("temperature_2m"))},
-                               {QStringLiteral("weatherCode"), current.value(QStringLiteral("weather_code"))}};
+                               {QStringLiteral("weatherCode"), current.value(QStringLiteral("weather_code"))},
+                               {QStringLiteral("timezone"), forecastObject.value(QStringLiteral("timezone"))},
+                               {QStringLiteral("utcOffsetSeconds"), offset},
+                               {QStringLiteral("forecast"), days}};
             if (units.value(QStringLiteral("temperature_2m")).toString() != QStringLiteral("°C")
                 || units.value(QStringLiteral("time")).toString() != QLatin1String("unixtime")
                 || !validObservation(result, QDateTime::currentSecsSinceEpoch())) {

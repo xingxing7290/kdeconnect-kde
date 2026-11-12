@@ -18,6 +18,7 @@
 - [空闲表盘与天气说明](docs/control-panel/DIALS.zh-CN.md)
 - [基础表盘与天气阶段记录](docs/control-panel/MILESTONE-06.zh-CN.md)
 - [Windows 独立目录候选包与验证边界](docs/control-panel/MILESTONE-07-PACKAGING.zh-CN.md)
+- [信息表盘、三日预报与最新检查](docs/control-panel/MILESTONE-07-INFO.zh-CN.md)
 - [Windows 智能跟随使用说明](docs/control-panel/FOLLOW.zh-CN.md)
 - [配套 Android 端](https://github.com/xingxing7290/kdeconnect-android)
 

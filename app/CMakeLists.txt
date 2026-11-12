@@ -38,6 +38,8 @@ ecm_target_qml_sources(kdeconnect-app SOURCES
     qml/PanelButtonDialog.qml
     qml/PanelDialGallery.qml
     qml/PanelDialPreview.qml
+    qml/PanelInformationDial.qml
+    qml/PanelWeatherGlyph.qml
     qml/mpris.qml
     qml/mousepad.qml
     qml/presentationRemote.qml

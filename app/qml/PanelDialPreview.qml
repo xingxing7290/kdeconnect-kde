@@ -16,7 +16,7 @@ Rectangle {
     readonly property bool hasObservation: weather.city === city.trim() && weather.source === "open-meteo" && Number.isFinite(weather.temperature) && Number.isFinite(weather.observedAt) && Number.isFinite(weather.fetchedAt)
     readonly property real age: now.getTime() / 1000 - (weather.observedAt || 0)
     readonly property real fetchedAge: now.getTime() / 1000 - (weather.fetchedAt || 0)
-    readonly property bool freshWeather: hasObservation && age >= -600 && age <= 10800 && fetchedAge >= -600 && fetchedAge <= 7200 && weather.status !== "disabled"
+    readonly property bool freshWeather: hasObservation && age >= -600 && age <= 10800 && fetchedAge >= -600 && fetchedAge <= 7200 && weather.status !== "disabled" && weather.status !== "no_city"
     readonly property string weatherLabel: weather.status === "disabled" ? qsTr("空闲天气已关闭") : hasObservation && !freshWeather ? qsTr("天气数据已过期") : weather.status === "loading" ? qsTr("正在更新天气") : weather.status === "ready" && freshWeather ? codeText(weather.weatherCode) : qsTr("天气暂不可用")
     function codeText(code) {
         if (code === 0) return qsTr("晴");
@@ -69,7 +69,7 @@ Rectangle {
         }
         Text { visible: root.dialId === "analog"; anchors.bottom: parent.bottom; anchors.horizontalCenter: parent.horizontalCenter; text: root.dateText; color: root.ink; font.pixelSize: 10 }
         Text {
-            visible: root.dialId === "digital" || root.dialId === "info"
+            visible: root.dialId === "digital"
             anchors.left: parent.left; anchors.verticalCenter: parent.verticalCenter
             width: parent.width * 0.7; height: parent.height * 0.8
             text: Qt.formatTime(root.now, "hh:mm"); color: root.light ? root.ink : "#85b4ff"
@@ -77,16 +77,16 @@ Rectangle {
             verticalAlignment: Text.AlignVCenter
         }
         Column {
-            visible: root.dialId === "digital" || root.dialId === "info" || root.dialId === "weather"
+            visible: root.dialId === "digital" || root.dialId === "weather"
             anchors.right: parent.right; anchors.verticalCenter: parent.verticalCenter
             width: parent.width * (root.dialId === "weather" ? 0.47 : 0.29); spacing: 4
-            Text { width: parent.width; visible: root.dialId === "weather" || root.dialId === "info"; text: (root.hasObservation ? root.weather.resolvedCity : root.city) || qsTr("未设置城市"); color: root.ink; font.pixelSize: 12; elide: Text.ElideRight }
+            Text { width: parent.width; visible: root.dialId === "weather" || root.dialId === "info"; text: (root.hasObservation ? root.weather.resolvedCity : root.city) || qsTr("未设置城市"); textFormat: Text.PlainText; color: root.ink; font.pixelSize: 12; elide: Text.ElideRight }
             Text { objectName: "panelWeatherTemperature"; visible: root.dialId === "weather" || root.dialId === "info" || (root.dialId === "digital" && !!root.city); text: root.freshWeather ? Math.round(root.weather.temperature) + "°C" : "--°C"; color: root.ink; font.pixelSize: Math.max(12, root.height * (root.dialId === "weather" ? 0.25 : 0.12)) }
             Text { objectName: "panelWeatherStatus"; width: parent.width; visible: root.dialId === "weather" || root.dialId === "info" || (root.dialId === "digital" && !!root.city); text: (root.freshWeather && root.weather.status !== "ready" ? qsTr("缓存 · ") : "") + root.weatherLabel; color: root.ink; font.pixelSize: 10; wrapMode: Text.WordWrap }
             Text { width: parent.width; visible: root.dialId === "weather" || root.dialId === "info" || (root.dialId === "digital" && !!root.city); text: qsTr("Open-Meteo 模型天气"); color: root.ink; opacity: 0.65; font.pixelSize: 9; wrapMode: Text.WordWrap }
             Text { width: parent.width; visible: root.hasObservation && (root.dialId === "weather" || root.dialId === "info" || root.dialId === "digital"); text: qsTr("模型 %1 · 获取 %2").arg(Qt.formatDateTime(new Date((root.weather.observedAt || 0) * 1000), "MM-dd hh:mm")).arg(Qt.formatTime(new Date((root.weather.fetchedAt || 0) * 1000), "hh:mm")); color: root.ink; opacity: 0.65; font.pixelSize: 9; wrapMode: Text.WordWrap }
             Text { width: parent.width; visible: root.dialId !== "weather"; text: root.dateText; color: root.ink; font.pixelSize: 10; wrapMode: Text.WordWrap }
-            Text { width: parent.width; visible: !!root.message; text: root.message; color: root.ink; font.pixelSize: 12; wrapMode: Text.WrapAnywhere; maximumLineCount: 2; elide: Text.ElideRight }
+            Text { width: parent.width; visible: !!root.message; text: root.message; textFormat: Text.PlainText; color: root.ink; font.pixelSize: 12; wrapMode: Text.WrapAnywhere; maximumLineCount: 2; elide: Text.ElideRight }
         }
         Canvas {
             id: car
@@ -109,7 +109,15 @@ Rectangle {
             visible: root.dialId === "car"; anchors.right: parent.right; anchors.verticalCenter: parent.verticalCenter; width: parent.width * 0.4; spacing: 8
             Text { text: Qt.formatTime(root.now, "hh:mm"); color: "#85b4ff"; font.pixelSize: Math.max(12, root.height * 0.22); font.family: "monospace" }
             Text { width: parent.width; text: root.dateText; color: root.ink; font.pixelSize: 10; wrapMode: Text.WordWrap }
-            Text { width: parent.width; text: root.message; color: root.ink; maximumLineCount: 2; elide: Text.ElideRight; wrapMode: Text.WrapAnywhere; font.pixelSize: 11 }
+            Text { width: parent.width; text: root.message; textFormat: Text.PlainText; color: root.ink; maximumLineCount: 2; elide: Text.ElideRight; wrapMode: Text.WrapAnywhere; font.pixelSize: 11 }
+        }
+    }
+    Loader {
+        active: root.dialId === "info"; anchors.fill: parent; anchors.margins: 12
+        sourceComponent: PanelInformationDial {
+            city: root.city; message: root.message; weather: root.weather; now: root.now; fresh: root.freshWeather
+            statusText: (root.freshWeather && root.weather.status !== "ready" ? qsTr("缓存 · ") : "") + root.weatherLabel
+            codeText: root.codeText
         }
     }
 }

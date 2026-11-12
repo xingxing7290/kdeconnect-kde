@@ -25,6 +25,7 @@ public:
     void refresh();
     static bool validCode(int code);
     static bool validObservation(const QJsonObject &object, qint64 now, qint64 maximumAge = 10800);
+    static bool validForecast(const QJsonObject &object);
 
 Q_SIGNALS:
     void changed();

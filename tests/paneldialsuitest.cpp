@@ -5,6 +5,7 @@
 #include <QDir>
 #include <QFile>
 #include <QFontDatabase>
+#include <QJsonArray>
 #include <QJsonDocument>
 #include <QQmlContext>
 #include <QQuickItem>
@@ -12,11 +13,21 @@
 #include <QQuickView>
 #include <QTemporaryDir>
 #include <QTest>
+#include <QTimeZone>
 #include <paneleditor.h>
 
 class PanelDialsUiTest : public QObject
 {
     Q_OBJECT
+    static QObject *visualFind(QQuickItem *item, const QString &name)
+    {
+        if (item->objectName() == name)
+            return item;
+        for (auto *child : item->childItems())
+            if (auto *found = visualFind(child, name))
+                return found;
+        return nullptr;
+    }
 private Q_SLOTS:
     void selectionSettingsAndPreviewsUseProductionQml()
     {
@@ -118,11 +129,97 @@ private Q_SLOTS:
                 QVERIFY(temperature);
                 QCOMPARE(temperature->property("text").toString(),
                          QString::number(qRound(observation.value(QStringLiteral("temperature")).toDouble())) + QStringLiteral("°C"));
+                if (qstrcmp(dial, "info") == 0) {
+                    auto *info = current->findChild<QObject *>(QStringLiteral("panelInformationDial"));
+                    QVERIFY(info);
+                    QCOMPARE(info->findChild<QObject *>(QStringLiteral("panelInfoTemperature"))->property("text"), temperature->property("text"));
+                    QCOMPARE(info->findChild<QObject *>(QStringLiteral("panelInfoBattery"))->property("text").toString(), QStringLiteral("--%"));
+                    const auto days = observation.value(QStringLiteral("forecast")).toArray();
+                    if (!days.isEmpty()) {
+                        for (int index = 0; index < days.size(); ++index) {
+                            const auto day = days[index].toObject();
+                            auto *range = visualFind(qobject_cast<QQuickItem *>(info), QStringLiteral("panelInfoForecastRange-%1").arg(index));
+                            QVERIFY(range);
+                            QCOMPARE(range->property("text").toString(),
+                                     QStringLiteral("%1° / %2°")
+                                         .arg(qRound(day.value(QStringLiteral("minimum")).toDouble()))
+                                         .arg(qRound(day.value(QStringLiteral("maximum")).toDouble())));
+                        }
+                    }
+                }
                 QTest::qWait(50);
                 if (!screenshots.isEmpty())
                     QVERIFY(view.grabWindow().save(QDir(screenshots).filePath(QStringLiteral("desktop-dial-%1-live.png").arg(QString::fromLatin1(dial)))));
             }
         }
+    }
+    void informationDialNeverInventsForecastOrBatteryAndHidesExpiredData()
+    {
+        QTest::failOnWarning();
+#ifdef Q_OS_WIN
+        QVERIFY(QFontDatabase::addApplicationFont(QStringLiteral("C:/Windows/Fonts/msyh.ttc")) >= 0);
+        QGuiApplication::setFont(QFont(QStringLiteral("Microsoft YaHei")));
+#endif
+        const auto now = QDateTime::currentDateTime();
+        const auto cityDate = QDateTime::fromSecsSinceEpoch(now.toSecsSinceEpoch() + 28800, QTimeZone::UTC).date();
+        QJsonArray days;
+        for (int index = 0; index < 3; ++index)
+            days.append(QJsonObject{{QStringLiteral("date"), cityDate.addDays(index).toString(Qt::ISODate)},
+                                    {QStringLiteral("minimum"), 11.2},
+                                    {QStringLiteral("maximum"), 22.4},
+                                    {QStringLiteral("weatherCode"), 3}});
+        QJsonObject observation{{QStringLiteral("city"), QStringLiteral("Test City")},
+                                {QStringLiteral("resolvedCity"), QStringLiteral("Test City / Test Country")},
+                                {QStringLiteral("source"), QStringLiteral("open-meteo")},
+                                {QStringLiteral("status"), QStringLiteral("ready")},
+                                {QStringLiteral("fetchedAt"), now.toSecsSinceEpoch()},
+                                {QStringLiteral("observedAt"), now.toSecsSinceEpoch() - 300},
+                                {QStringLiteral("temperature"), 18.2},
+                                {QStringLiteral("weatherCode"), 3},
+                                {QStringLiteral("forecast"), days},
+                                {QStringLiteral("timezone"), QStringLiteral("Test/City")},
+                                {QStringLiteral("utcOffsetSeconds"), 28800}};
+        QQuickView view;
+        view.setInitialProperties({{QStringLiteral("dialId"), QStringLiteral("info")},
+                                   {QStringLiteral("city"), QStringLiteral("Test City")},
+                                   {QStringLiteral("message"), QStringLiteral("Synthetic UI fixture - not a live observation")},
+                                   {QStringLiteral("now"), now},
+                                   {QStringLiteral("weather"), observation.toVariantMap()}});
+        view.setResizeMode(QQuickView::SizeRootObjectToView);
+        view.setSource(QUrl::fromLocalFile(QFINDTESTDATA("../app/qml/PanelDialPreview.qml")));
+        QCOMPARE(view.status(), QQuickView::Ready);
+        view.resize(1000, 520);
+        view.show();
+        QVERIFY(QTest::qWaitForWindowExposed(&view));
+        auto *info = view.rootObject()->findChild<QObject *>(QStringLiteral("panelInformationDial"));
+        QVERIFY(info);
+        auto *temperature = info->findChild<QObject *>(QStringLiteral("panelInfoTemperature"));
+        auto *range = visualFind(qobject_cast<QQuickItem *>(info), QStringLiteral("panelInfoForecastRange-0"));
+        auto *status = info->findChild<QObject *>(QStringLiteral("panelInfoStatus"));
+        QVERIFY(temperature && range && status);
+        QTRY_COMPARE(temperature->property("text").toString(), QStringLiteral("18°C"));
+        QCOMPARE(range->property("text").toString(), QStringLiteral("11° / 22°"));
+        QCOMPARE(info->findChild<QObject *>(QStringLiteral("panelInfoBattery"))->property("text").toString(), QStringLiteral("--%"));
+        view.rootObject()->setProperty("message", QStringLiteral("<img src='https://invalid.example/not-loaded.png'>literal text</img>"));
+        auto *message = info->findChild<QObject *>(QStringLiteral("panelInfoMessage"));
+        QVERIFY(message);
+        QCOMPARE(message->property("textFormat").toInt(), 0); // QQuickText::PlainText
+        QVERIFY(message->property("text").toString().startsWith(QStringLiteral("<img")));
+        observation.insert(QStringLiteral("status"), QStringLiteral("unavailable"));
+        view.rootObject()->setProperty("weather", observation.toVariantMap());
+        QTRY_VERIFY(status->property("text").toString().contains(QStringLiteral("缓存")));
+        QCOMPARE(temperature->property("text").toString(), QStringLiteral("18°C"));
+        view.rootObject()->setProperty("now", now.addSecs(7201));
+        QTRY_COMPARE(temperature->property("text").toString(), QStringLiteral("--°C"));
+        QCOMPARE(range->property("text").toString(), QStringLiteral("--° / --°"));
+        observation.remove(QStringLiteral("forecast"));
+        view.rootObject()->setProperty("weather", observation.toVariantMap());
+        view.rootObject()->setProperty("now", now);
+        QTRY_COMPARE(temperature->property("text").toString(), QStringLiteral("18°C"));
+        QCOMPARE(range->property("text").toString(), QStringLiteral("--° / --°"));
+        view.rootObject()->setProperty("weather", QVariantMap());
+        QTRY_COMPARE(temperature->property("text").toString(), QStringLiteral("--°C"));
+        QCOMPARE(range->property("text").toString(), QStringLiteral("--° / --°"));
     }
 };
 QTEST_MAIN(PanelDialsUiTest)

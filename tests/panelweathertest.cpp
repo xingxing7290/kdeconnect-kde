@@ -9,6 +9,7 @@
 #include <QNetworkReply>
 #include <QTemporaryDir>
 #include <QTest>
+#include <QTimeZone>
 #include <QUrlQuery>
 #include <panelweather.h>
 
@@ -102,14 +103,31 @@ class PanelWeatherTest : public QObject
                                                                   {QStringLiteral("longitude"), 112.9}}}}})
                     .toJson()};
     }
-    static QJsonObject forecast()
+    static QJsonObject forecast(int offset = 28800)
     {
+        const auto now = QDateTime::currentSecsSinceEpoch();
+        const auto start = (now + offset) / 86400 * 86400 - offset;
+        QJsonArray dates;
+        for (int day = 0; day < 3; ++day)
+            dates.append(start + day * 86400);
         return {{QStringLiteral("current_units"),
                  QJsonObject{{QStringLiteral("temperature_2m"), QStringLiteral("°C")}, {QStringLiteral("time"), QStringLiteral("unixtime")}}},
                 {QStringLiteral("current"),
                  QJsonObject{{QStringLiteral("time"), QDateTime::currentSecsSinceEpoch() - 300},
                              {QStringLiteral("temperature_2m"), 18.5},
-                             {QStringLiteral("weather_code"), 3}}}};
+                             {QStringLiteral("weather_code"), 3}}},
+                {QStringLiteral("utc_offset_seconds"), offset},
+                {QStringLiteral("timezone"), QStringLiteral("Test/Forecast-City")},
+                {QStringLiteral("daily_units"),
+                 QJsonObject{{QStringLiteral("time"), QStringLiteral("unixtime")},
+                             {QStringLiteral("temperature_2m_min"), QStringLiteral("°C")},
+                             {QStringLiteral("temperature_2m_max"), QStringLiteral("°C")},
+                             {QStringLiteral("weather_code"), QStringLiteral("wmo code")}}},
+                {QStringLiteral("daily"),
+                 QJsonObject{{QStringLiteral("time"), dates},
+                             {QStringLiteral("weather_code"), QJsonArray{3, 1, 61}},
+                             {QStringLiteral("temperature_2m_min"), QJsonArray{12.5, 11.0, 9.8}},
+                             {QStringLiteral("temperature_2m_max"), QJsonArray{20.0, 21.8, 19.3}}}}};
     }
 private Q_SLOTS:
     void networkingMustBeExplicitAndEmptyCityNeverQueries()
@@ -137,6 +155,9 @@ private Q_SLOTS:
         QCOMPARE(network.requests[0].scheme(), QStringLiteral("https"));
         QCOMPARE(network.requests[1].host(), QStringLiteral("api.open-meteo.com"));
         QCOMPARE(QUrlQuery(network.requests[1]).queryItemValue(QStringLiteral("timeformat")), QStringLiteral("unixtime"));
+        QCOMPARE(QUrlQuery(network.requests[1]).queryItemValue(QStringLiteral("timezone")), QStringLiteral("auto"));
+        QCOMPARE(QUrlQuery(network.requests[1]).queryItemValue(QStringLiteral("forecast_days")), QStringLiteral("3"));
+        QCOMPARE(weather.state().value(QStringLiteral("forecast")).toArray().size(), 3);
         QCOMPARE(weather.state().value(QStringLiteral("temperature")).toDouble(), 18.5);
         QCOMPARE(weather.state().value(QStringLiteral("resolvedCity")).toString(), QStringLiteral("长沙 / 中国"));
         const auto original = weather.state();
@@ -211,6 +232,45 @@ private Q_SLOTS:
         object = forecast();
         object.insert(QStringLiteral("current_units"), QJsonObject{{QStringLiteral("temperature_2m"), QStringLiteral("°F")}});
         QTest::newRow("wrong-units") << QJsonDocument(object).toJson();
+        for (const auto &field : {"time", "weather_code", "temperature_2m_min", "temperature_2m_max"}) {
+            object = forecast();
+            auto daily = object.value(QStringLiteral("daily")).toObject();
+            daily.insert(QLatin1String(field), QJsonArray{1, 2});
+            object.insert(QStringLiteral("daily"), daily);
+            QTest::newRow(qPrintable(QStringLiteral("short-%1").arg(QLatin1String(field)))) << QJsonDocument(object).toJson();
+        }
+        for (const auto &field : {"temperature_2m_min", "temperature_2m_max", "weather_code", "time"}) {
+            object = forecast();
+            auto daily = object.value(QStringLiteral("daily")).toObject();
+            auto values = daily.value(QLatin1String(field)).toArray();
+            values[1] = QJsonValue();
+            daily.insert(QLatin1String(field), values);
+            object.insert(QStringLiteral("daily"), daily);
+            QTest::newRow(qPrintable(QStringLiteral("null-%1").arg(QLatin1String(field)))) << QJsonDocument(object).toJson();
+        }
+        object = forecast();
+        auto daily = object.value(QStringLiteral("daily")).toObject();
+        daily.insert(QStringLiteral("weather_code"), QJsonArray{3, 4, 61});
+        object.insert(QStringLiteral("daily"), daily);
+        QTest::newRow("invalid-daily-code") << QJsonDocument(object).toJson();
+        daily.insert(QStringLiteral("weather_code"), QJsonArray{3, 1, 61});
+        daily.insert(QStringLiteral("temperature_2m_min"), QJsonArray{21.0, 11.0, 9.8});
+        object.insert(QStringLiteral("daily"), daily);
+        QTest::newRow("minimum-above-maximum") << QJsonDocument(object).toJson();
+        object = forecast();
+        object.insert(QStringLiteral("utc_offset_seconds"), QStringLiteral("28800"));
+        QTest::newRow("string-offset") << QJsonDocument(object).toJson();
+        object = forecast();
+        object.insert(QStringLiteral("utc_offset_seconds"), 50401);
+        QTest::newRow("invalid-offset") << QJsonDocument(object).toJson();
+        object = forecast();
+        object.insert(QStringLiteral("timezone"), QString());
+        QTest::newRow("empty-timezone") << QJsonDocument(object).toJson();
+        object = forecast();
+        auto dailyUnits = object.value(QStringLiteral("daily_units")).toObject();
+        dailyUnits.insert(QStringLiteral("temperature_2m_min"), QStringLiteral("°F"));
+        object.insert(QStringLiteral("daily_units"), dailyUnits);
+        QTest::newRow("wrong-daily-unit") << QJsonDocument(object).toJson();
         QTest::newRow("oversized") << QByteArray(70000, 'a');
         QTest::newRow("not-object") << QByteArray("[]");
     }
@@ -225,6 +285,21 @@ private Q_SLOTS:
         QTRY_COMPARE(weather.state().value(QStringLiteral("status")).toString(), QStringLiteral("unavailable"));
         QVERIFY(!weather.state().contains(QStringLiteral("temperature")));
         QVERIFY(!QFile::exists(directory.filePath(QStringLiteral("weather.json"))));
+    }
+    void forecastDatesUseCityOffsetNotComputerTimezone()
+    {
+        for (int offset : {-43200, -12600, 0, 20700, 28800, 50400}) {
+            QTemporaryDir directory;
+            WeatherNetwork network;
+            network.responses = {location(), {QJsonDocument(forecast(offset)).toJson()}};
+            ControlPanel::PanelWeather weather(directory.path(), nullptr, &network, true);
+            weather.configure(idle(QStringLiteral("长沙市")));
+            QTRY_COMPARE(weather.state().value(QStringLiteral("status")).toString(), QStringLiteral("ready"));
+            const auto days = weather.state().value(QStringLiteral("forecast")).toArray();
+            const auto cityDate = QDateTime::fromSecsSinceEpoch(weather.state().value(QStringLiteral("fetchedAt")).toInteger() + offset, QTimeZone::UTC).date();
+            QCOMPARE(days[0].toObject().value(QStringLiteral("date")).toString(), cityDate.toString(Qt::ISODate));
+            QCOMPARE(days[2].toObject().value(QStringLiteral("date")).toString(), cityDate.addDays(2).toString(Qt::ISODate));
+        }
     }
 };
 QTEST_GUILESS_MAIN(PanelWeatherTest)

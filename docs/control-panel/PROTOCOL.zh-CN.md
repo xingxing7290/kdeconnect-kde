@@ -57,6 +57,14 @@ sessionId、requestId 使用小写 UUID。Android 每次重新建立插件会话
 
 时间为 Unix 秒，接收端检查整数/范围和明显未来值；温度必须是有限 JSON 数值，范围 -100..70，代码必须是支持的整数 WMO 码。UTF-8 主体不超过 16 KiB、JSON 容器不超过 64 层。修订/城市不符、乱序或类型错误不能替换有效快照；天气错误也不能把动作会话置为失败。加载或不可用消息可保留同城已知快照，但不制造新的获取时间，显示时仍检查过期。来源、缓存、过期和隐私详见 DIALS.zh-CN.md。
 
+### 可选三日预报扩展
+
+天气包仍为 v1；旧端忽略未知字段，新 Android 也接受不含预报的旧端快照。新增可选 forecast 数组（为空或恰好 3 项），每项为 date、minimum、maximum、weatherCode。date 必须是严格 yyyy-MM-dd，按查询城市日期连续排列；温度有限且在 -100..70、minimum <= maximum，WMO 码沿用当前天气的白名单。
+
+非空预报必须同时携带 timezone（非空、无控制字符、最长 80）和 utcOffsetSeconds（整数，-43200..50400）。第一天必须等于 fetchedAt 加该偏移所得的城市日期；不能按电脑或手机时区重新解释。预报与当前观测一同校验、存储、保留原获取时间和过期，不单独制造新鲜度。缺省预报显示待更新，不推断温度或天气代码。跨城市、旧修订、旧观测及总体 16 KiB/64 层限制不变。
+
+手机本机电量仅由本机系统广播读取，不加入该天气包，不把某个设备的电量混作所有控制端的公共配置。
+
 ## 音量复用包
 
 音量继续使用 kdeconnect.systemvolume 和 kdeconnect.systemvolume.request，不混入面板 action/sessionId/revision。Windows sinkList 的 name 为稳定端点 ID，description 为友好名称，volume 为整数 0..100，maxVolume=100，muted/enabled 为布尔。没有默认输出时不自动选列表首项。

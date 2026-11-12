@@ -6,6 +6,8 @@
 #include <QClipboard>
 #include <QFileInfo>
 #include <QGuiApplication>
+#include <QHash>
+#include <QIcon>
 #include <QJsonArray>
 #include <QUrl>
 #include <QUuid>
@@ -286,11 +288,8 @@ bool PanelEditor::setButton(int index, const QVariantMap &value)
     button.insert(QStringLiteral("id"), oldId.isEmpty() ? QUuid::createUuid().toString(QUuid::WithoutBraces) : oldId);
     if (!button.contains(QStringLiteral("icon")))
         button.insert(QStringLiteral("icon"), QString());
-    if (button.value(QStringLiteral("icon")).toString().isEmpty() && button.value(QStringLiteral("kind")).toString() == QLatin1String("program")) {
-        button.insert(
-            QStringLiteral("icon"),
-            m_assets.importProgramIcon(QUrl::fromLocalFile(button.value(QStringLiteral("target")).toObject().value(QStringLiteral("path")).toString())));
-    }
+    if (button.value(QStringLiteral("icon")).toString().isEmpty())
+        button.insert(QStringLiteral("icon"), defaultButtonIcon(button));
     if (!button.value(QStringLiteral("icon")).toString().isEmpty() && !m_assets.read(button.value(QStringLiteral("icon")).toString()))
         return fail(QStringLiteral("icon_unavailable"));
     buttons[index] = button;
@@ -385,6 +384,68 @@ QString PanelEditor::programIcon(const QString &path)
     if (id.isEmpty())
         fail(error);
     return id;
+}
+
+QString PanelEditor::defaultButtonIcon(const QJsonObject &button) const
+{
+    const auto kind = button.value(QStringLiteral("kind")).toString();
+    if (kind == QLatin1String("program")) {
+        const auto id =
+            m_assets.importProgramIcon(QUrl::fromLocalFile(button.value(QStringLiteral("target")).toObject().value(QStringLiteral("path")).toString()));
+        if (!id.isEmpty())
+            return id;
+    }
+    if (!qobject_cast<QGuiApplication *>(QCoreApplication::instance()))
+        return {};
+    static const QHash<QString, QString> systemIcons{{QStringLiteral("thisPc"), QStringLiteral("computer")},
+                                                     {QStringLiteral("recycleBin"), QStringLiteral("user-trash")},
+                                                     {QStringLiteral("commandPrompt"), QStringLiteral("utilities-terminal")},
+                                                     {QStringLiteral("taskManager"), QStringLiteral("utilities-system-monitor")},
+                                                     {QStringLiteral("showDesktop"), QStringLiteral("user-desktop")},
+                                                     {QStringLiteral("screenshot"), QStringLiteral("camera-photo")},
+                                                     {QStringLiteral("settings"), QStringLiteral("preferences-system")},
+                                                     {QStringLiteral("networkSettings"), QStringLiteral("network-wireless")},
+                                                     {QStringLiteral("personalization"), QStringLiteral("preferences-desktop-theme")},
+                                                     {QStringLiteral("displaySettings"), QStringLiteral("video-display")},
+                                                     {QStringLiteral("soundSettings"), QStringLiteral("audio-volume-high")}};
+    static const QHash<QString, QString> kindIcons{{QStringLiteral("website"), QStringLiteral("internet-web-browser")},
+                                                   {QStringLiteral("file"), QStringLiteral("text-x-generic")},
+                                                   {QStringLiteral("folder"), QStringLiteral("folder")},
+                                                   {QStringLiteral("shortcut"), QStringLiteral("input-keyboard")},
+                                                   {QStringLiteral("command"), QStringLiteral("utilities-terminal")}};
+    const auto name = kind == QLatin1String("system")
+        ? systemIcons.value(button.value(QStringLiteral("target")).toObject().value(QStringLiteral("action")).toString())
+        : kindIcons.value(kind, QStringLiteral("application-x-executable"));
+    const auto icon = QIcon::fromTheme(name);
+    return icon.isNull() ? QString() : m_assets.importPixels(icon.pixmap(PanelAssets::IconSize, PanelAssets::IconSize).toImage());
+}
+
+bool PanelEditor::fillMissingIcons()
+{
+    auto config = m_store.document().privateConfig();
+    auto pages = config.value(QStringLiteral("pages")).toArray();
+    bool changed = false;
+    for (int pageNumber = 0; pageNumber < pages.size(); ++pageNumber) {
+        auto page = pages[pageNumber].toObject();
+        auto buttons = page.value(QStringLiteral("slots")).toArray();
+        for (int slot = 0; slot < buttons.size(); ++slot) {
+            auto button = buttons[slot].toObject();
+            if (button.isEmpty() || !button.value(QStringLiteral("icon")).toString().isEmpty())
+                continue;
+            const auto id = defaultButtonIcon(button);
+            if (id.isEmpty())
+                return fail(QStringLiteral("icon_unavailable"));
+            button.insert(QStringLiteral("icon"), id);
+            buttons[slot] = button;
+            changed = true;
+        }
+        page.insert(QStringLiteral("slots"), buttons);
+        pages[pageNumber] = page;
+    }
+    if (!changed)
+        return true;
+    config.insert(QStringLiteral("pages"), pages);
+    return save(config);
 }
 QUrl PanelEditor::assetUrl(const QString &id) const
 {

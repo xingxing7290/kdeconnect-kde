@@ -8,6 +8,7 @@
 #include <QDropEvent>
 #include <QFile>
 #include <QFontDatabase>
+#include <QJsonArray>
 #include <QJsonDocument>
 #include <QMimeData>
 #include <QQmlContext>
@@ -180,6 +181,63 @@ private Q_SLOTS:
         QTest::newRow("shortcut") << 4 << QStringLiteral("shortcut");
         QTest::newRow("system") << 5 << QStringLiteral("system");
         QTest::newRow("command") << 6 << QStringLiteral("command");
+    }
+    void themedDefaultsAreAssetsAndBackfillPreservesCustomIcons()
+    {
+        const auto system = [](const QString &action) {
+            return QVariantMap{{QStringLiteral("kind"), QStringLiteral("system")},
+                               {QStringLiteral("name"), action},
+                               {QStringLiteral("target"), QVariantMap{{QStringLiteral("action"), action}}}};
+        };
+        QVERIFY(editor->setButton(0, system(QStringLiteral("thisPc"))));
+        QVERIFY(editor->setButton(1, system(QStringLiteral("recycleBin"))));
+        const auto computerIcon = button(0).value(QStringLiteral("icon")).toString();
+        const auto trashIcon = button(1).value(QStringLiteral("icon")).toString();
+        QVERIFY(ControlPanel::PanelAssets::validId(computerIcon));
+        QVERIFY(ControlPanel::PanelAssets::validId(trashIcon));
+        QVERIFY(computerIcon != trashIcon);
+        ControlPanel::PanelAssets assets(QDir(directory->path()).filePath(QStringLiteral("config")));
+        const auto bytes = assets.read(trashIcon);
+        QVERIFY(bytes);
+        QCOMPARE(QImage::fromData(*bytes, "PNG").size(), QSize(256, 256));
+        const auto document = ControlPanel::PanelDocument::fromJson(QJsonDocument(QJsonObject::fromVariantMap(editor->config())).toJson());
+        QVERIFY(document);
+        const auto projected =
+            document->publicConfig().value(QStringLiteral("pages")).toArray()[0].toObject().value(QStringLiteral("slots")).toArray()[1].toObject();
+        QCOMPARE(projected.value(QStringLiteral("icon")).toString(), trashIcon);
+        QVERIFY(!projected.contains(QStringLiteral("target")));
+        QImage custom(64, 64, QImage::Format_ARGB32);
+        custom.fill(Qt::blue);
+        const auto customPath = QDir(directory->path()).filePath(QStringLiteral("custom-default-test.png"));
+        QVERIFY(custom.save(customPath));
+        const auto customId = editor->importIcon(QUrl::fromLocalFile(customPath));
+        auto customButton = website(QStringLiteral("Custom"));
+        customButton.insert(QStringLiteral("icon"), customId);
+        QVERIFY(editor->setButton(0, customButton));
+        auto legacy = QJsonObject::fromVariantMap(editor->config());
+        auto pages = legacy.value(QStringLiteral("pages")).toArray();
+        auto page = pages[0].toObject();
+        auto buttons = page.value(QStringLiteral("slots")).toArray();
+        auto oldButton = buttons[1].toObject();
+        oldButton.insert(QStringLiteral("icon"), QString());
+        buttons[1] = oldButton;
+        page.insert(QStringLiteral("slots"), buttons);
+        pages[0] = page;
+        legacy.insert(QStringLiteral("pages"), pages);
+        ControlPanel::PanelStore external(QDir(directory->path()).filePath(QStringLiteral("config")));
+        QVERIFY(external.load());
+        QVERIFY(external.save(legacy, external.document().revision()));
+        QTRY_COMPARE(editor->config().value(QStringLiteral("revision")).toLongLong(), external.document().revision());
+        QCOMPARE(button(1).value(QStringLiteral("icon")).toString(), QString());
+        const auto revision = editor->config().value(QStringLiteral("revision")).toLongLong();
+        QVERIFY(click(QStringLiteral("panelFillMissingIcons")));
+        QCOMPARE(editor->config().value(QStringLiteral("revision")).toLongLong(), revision + 1);
+        QCOMPARE(button(0).value(QStringLiteral("icon")).toString(), customId);
+        QCOMPARE(button(1).value(QStringLiteral("icon")).toString(), trashIcon);
+        QVERIFY(button(2).isEmpty());
+        const auto filled = editor->config();
+        QVERIFY(click(QStringLiteral("panelFillMissingIcons")));
+        QCOMPARE(editor->config(), filled);
     }
     void allKindsSaveFromProductionForm()
     {

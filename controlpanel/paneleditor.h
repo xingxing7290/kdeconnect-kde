@@ -61,6 +61,7 @@ public:
     Q_INVOKABLE bool setIdle(const QString &key, const QVariant &value);
     Q_INVOKABLE bool setIdleOptions(const QVariantMap &values);
     Q_INVOKABLE bool setIdleOptionsChecked(const QVariantMap &values, double expectedRevision);
+    Q_INVOKABLE bool fillMissingIcons();
     Q_INVOKABLE bool restoreBackup();
 
 Q_SIGNALS:
@@ -76,6 +77,7 @@ private:
     int pageIndex(const QJsonArray &pages) const;
     bool matchesContext(int index, const QVariantMap &context) const;
     bool matchesPageContext(const QString &pageId, const QVariantMap &context) const;
+    QString defaultButtonIcon(const QJsonObject &button) const;
     PanelStore m_store;
     PanelForeground m_foreground;
     PanelAssets m_assets;

@@ -62,6 +62,7 @@ Item {
             invalid_background: qsTr("背景色应为 #RRGGBB 格式，例如 #FFFFFF。"),
             invalid_idle_timeout: qsTr("空闲时长应为 1000 至 86400000 毫秒。"),
             invalid_dial_text: qsTr("城市最多 120 个字符，个性化文本最多 240 个字符。"),
+            icon_unavailable: qsTr("图标无法读取或生成，请检查图标主题和缓存目录空间后重试。"),
             store_busy: qsTr("配置正由其他窗口保存，请稍后重试。"),
             directory_unavailable: qsTr("配置目录不可写，请检查磁盘空间和目录权限。"),
             write_failed: qsTr("配置写入失败，请检查磁盘空间和目录权限。"),
@@ -402,6 +403,7 @@ Item {
                 C.Button { text: qsTr("识别当前程序"); visible: config.mode === "follow"; onClicked: foregroundDialog.open() }
                 C.CheckBox { text: qsTr("音量控制"); checked: config.appearance.showVolume; onClicked: editor.setAppearance("showVolume", checked) }
                 C.CheckBox { text: qsTr("显示名称"); checked: config.appearance.showLabels; onClicked: editor.setAppearance("showLabels", checked) }
+                C.Button { objectName: "panelFillMissingIcons"; text: qsTr("补齐默认图标"); onClicked: editor.fillMissingIcons(); C.ToolTip.visible: hovered; C.ToolTip.text: qsTr("为旧按钮补齐可同步到手机的图标，不替换已设置的图标。") }
             }
             C.Label {
                 visible: config.mode === "follow"; Layout.fillWidth: true; elide: Text.ElideMiddle; color: "#69778b"; font.pixelSize: 11

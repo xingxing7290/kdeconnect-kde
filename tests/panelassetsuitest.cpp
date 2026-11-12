@@ -82,7 +82,7 @@ private Q_SLOTS:
         QCOMPARE(editor.config(), original);
         open();
         QTRY_VERIFY(dialog->property("visible").toBool());
-        QCOMPARE(dialog->property("iconId").toString(), QString());
+        QCOMPARE(dialog->property("iconId").toString(), button.toMap().value(QStringLiteral("icon")).toString());
         dialog->setProperty("iconId", icon);
         click(QStringLiteral("panelButtonSave"));
         QTRY_VERIFY(!dialog->property("visible").toBool());

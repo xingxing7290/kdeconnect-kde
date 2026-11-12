@@ -1,7 +1,7 @@
 find_package(Qt6 ${QT_MIN_VERSION} REQUIRED COMPONENTS Test)
 find_package(KF6BreezeIcons ${KF_MIN_VERSION} REQUIRED)
 ecm_add_test(panelweathertest.cpp LINK_LIBRARIES kdeconnectpanelweather Qt::Test)
-ecm_add_test(paneldialsuitest.cpp LINK_LIBRARIES kdeconnectpanelactions Qt::Quick Qt::QuickControls2 Qt::Test)
+ecm_add_test(paneldialsuitest.cpp LINK_LIBRARIES kdeconnectpanelactions KF6::BreezeIcons Qt::Quick Qt::QuickControls2 Qt::Test)
 set_property(TEST paneldialsuitest APPEND PROPERTY ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
 if(WIN32)
     add_executable(panelweatherintegration panelweatherintegration.cpp)

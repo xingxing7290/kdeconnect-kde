@@ -1,10 +1,12 @@
 /*
  * SPDX-License-Identifier: GPL-2.0-only OR GPL-3.0-only OR LicenseRef-KDE-Accepted-GPL
  */
+#include <BreezeIcons>
 #include <QDateTime>
 #include <QDir>
 #include <QFile>
 #include <QFontDatabase>
+#include <QIcon>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QLockFile>
@@ -33,6 +35,9 @@ private Q_SLOTS:
     void initTestCase()
     {
         QQuickStyle::setStyle(QStringLiteral("Basic"));
+        BreezeIcons::initIcons();
+        QIcon::setThemeName(QStringLiteral("breeze"));
+        QVERIFY(QIcon::hasThemeIcon(QStringLiteral("preferences-system")));
 #ifdef Q_OS_WIN
         QVERIFY(QFontDatabase::addApplicationFont(QStringLiteral("C:/Windows/Fonts/msyh.ttc")) >= 0);
         QGuiApplication::setFont(QFont(QStringLiteral("Microsoft YaHei")));

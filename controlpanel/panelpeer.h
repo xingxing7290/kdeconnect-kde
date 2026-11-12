@@ -20,6 +20,7 @@ public:
     explicit PanelPeer(PanelRuntime *runtime, Executor executor, QObject *parent = nullptr);
     void receive(const QJsonObject &request);
     void sendConfiguration();
+    QString sessionId() const;
 
 Q_SIGNALS:
     void packetReady(const QString &type, const QJsonObject &body);
@@ -31,7 +32,7 @@ private:
         QJsonObject result;
     };
     void sendState();
-    void sendResult(const QString &id, const QString &error);
+    void sendResult(const QString &id, const QString &error, const QString &session = {});
     PanelRuntime *m_runtime;
     Executor m_executor;
     QString m_sessionId;

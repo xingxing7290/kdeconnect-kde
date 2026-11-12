@@ -22,6 +22,10 @@
 
 所有请求及响应含 protocolVersion: 1；未配对设备不加载本插件。
 
+阶段十五为配置、状态、结果和天气响应追加可选的 sessionId 包装字段，配置对象/固定样本及请求字段不变。握手后响应标记目标控制器的当前会话；握手前主动发布可省略标记。Android 始终拒绝显式但不匹配的标记；首次接受匹配标记的有效配置后，本插件会话内也拒绝省略标记的上述响应，避免降回未绑定模式。图标的 sessionId 仍是原有必填字段。
+
+兼容旧服务端时可继续接收没有该字段的响应，但不能声称具有同等的迟到响应隔离；此路径仍依赖配对连接、revision、requestId 和断线不补发保护。sessionId 不替代 TLS/配对身份，不是授权凭证，不写入展示缓存。运行中降级为旧服务端应重新建立插件连接，不自动放宽已绑定会话。
+
 | 类型 | 主体字段 | 用途 |
 | --- | --- | --- |
 | kdeconnect.controlpanel.request | operation=config, sessionId | 建立会话并请求完整配置 |
@@ -35,6 +39,10 @@
 | kdeconnect.controlpanel.dial | revision, city, source, status；可选 resolvedCity, observedAt, fetchedAt, temperature, weatherCode | 当前配置的模型天气快照；不得以伪造数据代替网络失败 |
 
 sessionId、requestId 使用小写 UUID。Android 每次重新建立插件会话生成新的 sessionId，配置重取沿用当前 sessionId；sequence 从 1 单调递增，最大为安全 JSON 整数上限。同一会话最近 256 个动作请求保留原始请求和结果：相同请求返回原结果，ID 冲突返回 invalid_request。结果缓存淘汰后仍保留最高 sequence，更早或乱序请求返回 request_expired，不能重新执行。每个连接最多记录 4096 个已退休会话 ID，退休会话不能通过重复握手复活。
+
+success 必须与 error 为空一致，矛盾结果不确认待处理动作。有效动作结果中的 invalid_session 和 stale_revision 只触发当前会话重新握手/同步，保持 sequence 递增，不重发原动作；握手本身被拒绝时进入可见错误，不递归无限重试。过期请求提示“未重新执行”，不能理解为原操作从未发生。手动同步或配置变化清掉过期动作反馈。
+
+多控制端使用同一个桌面运行时当前页，手动选择和智能跟随广播给各控制器；各设备的插件/PanelPeer 独立维护会话、序号、结果缓存和既有远程命令配置。相同 requestId 出现在不同设备时不共用执行结果。原生执行若重入并建立新会话，旧结果仍标记原会话，不写入新会话的去重缓存。
 
 动作请求最大 4096 字节，按 operation 严格白名单检查字段。revision 不匹配返回 stale_revision 并发送最新完整配置。错误码包含 invalid_request、unsupported_version、invalid_session、request_expired、stale_revision、unknown_button、invalid_target、target_missing、launch_failed、permission_denied、config_unavailable、offline。
 

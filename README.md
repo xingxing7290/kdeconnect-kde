@@ -2,7 +2,7 @@
 
 ## KDE 控制台开发分支
 
-当前 master 在体验版后继续开发：[表盘/外观保存保护及 Android 失焦处理](docs/control-panel/DEVELOPMENT-14-DIAL-OPTIONS.zh-CN.md) 尚未构建或运行验证。下方体验版标签和附件保持不变，不代表当前 master 的测试状态。
+当前 master 在体验版后继续开发：[表盘/外观及焦点处理](docs/control-panel/DEVELOPMENT-14-DIAL-OPTIONS.zh-CN.md)、[连接与多设备会话隔离](docs/control-panel/DEVELOPMENT-15-CONNECTIONS.zh-CN.md) 均尚未构建或运行验证。下方体验版标签和附件保持不变，不代表当前 master 的测试状态。
 
 现提供 [0.1.0-alpha.1 功能体验版](docs/control-panel/PREVIEW-0.1.0-alpha.1.zh-CN.md)：按用户要求先输出阶段性小版本，仅完成打包所需编译与最小核验，不是完整测试或正式发行。Android 调试 APK 见预发布；Windows 先提供本地内部包，GitHub 同步对应源码，公开二进制发行材料仍待收口。后续继续全部功能开发，再统一回归。
 
@@ -30,6 +30,7 @@
 - [全功能开发清单与最后统一测试的执行顺序](docs/control-panel/DEVELOPMENT-12-FUNCTIONS.zh-CN.md)
 - [原生动作、跟随反馈与三角色音量开发（未测试）](docs/control-panel/DEVELOPMENT-13-NATIVE.zh-CN.md)
 - [表盘、外观设置与焦点边界开发（未测试）](docs/control-panel/DEVELOPMENT-14-DIAL-OPTIONS.zh-CN.md)
+- [连接、会话与多设备开发（未测试）](docs/control-panel/DEVELOPMENT-15-CONNECTIONS.zh-CN.md)
 - [Windows 智能跟随使用说明](docs/control-panel/FOLLOW.zh-CN.md)
 - [配套 Android 端](https://github.com/xingxing7290/kdeconnect-android)
 

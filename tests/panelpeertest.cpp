@@ -61,6 +61,96 @@ private:
     }
 
 private Q_SLOTS:
+    void responsesAreBoundToEachControllerAndRequestCachesRemainIndependent()
+    {
+        QTemporaryDir directory;
+        PanelStore store(directory.path());
+        initialize(store);
+        PanelRuntime runtime(&store);
+        int firstCalls = 0;
+        int secondCalls = 0;
+        PanelPeer first(&runtime, [&](const QJsonObject &) {
+            ++firstCalls;
+            return QString();
+        });
+        PanelPeer second(&runtime, [&](const QJsonObject &) {
+            ++secondCalls;
+            return QStringLiteral("permission_denied");
+        });
+        QSignalSpy firstPackets(&first, &PanelPeer::packetReady);
+        QSignalSpy secondPackets(&second, &PanelPeer::packetReady);
+        first.sendConfiguration();
+        QVERIFY(!firstPackets.first()[1].toJsonObject().contains(QStringLiteral("sessionId")));
+        firstPackets.clear();
+        const auto firstSession = uuid();
+        const auto secondSession = uuid();
+        first.receive(handshake(firstSession));
+        second.receive(handshake(secondSession));
+        QCOMPARE(first.sessionId(), firstSession);
+        QCOMPARE(second.sessionId(), secondSession);
+        QCOMPARE(firstPackets.first()[1].toJsonObject().value(QStringLiteral("sessionId")).toString(), firstSession);
+        QCOMPARE(secondPackets.first()[1].toJsonObject().value(QStringLiteral("sessionId")).toString(), secondSession);
+        auto firstRequest = action(store, firstSession, 1);
+        auto secondRequest = action(store, secondSession, 1);
+        secondRequest.insert(QStringLiteral("requestId"), firstRequest.value(QStringLiteral("requestId")));
+        first.receive(firstRequest);
+        second.receive(secondRequest);
+        const auto firstResult = lastResult(firstPackets);
+        const auto secondResult = lastResult(secondPackets);
+        QCOMPARE(firstResult.value(QStringLiteral("sessionId")).toString(), firstSession);
+        QCOMPARE(secondResult.value(QStringLiteral("sessionId")).toString(), secondSession);
+        QVERIFY(firstResult.value(QStringLiteral("success")).toBool());
+        QVERIFY(!secondResult.value(QStringLiteral("success")).toBool());
+        first.receive(firstRequest);
+        second.receive(secondRequest);
+        QCOMPARE(firstCalls, 1);
+        QCOMPARE(secondCalls, 1);
+        QCOMPARE(lastResult(firstPackets), firstResult);
+        QCOMPARE(lastResult(secondPackets), secondResult);
+        QVERIFY(runtime.selectPage(QStringLiteral("editor")));
+        QCOMPARE(firstPackets.last()[1].toJsonObject().value(QStringLiteral("sessionId")).toString(), firstSession);
+        QCOMPARE(secondPackets.last()[1].toJsonObject().value(QStringLiteral("sessionId")).toString(), secondSession);
+        QCOMPARE(firstPackets.last()[1].toJsonObject().value(QStringLiteral("activePageId")).toString(), QStringLiteral("editor"));
+        QCOMPARE(secondPackets.last()[1].toJsonObject().value(QStringLiteral("activePageId")).toString(), QStringLiteral("editor"));
+        first.receive(secondRequest);
+        QCOMPARE(lastResult(firstPackets).value(QStringLiteral("error")).toString(), QStringLiteral("invalid_session"));
+        QCOMPARE(lastResult(firstPackets).value(QStringLiteral("sessionId")).toString(), secondSession);
+        QCOMPARE(first.sessionId(), firstSession);
+        QCOMPARE(firstCalls, 1);
+    }
+
+    void reentrantSessionChangeDoesNotPutOldCompletionIntoNewCache()
+    {
+        QTemporaryDir directory;
+        PanelStore store(directory.path());
+        initialize(store);
+        PanelRuntime runtime(&store);
+        const auto firstSession = uuid();
+        const auto secondSession = uuid();
+        int calls = 0;
+        PanelPeer *active = nullptr;
+        PanelPeer peer(&runtime, [&](const QJsonObject &) {
+            if (++calls == 1)
+                active->receive(handshake(secondSession));
+            return QString();
+        });
+        active = &peer;
+        QSignalSpy packets(&peer, &PanelPeer::packetReady);
+        peer.receive(handshake(firstSession));
+        const auto firstRequest = action(store, firstSession, 1);
+        peer.receive(firstRequest);
+        QCOMPARE(peer.sessionId(), secondSession);
+        QCOMPARE(lastResult(packets).value(QStringLiteral("sessionId")).toString(), firstSession);
+        auto next = action(store, secondSession, 1);
+        next.insert(QStringLiteral("requestId"), firstRequest.value(QStringLiteral("requestId")));
+        peer.receive(next);
+        QCOMPARE(calls, 2);
+        QCOMPARE(lastResult(packets).value(QStringLiteral("sessionId")).toString(), secondSession);
+        QVERIFY(lastResult(packets).value(QStringLiteral("success")).toBool());
+        peer.receive(next);
+        QCOMPARE(calls, 2);
+    }
+
     void assetRequestsRequireSessionRevisionAndReferencedHash()
     {
         QTemporaryDir directory;

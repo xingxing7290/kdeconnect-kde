@@ -110,6 +110,8 @@ void ControlPanelPlugin::publishWeather()
     auto data = weather()->state();
     data.insert(QStringLiteral("protocolVersion"), 1);
     data.insert(QStringLiteral("revision"), store->document().revision());
+    if (!m_peer->sessionId().isEmpty())
+        data.insert(QStringLiteral("sessionId"), m_peer->sessionId());
     NetworkPacket packet(QStringLiteral("kdeconnect.controlpanel.dial"), data.toVariantMap());
     sendPacket(packet);
 }

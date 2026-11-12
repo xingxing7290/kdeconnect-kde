@@ -44,25 +44,38 @@ void PanelPeer::sendConfiguration()
         sendResult({}, QStringLiteral("config_unavailable"));
         return;
     }
-    Q_EMIT packetReady(QStringLiteral("kdeconnect.controlpanel.config"),
-                       {{QStringLiteral("protocolVersion"), 1}, {QStringLiteral("config"), store->document().publicConfig()}});
+    QJsonObject body{{QStringLiteral("protocolVersion"), 1}, {QStringLiteral("config"), store->document().publicConfig()}};
+    if (!m_sessionId.isEmpty())
+        body.insert(QStringLiteral("sessionId"), m_sessionId);
+    Q_EMIT packetReady(QStringLiteral("kdeconnect.controlpanel.config"), body);
     sendState();
 }
 
 void PanelPeer::sendState()
 {
     if (m_runtime->store()->isUsable()) {
-        Q_EMIT packetReady(QStringLiteral("kdeconnect.controlpanel.state"), m_runtime->state());
+        auto body = m_runtime->state();
+        if (!m_sessionId.isEmpty())
+            body.insert(QStringLiteral("sessionId"), m_sessionId);
+        Q_EMIT packetReady(QStringLiteral("kdeconnect.controlpanel.state"), body);
     }
 }
 
-void PanelPeer::sendResult(const QString &id, const QString &error)
+QString PanelPeer::sessionId() const
 {
-    Q_EMIT packetReady(QStringLiteral("kdeconnect.controlpanel.result"),
-                       {{QStringLiteral("protocolVersion"), 1},
-                        {QStringLiteral("requestId"), id},
-                        {QStringLiteral("success"), error.isEmpty()},
-                        {QStringLiteral("error"), error}});
+    return m_sessionId;
+}
+
+void PanelPeer::sendResult(const QString &id, const QString &error, const QString &session)
+{
+    QJsonObject body{{QStringLiteral("protocolVersion"), 1},
+                     {QStringLiteral("requestId"), id},
+                     {QStringLiteral("success"), error.isEmpty()},
+                     {QStringLiteral("error"), error}};
+    const auto replySession = session.isEmpty() ? m_sessionId : session;
+    if (!replySession.isEmpty())
+        body.insert(QStringLiteral("sessionId"), replySession);
+    Q_EMIT packetReady(QStringLiteral("kdeconnect.controlpanel.result"), body);
 }
 
 void PanelPeer::receive(const QJsonObject &request)
@@ -102,7 +115,7 @@ void PanelPeer::receive(const QJsonObject &request)
     if (operation == QLatin1String("config")) {
         if (m_sessionId != session) {
             if (m_retiredSessions.contains(session) || m_retiredSessions.size() >= 4096) {
-                sendResult({}, QStringLiteral("invalid_session"));
+                sendResult({}, QStringLiteral("invalid_session"), session);
                 return;
             }
             if (!m_sessionId.isEmpty())
@@ -116,7 +129,7 @@ void PanelPeer::receive(const QJsonObject &request)
         return;
     }
     if (session != m_sessionId) {
-        sendResult(id, QStringLiteral("invalid_session"));
+        sendResult(id, QStringLiteral("invalid_session"), session);
         return;
     }
     if (!integer(request.value(QStringLiteral("revision")), 0, PanelDocument::MaxRevision)) {
@@ -204,13 +217,16 @@ void PanelPeer::receive(const QJsonObject &request)
         error = button.isEmpty() ? QStringLiteral("unknown_button") : m_executor(button);
     }
     const QJsonObject result{{QStringLiteral("protocolVersion"), 1},
+                             {QStringLiteral("sessionId"), session},
                              {QStringLiteral("requestId"), id},
                              {QStringLiteral("success"), error.isEmpty()},
                              {QStringLiteral("error"), error}};
-    m_completed.insert(id, {request, result});
-    m_order.enqueue(id);
-    if (m_order.size() > 256) {
-        m_completed.remove(m_order.dequeue());
+    // Native launch can reenter the event loop and establish a newer session.
+    if (m_sessionId == session) {
+        m_completed.insert(id, {request, result});
+        m_order.enqueue(id);
+        if (m_order.size() > 256)
+            m_completed.remove(m_order.dequeue());
     }
     Q_EMIT packetReady(QStringLiteral("kdeconnect.controlpanel.result"), result);
     if (error == QLatin1String("stale_revision")) {

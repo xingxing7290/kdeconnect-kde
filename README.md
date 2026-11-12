@@ -2,6 +2,8 @@
 
 ## KDE 控制台开发分支
 
+当前 master 已[修复小屏大字表盘裁切](docs/control-panel/MILESTONE-21-DIAL-ACCESSIBILITY.zh-CN.md)：Android 全量 45 套件/294 项通过，中英文、最长输入、640dp 窄屏与离线天气检查通过；实际模拟器两倍字号对照及五表盘唤醒通过。Lint 重新生成后仍有 493 错误，完整无障碍和整体验收未完成。本轮新 APK 仅为本地内部候选，已发布 alpha.2 不包含此修复，标签与附件不覆盖。
+
 最新验证见[阶段二十](docs/control-panel/MILESTONE-20-WEATHER-E2E.zh-CN.md)：同一个已发布 APK、配对身份和真实天气快照下，旧桌面包重连后天气不显示，新包正常；新包五表盘空闲/首次触摸仅唤醒也通过。仅补充运行证据，不改 alpha.2 标签或附件；普通 LAN、完整视觉/无障碍、原生操作及发行门槛仍保留。
 
 当前小版本为 [0.1.0-alpha.2](docs/control-panel/PREVIEW-0.1.0-alpha.2.zh-CN.md)：包括默认图标、字体/温度范围裁切和重连天气推送顺序修复。Android 274 项、Windows 22/22 通过；Lint 仍有 493 错误，完整验收未完成。Android 提供调试 APK，Windows 二进制仅本地内部使用，GitHub 提供对应源码。后面的 alpha.1 和阶段十八内容保留为历史记录，以本段和[阶段十九](docs/control-panel/MILESTONE-19-WEATHER-ORDER.zh-CN.md)为当前状态。

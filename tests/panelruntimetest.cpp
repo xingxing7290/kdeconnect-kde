@@ -103,6 +103,34 @@ private Q_SLOTS:
         QCOMPARE(active(runtime), QStringLiteral("home"));
         QVERIFY(!runtime.selectPage(QStringLiteral("editor")));
     }
+    void pagesModeKeepsRuntimePageAcrossUnrelatedConfigurationChanges()
+    {
+        QTemporaryDir directory;
+        PanelStore store(directory.path());
+        initialize(store, QStringLiteral("pages"));
+        PanelRuntime runtime(&store);
+        QVERIFY(runtime.selectPage(QStringLiteral("editor")));
+        auto config = store.document().privateConfig();
+        auto appearance = config.value(QStringLiteral("appearance")).toObject();
+        appearance.insert(QStringLiteral("showLabels"), false);
+        config.insert(QStringLiteral("appearance"), appearance);
+        QVERIFY(store.save(config, store.document().revision()));
+        QCOMPARE(active(runtime), QStringLiteral("editor"));
+        config = store.document().privateConfig();
+        config.insert(QStringLiteral("activePageId"), QStringLiteral("editor"));
+        QVERIFY(store.save(config, store.document().revision()));
+        config = store.document().privateConfig();
+        config.insert(QStringLiteral("activePageId"), QStringLiteral("home"));
+        QVERIFY(store.save(config, store.document().revision()));
+        QCOMPARE(active(runtime), QStringLiteral("home"));
+        QVERIFY(runtime.selectPage(QStringLiteral("editor")));
+        config = store.document().privateConfig();
+        auto pages = config.value(QStringLiteral("pages")).toArray();
+        pages.removeAt(1);
+        config.insert(QStringLiteral("pages"), pages);
+        QVERIFY(store.save(config, store.document().revision()));
+        QCOMPARE(active(runtime), QStringLiteral("home"));
+    }
     void editingBindingsAndDeletingMatchedPageRecomputesWithoutNewFocus()
     {
         QTemporaryDir directory;

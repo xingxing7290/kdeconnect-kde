@@ -34,7 +34,7 @@ if(WIN32)
     add_executable(panelemulatorintegration panelemulatorintegration.cpp)
     target_link_libraries(panelemulatorintegration PRIVATE kdeconnectpanelactions)
     add_executable(volumeintegration volumeintegration.cpp)
-    target_link_libraries(volumeintegration PRIVATE kdeconnectvolume)
+    target_link_libraries(volumeintegration PRIVATE kdeconnectvolume ole32)
     # Requires a desktop session and foreground activation permission; run manually.
     add_executable(panelforegroundintegration panelforegroundintegration.cpp)
     target_link_libraries(panelforegroundintegration PRIVATE kdeconnectpanel Qt::Gui)

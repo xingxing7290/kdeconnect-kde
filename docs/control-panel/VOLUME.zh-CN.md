@@ -7,6 +7,7 @@
 - 手机拖动期间最多每 80 毫秒发一次音量更新，松手补发最终值。一次手势只针对开始时的设备 ID；中途默认输出变化不会把旧手势写到新设备。
 - 音量区域与页面手势区分开；选择上下翻页也不应让音量拖动切页。
 - 没有默认输出时禁用音量与静音，不擅自选择列表中的第一个设备。有可用输出时仍可打开列表明确选择。
+- 当前开发代码中，Windows 输出选择同时切换系统、媒体和通信默认角色；失败时尝试恢复原端点。已获用户授权，但本批未构建或运行验证，不能按旧版本实测结果认定通过。
 
 ## 实现与兼容
 
@@ -18,7 +19,8 @@ Windows 只接受整数 0..100、布尔静音/启用和当前存在的设备 ID�
 
 ## 验证边界与待办
 
-- 默认输出切换沿用原 KDE Windows 实现的 eMultimedia 角色。尚需核对 eConsole 和不同应用实际播放路径；本轮不能推断所有 Windows 音频角色都被切换。没有主动请求改变通话角色。
+- 历史已测版本仅切换 eMultimedia。阶段十三开发代码改为先保存三个角色再逐项写入和回读，失败时逆序尝试恢复；原端点不可读则不写入。并发变成第三个设备时不盲目覆盖，无法完整恢复返回明确错误。此授权的共享后端修改也影响原 System Volume 插件。具体步骤及未测边界见 DEVELOPMENT-13-NATIVE.zh-CN.md。
+- 默认角色设置不是原子事务；服务失败、拔插或外部并发可能使回滚不完整。默认勾选和音量显示仍按媒体角色读取，不保证显式绑定设备的应用或既有音频流自动迁移。
 - 电脑侧原生写入失败有 error 属性，界面显示错误；手机原协议没有逐次写入结果确认，失败提示仍需完善，不能把当前状态回读当成所有错误场景的完整反馈。
 - 已实测真实音量、外部变化、静音、手机选择设备，以及换设备后的目标隔离；设备拔插、无输出硬件状态、休眠/唤醒、长期运行和完整多平台回归仍需补证。
 - 当前 Samsung 真机上，部分右侧控件的 UIAutomator 边界为零，但可见图像、触摸和原生回读正常；它与窗口裁切/已有分辨率覆盖的关系尚未确定，无障碍验收仍未通过。
@@ -27,7 +29,7 @@ Windows 只接受整数 0..100、布尔静音/启用和当前存在的设备 ID�
 
 - volumecontrollertest：假音频系统下的同名设备隔离、默认切换、移除、错误恢复、请求类型和范围。
 - volumeuitest：加载实际 ControlDashboard.qml，以假音频系统执行鼠标滑杆、键盘调节、静音、输出选择、外部默认变化和无输出禁用。
-- Windows volumeintegration：默认只读；--snapshot 保存基线，--exercise 做原生测试后恢复，--restore 显式恢复。测试可短暂改变实际音量/静音/多媒体默认设备，运行前应了解影响，不属于安装包。
+- Windows volumeintegration：默认只读；新版 --snapshot 保存 schemaVersion 2 的三角色和音量/静音基线，--exercise 做原生测试后恢复，--restore 按三个独立原 ID 恢复。旧数组快照只含媒体角色，信息不足会拒绝恢复。最终运行前先保存新版磁盘快照；测试可短暂改变实际音量/静音/系统、媒体、通信默认输出，不属于安装包。本批未运行。
 - Android SystemVolumePluginTest 与 PanelVolumeDragTest：列表替换、默认状态、监听器生命周期、请求、实时拖动节流、最终值及设备切换/离线边界。
 
 原生接口参考：[音量标量](https://learn.microsoft.com/en-us/windows/win32/api/endpointvolume/nf-endpointvolume-iaudioendpointvolume-setmastervolumelevelscalar)、[默认音频端点与角色](https://learn.microsoft.com/en-us/windows/win32/api/mmdeviceapi/nf-mmdeviceapi-immdeviceenumerator-getdefaultaudioendpoint)、[COM 初始化配平](https://learn.microsoft.com/en-us/windows/win32/api/combaseapi/nf-combaseapi-coinitializeex)。

@@ -26,6 +26,7 @@
 - [隔离模拟器双端配对、执行与重连验证](docs/control-panel/MILESTONE-10-EMULATOR.zh-CN.md)
 - [离线进程恢复、图标附件与多页联调](docs/control-panel/MILESTONE-11-RESTORE.zh-CN.md)
 - [全功能开发清单与最后统一测试的执行顺序](docs/control-panel/DEVELOPMENT-12-FUNCTIONS.zh-CN.md)
+- [原生动作、跟随反馈与三角色音量开发（未测试）](docs/control-panel/DEVELOPMENT-13-NATIVE.zh-CN.md)
 - [Windows 智能跟随使用说明](docs/control-panel/FOLLOW.zh-CN.md)
 - [配套 Android 端](https://github.com/xingxing7290/kdeconnect-android)
 

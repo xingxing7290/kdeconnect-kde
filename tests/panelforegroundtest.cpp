@@ -15,6 +15,7 @@ private Q_SLOTS:
     {
         QCOMPARE(ForegroundFilter::applicationName(QStringLiteral("  C:\\Program Files\\Editor\\NOTEpad++.EXE  ")), QStringLiteral("notepad++.exe"));
         QCOMPARE(ForegroundFilter::applicationName(QStringLiteral("/opt/program.exe")), QStringLiteral("program.exe"));
+        QCOMPARE(ForegroundFilter::applicationName(QStringLiteral("\"C:\\Apps\\Editor.EXE\"")), QStringLiteral("editor.exe"));
         QVERIFY(ForegroundFilter::applicationName(QStringLiteral("bad\n.exe")).isEmpty());
         QVERIFY(ForegroundFilter::applicationName(QString(261, QLatin1Char('x'))).isEmpty());
     }
@@ -70,6 +71,29 @@ private Q_SLOTS:
         monitor.setEnabled(true);
         QTest::qWait(500);
         QCOMPARE(changed.size(), 1);
+    }
+    void unreadableWindowBlocksStaleResultUntilAValidApplicationReturns()
+    {
+        ForegroundSample sample{QStringLiteral("test.exe"), false};
+        PanelForeground monitor(nullptr, [&sample] {
+            return sample;
+        });
+        monitor.setEnabled(true);
+        QTRY_COMPARE_WITH_TIMEOUT(monitor.application(), QStringLiteral("test.exe"), 2000);
+        sample = {QString(), true, QStringLiteral("process_unavailable")};
+        QTRY_COMPARE_WITH_TIMEOUT(monitor.error(), QStringLiteral("process_unavailable"), 1000);
+        QCOMPARE(monitor.application(), QStringLiteral("test.exe"));
+        sample = {};
+        QTest::qWait(450);
+        QCOMPARE(monitor.error(), QStringLiteral("process_unavailable"));
+        sample = {QStringLiteral("test.exe"), false};
+        QTRY_VERIFY_WITH_TIMEOUT(monitor.error().isEmpty(), 1000);
+        sample = {QString(), true, QStringLiteral("hosted_application_unavailable")};
+        QTRY_COMPARE_WITH_TIMEOUT(monitor.error(), QStringLiteral("hosted_application_unavailable"), 1000);
+        sample = {QStringLiteral("other.exe"), false};
+        QTRY_COMPARE_WITH_TIMEOUT(monitor.application(), QStringLiteral("other.exe"), 2000);
+        QVERIFY(monitor.error().isEmpty());
+        monitor.setEnabled(false);
     }
 };
 

@@ -15,6 +15,7 @@ namespace ControlPanel
 struct ForegroundSample {
     QString application;
     bool ignored = true;
+    QString error = {};
 };
 
 // Ignores transient focus changes without restarting the stable application's page.
@@ -37,23 +38,28 @@ class PanelForeground : public QObject
     Q_OBJECT
     Q_PROPERTY(QString application READ application NOTIFY applicationChanged)
     Q_PROPERTY(bool supported READ supported CONSTANT)
+    Q_PROPERTY(QString error READ error NOTIFY errorChanged)
 public:
     using Reader = std::function<ForegroundSample()>;
     explicit PanelForeground(QObject *parent = nullptr, Reader reader = {});
     QString application() const;
+    QString error() const;
     static bool supported();
     static ForegroundSample readCurrent();
     void setEnabled(bool enabled);
 
 Q_SIGNALS:
     void applicationChanged();
+    void errorChanged();
 
 private:
     void poll();
+    void setError(const QString &error);
     Reader m_reader;
     ForegroundFilter m_filter;
     QElapsedTimer m_clock;
     QTimer m_timer;
     QString m_application;
+    QString m_error;
 };
 }

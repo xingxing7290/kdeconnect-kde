@@ -11,9 +11,49 @@
 
 namespace ControlPanel
 {
+#ifdef Q_OS_WIN
+namespace
+{
+QString processApplication(DWORD processId)
+{
+    HANDLE process = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, FALSE, processId);
+    if (!process)
+        return {};
+    wchar_t path[32768];
+    DWORD length = DWORD(std::size(path));
+    const bool success = QueryFullProcessImageNameW(process, 0, path, &length);
+    CloseHandle(process);
+    return success ? ForegroundFilter::applicationName(QString::fromWCharArray(path, int(length))) : QString();
+}
+
+struct HostedApplication {
+    DWORD hostProcessId;
+    QString application;
+};
+
+BOOL CALLBACK findHostedApplication(HWND window, LPARAM parameter)
+{
+    auto *result = reinterpret_cast<HostedApplication *>(parameter);
+    if (!IsWindowVisible(window))
+        return TRUE;
+    wchar_t className[256] = {};
+    if (!GetClassNameW(window, className, 256) || QString::fromWCharArray(className) != QLatin1String("Windows.UI.Core.CoreWindow"))
+        return TRUE;
+    DWORD processId = 0;
+    GetWindowThreadProcessId(window, &processId);
+    if (!processId || processId == result->hostProcessId || processId == DWORD(QCoreApplication::applicationPid()))
+        return TRUE;
+    result->application = processApplication(processId);
+    return result->application.isEmpty() ? TRUE : FALSE;
+}
+}
+#endif
+
 QString ForegroundFilter::applicationName(const QString &value)
 {
     QString name = value.trimmed();
+    if (name.size() >= 2 && name.startsWith(QLatin1Char('"')) && name.endsWith(QLatin1Char('"')))
+        name = name.mid(1, name.size() - 2).trimmed();
     name.replace(QLatin1Char('\\'), QLatin1Char('/'));
     name = name.section(QLatin1Char('/'), -1);
     if (name.isEmpty() || name.size() > 260)
@@ -63,6 +103,19 @@ QString PanelForeground::application() const
     return m_application;
 }
 
+QString PanelForeground::error() const
+{
+    return m_error;
+}
+
+void PanelForeground::setError(const QString &error)
+{
+    if (m_error == error)
+        return;
+    m_error = error;
+    Q_EMIT errorChanged();
+}
+
 bool PanelForeground::supported()
 {
 #ifdef Q_OS_WIN
@@ -90,18 +143,18 @@ ForegroundSample PanelForeground::readCurrent()
     GetWindowThreadProcessId(window, &processId);
     if (!processId || processId == DWORD(QCoreApplication::applicationPid()))
         return {};
-    HANDLE process = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, FALSE, processId);
-    if (!process)
-        return {};
-    wchar_t path[32768];
-    DWORD length = DWORD(std::size(path));
-    const bool success = QueryFullProcessImageNameW(process, 0, path, &length);
-    CloseHandle(process);
-    if (!success)
-        return {};
-    const auto name = ForegroundFilter::applicationName(QString::fromWCharArray(path, int(length)));
+    auto name = processApplication(processId);
+    if (name.isEmpty())
+        return {QString(), true, QStringLiteral("process_unavailable")};
     if (QStringList{QStringLiteral("kdeconnect-app.exe"), QStringLiteral("kdeconnectd.exe"), QStringLiteral("kdeconnect-indicator.exe")}.contains(name))
         return {};
+    if (name == QLatin1String("applicationframehost.exe")) {
+        HostedApplication hosted{processId, {}};
+        EnumChildWindows(window, findHostedApplication, reinterpret_cast<LPARAM>(&hosted));
+        if (hosted.application.isEmpty())
+            return {QString(), true, QStringLiteral("hosted_application_unavailable")};
+        name = hosted.application;
+    }
     return {name, false};
 #else
     return {};
@@ -123,10 +176,16 @@ void PanelForeground::setEnabled(bool enabled)
 
 void PanelForeground::poll()
 {
-    const auto stable = m_filter.observe(m_reader(), m_clock.elapsed());
+    const auto sample = m_reader();
+    if (!sample.error.isEmpty())
+        setError(sample.error);
+    const auto stable = m_filter.observe(sample, m_clock.elapsed());
     if (stable) {
         m_application = *stable;
+        setError({});
         Q_EMIT applicationChanged();
+    } else if (!sample.ignored && !sample.application.isEmpty() && ForegroundFilter::applicationName(sample.application) == m_application) {
+        setError({});
     }
 }
 }

@@ -22,6 +22,7 @@ class PanelEditor : public QObject
     Q_PROPERTY(QStringList keyNames READ keyNames CONSTANT)
     Q_PROPERTY(QString foregroundApplication READ foregroundApplication NOTIFY foregroundChanged)
     Q_PROPERTY(bool foregroundSupported READ foregroundSupported CONSTANT)
+    Q_PROPERTY(QString foregroundError READ foregroundError NOTIFY foregroundChanged)
     Q_PROPERTY(QVariantMap weather READ weather NOTIFY weatherChanged)
 public:
     explicit PanelEditor(const QString &directory = {}, QObject *parent = nullptr, bool weatherNetworking = false);
@@ -33,6 +34,7 @@ public:
     QStringList keyNames() const;
     QString foregroundApplication() const;
     bool foregroundSupported() const;
+    QString foregroundError() const;
     Q_INVOKABLE bool copyForegroundApplication();
     Q_INVOKABLE bool selectPage(const QString &pageId);
     Q_INVOKABLE bool addPage();

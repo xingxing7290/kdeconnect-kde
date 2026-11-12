@@ -33,6 +33,7 @@ PanelEditor::PanelEditor(const QString &directory, QObject *parent, bool weather
         Q_EMIT changed();
     });
     connect(&m_foreground, &PanelForeground::applicationChanged, this, &PanelEditor::foregroundChanged);
+    connect(&m_foreground, &PanelForeground::errorChanged, this, &PanelEditor::foregroundChanged);
     connect(&m_weather, &PanelWeather::changed, this, &PanelEditor::weatherChanged);
     const auto updateWeather = [this] {
         m_weather.configure(m_store.isUsable() ? m_store.document().privateConfig().value(QStringLiteral("idle")).toObject() : QJsonObject());
@@ -77,9 +78,14 @@ bool PanelEditor::foregroundSupported() const
     return PanelForeground::supported();
 }
 
+QString PanelEditor::foregroundError() const
+{
+    return m_foreground.error();
+}
+
 bool PanelEditor::copyForegroundApplication()
 {
-    if (m_foreground.application().isEmpty() || !qobject_cast<QGuiApplication *>(QCoreApplication::instance()))
+    if (m_foreground.application().isEmpty() || !m_foreground.error().isEmpty() || !qobject_cast<QGuiApplication *>(QCoreApplication::instance()))
         return false;
     QGuiApplication::clipboard()->setText(m_foreground.application());
     return true;

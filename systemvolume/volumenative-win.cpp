@@ -4,6 +4,7 @@
 #include "../plugins/systemvolume/PolicyConfig.h"
 #include "volumecontroller.h"
 #include <Functiondiscoverykeys_devpkey.h>
+#include <array>
 #include <endpointvolume.h>
 #include <mmdeviceapi.h>
 #include <qt_windows.h>
@@ -91,14 +92,60 @@ public:
     {
         if (!volumeEndpoint(id))
             return QStringLiteral("output_unavailable");
+        constexpr std::array<ERole, 3> roles{eConsole, eMultimedia, eCommunications};
+        std::array<QString, 3> previous;
+        std::array<bool, 3> attempted{};
+        bool alreadyDefault = true;
+        for (size_t index = 0; index < roles.size(); ++index) {
+            previous[index] = defaultIdentifier(roles[index]);
+            if (previous[index].isEmpty())
+                return QStringLiteral("default_output_state_unavailable");
+            alreadyDefault = alreadyDefault && previous[index] == id;
+        }
+        if (alreadyDefault)
+            return {};
         ComPtr<IPolicyConfigVista> policy;
-        // Reuse the existing KDE Windows multimedia-role policy interface.
+        // Reuse the existing KDE Windows policy interface for all default roles.
         if (FAILED(CoCreateInstance(__uuidof(CPolicyConfigVistaClient), nullptr, CLSCTX_ALL, IID_PPV_ARGS(&policy))))
             return QStringLiteral("default_output_failed");
-        return SUCCEEDED(policy->SetDefaultEndpoint(reinterpret_cast<LPCWSTR>(id.utf16()), eMultimedia)) ? QString() : QStringLiteral("default_output_failed");
+        const auto rollback = [&](const QString &failure) {
+            for (size_t remaining = roles.size(); remaining > 0; --remaining) {
+                const auto index = remaining - 1;
+                if (!attempted[index] || previous[index] == id)
+                    continue;
+                // Do not overwrite a concurrent change to a third endpoint.
+                if (defaultIdentifier(roles[index]) == id)
+                    policy->SetDefaultEndpoint(reinterpret_cast<LPCWSTR>(previous[index].utf16()), roles[index]);
+            }
+            for (size_t index = 0; index < roles.size(); ++index) {
+                if (defaultIdentifier(roles[index]) != previous[index])
+                    return QStringLiteral("default_output_partial_failure");
+            }
+            return failure;
+        };
+        for (size_t index = 0; index < roles.size(); ++index) {
+            const auto current = defaultIdentifier(roles[index]);
+            if (current == id)
+                continue;
+            if (current != previous[index])
+                return rollback(QStringLiteral("default_output_changed"));
+            attempted[index] = true;
+            if (FAILED(policy->SetDefaultEndpoint(reinterpret_cast<LPCWSTR>(id.utf16()), roles[index])) || defaultIdentifier(roles[index]) != id)
+                return rollback(QStringLiteral("default_output_failed"));
+        }
+        for (const auto role : roles) {
+            if (defaultIdentifier(role) != id)
+                return rollback(QStringLiteral("default_output_changed"));
+        }
+        return {};
     }
 
 private:
+    QString defaultIdentifier(ERole role)
+    {
+        ComPtr<IMMDevice> device;
+        return m_enumerator && SUCCEEDED(m_enumerator->GetDefaultAudioEndpoint(eRender, role, &device)) ? identifier(device.Get()) : QString();
+    }
     QString identifier(IMMDevice *device)
     {
         LPWSTR text = nullptr;

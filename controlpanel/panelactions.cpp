@@ -16,6 +16,7 @@
 #define NOMINMAX
 #endif
 #include <Windows.h>
+#include <objbase.h>
 #include <shellapi.h>
 #endif
 
@@ -96,11 +97,16 @@ bool stringValue(const QJsonValue &value, int maximum, bool allowEmpty = false)
 QString sendKeys(const QList<int> &keys)
 {
 #ifdef Q_OS_WIN
-    if (!GetForegroundWindow())
+    const auto foreground = GetForegroundWindow();
+    if (!foreground)
         return QStringLiteral("no_foreground_window");
     for (const int modifier : {VK_CONTROL, VK_MENU, VK_SHIFT, VK_LWIN, VK_RWIN}) {
         if (GetAsyncKeyState(modifier) & 0x8000)
             return QStringLiteral("modifiers_held");
+    }
+    for (const int key : keys) {
+        if (GetAsyncKeyState(key) & 0x8000)
+            return QStringLiteral("keys_held");
     }
     QList<INPUT> input;
     auto append = [&input](int key, bool release) {
@@ -115,9 +121,11 @@ QString sendKeys(const QList<int> &keys)
         append(key, false);
     for (auto it = keys.crbegin(); it != keys.crend(); ++it)
         append(*it, true);
+    if (GetForegroundWindow() != foreground)
+        return QStringLiteral("foreground_changed");
     const auto sent = SendInput(static_cast<UINT>(input.size()), input.data(), sizeof(INPUT));
     if (sent != static_cast<UINT>(input.size())) {
-        // A partial send must never leave a modifier held down.
+        // Attempt key-up cleanup if only part of the chord was inserted.
         input.clear();
         for (auto it = keys.crbegin(); it != keys.crend(); ++it)
             append(*it, true);
@@ -131,9 +139,20 @@ QString sendKeys(const QList<int> &keys)
 #endif
 }
 
-bool openTarget(const QString &target)
+QString openTarget(const QString &target)
 {
 #ifdef Q_OS_WIN
+    const auto initialized = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
+    struct Cleanup {
+        bool active;
+        ~Cleanup()
+        {
+            if (active)
+                CoUninitialize();
+        }
+    } cleanup{SUCCEEDED(initialized)};
+    if (FAILED(initialized) && initialized != RPC_E_CHANGED_MODE)
+        return QStringLiteral("launch_environment_unavailable");
     const auto native = target.toStdWString();
     SHELLEXECUTEINFOW info{};
     info.cbSize = sizeof(info);
@@ -141,9 +160,43 @@ bool openTarget(const QString &target)
     info.lpVerb = L"open";
     info.lpFile = native.c_str();
     info.nShow = SW_SHOWNORMAL;
-    return ShellExecuteExW(&info);
+    SetLastError(ERROR_SUCCESS);
+    if (ShellExecuteExW(&info))
+        return {};
+    const auto error = GetLastError();
+    switch (error) {
+    case ERROR_FILE_NOT_FOUND:
+    case ERROR_PATH_NOT_FOUND:
+        return QStringLiteral("target_missing");
+    case ERROR_ACCESS_DENIED:
+    case ERROR_ELEVATION_REQUIRED:
+    case ERROR_PRIVILEGE_NOT_HELD:
+        return QStringLiteral("permission_denied");
+    case ERROR_NO_ASSOCIATION:
+        return QStringLiteral("association_unavailable");
+    case ERROR_DLL_NOT_FOUND:
+        return QStringLiteral("dependency_unavailable");
+    case ERROR_BAD_EXE_FORMAT:
+        return QStringLiteral("invalid_target");
+    case ERROR_CANCELLED:
+        return QStringLiteral("action_cancelled");
+    default:
+        break;
+    }
+    if (error == ERROR_SUCCESS) {
+        const auto legacy = reinterpret_cast<INT_PTR>(info.hInstApp);
+        if (legacy == SE_ERR_FNF || legacy == SE_ERR_PNF)
+            return QStringLiteral("target_missing");
+        if (legacy == SE_ERR_ACCESSDENIED)
+            return QStringLiteral("permission_denied");
+        if (legacy == SE_ERR_NOASSOC || legacy == SE_ERR_ASSOCINCOMPLETE)
+            return QStringLiteral("association_unavailable");
+        if (legacy == SE_ERR_DLLNOTFOUND)
+            return QStringLiteral("dependency_unavailable");
+    }
+    return QStringLiteral("launch_failed");
 #else
-    return QDesktopServices::openUrl(QUrl(target));
+    return QDesktopServices::openUrl(QUrl(target)) ? QString() : QStringLiteral("launch_failed");
 #endif
 }
 }
@@ -273,7 +326,7 @@ QString PanelActions::execute(const QJsonObject &button)
             return QProcess::startDetached(path, {}) ? QString() : QStringLiteral("launch_failed");
         }
         if (target.startsWith(QLatin1String("shell:")) || target.startsWith(QLatin1String("ms-settings:"))) {
-            return openTarget(target) ? QString() : QStringLiteral("launch_failed");
+            return openTarget(target);
         }
         QList<int> keys;
         for (const auto &key : target.split(QLatin1Char(',')))
@@ -292,6 +345,6 @@ QString PanelActions::execute(const QJsonObject &button)
 #else
                                                                     : QUrl::fromLocalFile(action->target).toString();
 #endif
-    return openTarget(target) ? QString() : QStringLiteral("launch_failed");
+    return openTarget(target);
 }
 }

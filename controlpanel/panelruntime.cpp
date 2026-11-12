@@ -14,24 +14,35 @@ PanelRuntime::PanelRuntime(PanelStore *store, QObject *parent)
     connect(store, &PanelStore::changed, this, [this] {
         const auto config = m_store->document().privateConfig();
         const auto mode = config.value(QStringLiteral("mode")).toString();
-        if (mode != m_mode)
+        const bool modeChanged = mode != m_mode;
+        const auto configuredPage = config.value(QStringLiteral("activePageId")).toString();
+        const bool configuredPageChanged = configuredPage != m_configuredPageId;
+        if (modeChanged)
             m_manualPageId.clear();
         m_mode = mode;
         bool manualPageExists = false;
+        bool activePageExists = false;
         for (const auto &page : config.value(QStringLiteral("pages")).toArray()) {
             if (page.toObject().value(QStringLiteral("id")).toString() == m_manualPageId)
                 manualPageExists = true;
+            if (page.toObject().value(QStringLiteral("id")).toString() == m_activePageId)
+                activePageExists = true;
         }
         if (!manualPageExists)
             m_manualPageId.clear();
-        m_activePageId = mode == QLatin1String("single") ? config.value(QStringLiteral("homePageId")).toString()
-            : mode == QLatin1String("follow")            ? (m_manualPageId.isEmpty() ? followedPage(config) : m_manualPageId)
-                                                         : config.value(QStringLiteral("activePageId")).toString();
+        if (mode == QLatin1String("single"))
+            m_activePageId = config.value(QStringLiteral("homePageId")).toString();
+        else if (mode == QLatin1String("follow"))
+            m_activePageId = m_manualPageId.isEmpty() ? followedPage(config) : m_manualPageId;
+        else if (modeChanged || configuredPageChanged || !activePageExists)
+            m_activePageId = configuredPage;
+        m_configuredPageId = configuredPage;
         Q_EMIT stateChanged();
     });
     const auto config = store->document().privateConfig();
     const auto mode = config.value(QStringLiteral("mode")).toString();
     m_mode = mode;
+    m_configuredPageId = config.value(QStringLiteral("activePageId")).toString();
     m_activePageId = mode == QLatin1String("single") || mode == QLatin1String("follow") ? config.value(QStringLiteral("homePageId")).toString()
                                                                                         : config.value(QStringLiteral("activePageId")).toString();
 }

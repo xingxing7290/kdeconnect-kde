@@ -65,6 +65,25 @@ Item {
         };
         return messages[code] || qsTr("无法保存配置：%1").arg(code);
     }
+    function foregroundErrorText() {
+        if (editor.foregroundError === "hosted_application_unavailable") return qsTr("未识别出此宿主窗口中的实际程序，请切到目标应用后稍等，或手工填写程序名。");
+        if (editor.foregroundError) return qsTr("暂时无法读取目标程序，可能受权限限制。仅保留上次稳定结果，不会自动提权；请重新切到可识别的窗口。");
+        return "";
+    }
+    function volumeErrorText(code) {
+        const messages = {
+            default_output_state_unavailable: qsTr("无法读取三个默认音频角色，未执行切换。请检查音频设备后重试。"),
+            default_output_failed: qsTr("默认输出切换失败，请检查音频设备或权限后重试。"),
+            default_output_changed: qsTr("切换期间音频输出发生变化，本次未完成。请重新选择输出。"),
+            default_output_partial_failure: qsTr("输出切换失败，且未能完整恢复原设备。请在 Windows 声音设置中检查系统、媒体和通信输出。"),
+            output_unavailable: qsTr("所选音频设备已不可用，请重新选择。"),
+            audio_unavailable: qsTr("Windows 音频服务暂不可用，请稍后重试。"),
+            enumeration_failed: qsTr("暂时无法读取音频设备列表，请稍后重试。"),
+            volume_failed: qsTr("音量设置失败，请检查设备后重试。"),
+            mute_failed: qsTr("静音设置失败，请检查设备后重试。")
+        };
+        return messages[code] || qsTr("音量操作暂不可用：%1").arg(code);
+    }
     function requestDeletePage(id) {
         const target = config.pages.find(item => item.id === id);
         if (!target || config.pages.length <= 1) return;
@@ -384,6 +403,7 @@ Item {
                 visible: config.mode === "follow"; Layout.fillWidth: true; elide: Text.ElideMiddle; color: "#69778b"; font.pixelSize: 11
                 text: editor.foregroundSupported ? qsTr("当前程序：%1；手动切页保持到下次程序切换。").arg(editor.foregroundApplication || qsTr("请切到要识别的软件")) : qsTr("当前平台暂不支持前台识别，请使用 Windows 版本。")
             }
+            C.Label { visible: config.mode === "follow" && !!editor.foregroundError; text: root.foregroundErrorText(); color: "#a25712"; Layout.fillWidth: true; wrapMode: Text.WordWrap; font.pixelSize: 11 }
             Flow {
                 Layout.fillWidth: true; spacing: 14
                 RowLayout {
@@ -416,10 +436,13 @@ Item {
                     enabled: localVolume.outputs.length > 0
                     onActivated: localVolume.setDefaultSink(localVolume.outputs[currentIndex].name)
                     Accessible.name: qsTr("默认音频输出设备")
+                    Accessible.description: qsTr("同时切换系统、媒体和通信默认输出；失败时尝试恢复原设备。")
+                    C.ToolTip.visible: hovered
+                    C.ToolTip.text: Accessible.description
                 }
                 C.Label { text: qsTr("无默认输出"); color: "#b3261e"; visible: !localVolume.available }
             }
-            C.Label { visible: !!localVolume.error; text: qsTr("音量操作暂不可用：") + localVolume.error; color: "#b3261e"; font.pixelSize: 11; Layout.fillWidth: true }
+            C.Label { visible: !!localVolume.error; text: root.volumeErrorText(localVolume.error); textFormat: Text.PlainText; wrapMode: Text.WordWrap; color: "#b3261e"; font.pixelSize: 11; Layout.fillWidth: true }
         }
         ColumnLayout {
             C.Label { text: qsTr("开启连接"); font.pixelSize: 26; font.bold: true; color: "#273448" }
@@ -470,7 +493,7 @@ Item {
             width: parent.width
             C.TextField { id: pageName; objectName: "panelPageName"; placeholderText: qsTr("页面名称"); maximumLength: 120; Layout.fillWidth: true; Accessible.name: placeholderText }
             C.TextField { id: applicationField; objectName: "panelPageApplication"; placeholderText: qsTr("绑定的程序名，例如 notepad.exe"); maximumLength: 260; Layout.fillWidth: true; Accessible.name: placeholderText }
-            C.Button { text: qsTr("使用当前识别的程序"); visible: config.mode === "follow"; enabled: !!editor.foregroundApplication; onClicked: applicationField.text = editor.foregroundApplication }
+            C.Button { text: qsTr("使用当前识别的程序"); visible: config.mode === "follow"; enabled: !!editor.foregroundApplication && !editor.foregroundError; onClicked: applicationField.text = editor.foregroundApplication }
             C.Label { visible: !!pageDialog.validationError; text: pageDialog.validationError; textFormat: Text.PlainText; color: "#b3261e"; wrapMode: Text.WordWrap; Layout.fillWidth: true }
             RowLayout {
                 Item { Layout.fillWidth: true }
@@ -498,10 +521,12 @@ Item {
         ColumnLayout {
             width: parent.width; spacing: 14
             C.Label { text: qsTr("保持此窗口打开，点击要绑定的软件，等待片刻后返回。识别只使用程序名，不读取窗口标题或文档内容。"); wrapMode: Text.WordWrap; Layout.fillWidth: true }
+            C.Label { visible: !!editor.foregroundError; text: root.foregroundErrorText(); color: "#a25712"; wrapMode: Text.WordWrap; Layout.fillWidth: true }
+            C.Label { text: qsTr("最近稳定识别的程序"); color: "#69778b"; Layout.fillWidth: true }
             C.TextField { text: editor.foregroundApplication; readOnly: true; selectByMouse: true; placeholderText: qsTr("等待前台程序"); Layout.fillWidth: true }
             RowLayout {
-                C.Button { text: qsTr("复制程序名称"); enabled: !!editor.foregroundApplication; onClicked: editor.copyForegroundApplication() }
-                C.Button { text: qsTr("绑定到当前页"); highlighted: true; palette.dark: "#286fe0"; palette.mid: "#205ab8"; palette.brightText: "white"; enabled: !!editor.foregroundApplication; onClicked: {
+                C.Button { text: qsTr("复制程序名称"); enabled: !!editor.foregroundApplication && !editor.foregroundError; onClicked: editor.copyForegroundApplication() }
+                C.Button { text: qsTr("绑定到当前页"); highlighted: true; palette.dark: "#286fe0"; palette.mid: "#205ab8"; palette.brightText: "white"; enabled: !!editor.foregroundApplication && !editor.foregroundError; onClicked: {
                     if (editor.renamePageChecked(foregroundDialog.targetPageId, foregroundDialog.targetPageName, editor.foregroundApplication, foregroundDialog.editSnapshot)) foregroundDialog.close();
                     else foregroundDialog.validationError = root.configurationError(editor.error);
                 } }

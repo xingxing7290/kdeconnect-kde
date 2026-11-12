@@ -27,5 +27,6 @@ private:
     QString m_foregroundApplication;
     QString m_manualPageId;
     QString m_mode;
+    QString m_configuredPageId;
 };
 }

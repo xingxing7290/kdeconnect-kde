@@ -61,6 +61,8 @@ success 必须与 error 为空一致，矛盾结果不确认待处理动作。�
 
 ## 天气快照
 
+桌面端每次完整配置成功进入发送队列后重推当前天气快照，包括配置广播与重连；天气变化仍单独推送。这样即使共享天气对象先发出新修订快照，Android 严格拒绝未来 revision 后仍会在 CONFIG 之后收到有效重发。不缓存未来包、不放宽会话/城市/revision 校验，入队成功不等于网络送达确认。生产插件回归见阶段十九，真实重连对照见 MILESTONE-20-WEATHER-E2E.zh-CN.md。
+
 天气包无二进制附件，protocolVersion=1、revision 为当前配置修订，city 必须匹配配置的去首尾空白城市名，source 固定为 open-meteo。status 为 ready/loading/unavailable/disabled/no_city。完整数值组 resolvedCity、observedAt、fetchedAt、temperature、weatherCode 要么全部存在且合法，要么全部缺省；ready 不允许缺省。observedAt 表示模型时刻，不代表传感器实测。
 
 时间为 Unix 秒，接收端检查整数/范围和明显未来值；温度必须是有限 JSON 数值，范围 -100..70，代码必须是支持的整数 WMO 码。UTF-8 主体不超过 16 KiB、JSON 容器不超过 64 层。修订/城市不符、乱序或类型错误不能替换有效快照；天气错误也不能把动作会话置为失败。加载或不可用消息可保留同城已知快照，但不制造新的获取时间，显示时仍检查过期。来源、缓存、过期和隐私详见 DIALS.zh-CN.md。

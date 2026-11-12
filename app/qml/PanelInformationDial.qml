@@ -16,7 +16,7 @@ Rectangle {
     property var codeText: function(code) { return ""; }
     readonly property real u: Math.max(0.1, Math.min(width/720, height/360))
     readonly property color ink: "#202722"
-    readonly property color quiet: "#73796e"
+    readonly property color quiet: "#5f655f"
     readonly property string cityToday: new Date(now.getTime() + (weather.utcOffsetSeconds || 0) * 1000).toISOString().slice(0,10)
     readonly property var days: fresh && weather.forecast ? Array.from(weather.forecast).filter(day => day.date >= cityToday) : []
     readonly property var today: days.length && days[0].date === cityToday ? days[0] : null

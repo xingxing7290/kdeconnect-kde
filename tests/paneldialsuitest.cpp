@@ -2,6 +2,7 @@
  * SPDX-License-Identifier: GPL-2.0-only OR GPL-3.0-only OR LicenseRef-KDE-Accepted-GPL
  */
 #include <BreezeIcons>
+#include <QColor>
 #include <QDateTime>
 #include <QDir>
 #include <QFile>
@@ -17,6 +18,7 @@
 #include <QTemporaryDir>
 #include <QTest>
 #include <QTimeZone>
+#include <cmath>
 #include <paneleditor.h>
 
 class PanelDialsUiTest : public QObject
@@ -32,6 +34,130 @@ class PanelDialsUiTest : public QObject
         return nullptr;
     }
 private Q_SLOTS:
+    void previewsKeepReadableTextContrast()
+    {
+        QTest::failOnWarning();
+        const auto blend = [](QColor foreground, const QColor &background) {
+            const auto alpha = foreground.alphaF();
+            return QColor::fromRgbF(foreground.redF() * alpha + background.redF() * (1 - alpha),
+                                    foreground.greenF() * alpha + background.greenF() * (1 - alpha),
+                                    foreground.blueF() * alpha + background.blueF() * (1 - alpha));
+        };
+        const auto luminance = [](const QColor &color) {
+            const auto channel = [](double value) {
+                return value <= 0.04045 ? value / 12.92 : std::pow((value + 0.055) / 1.055, 2.4);
+            };
+            return 0.2126 * channel(color.redF()) + 0.7152 * channel(color.greenF()) + 0.0722 * channel(color.blueF());
+        };
+        QCOMPARE(luminance(QColor(Qt::black)), 0.0);
+        QCOMPARE(luminance(QColor(Qt::white)), 1.0);
+        const auto grayRatio = 1.05 / (luminance(QColor(QStringLiteral("#777777"))) + 0.05);
+        QVERIFY(grayRatio < 4.5);
+        const auto translucentBlack = blend(QColor(0, 0, 0, 127), QColor(Qt::white));
+        const auto alphaRatio = 1.05 / (luminance(translucentBlack) + 0.05);
+        QVERIFY(alphaRatio > 3.9 && alphaRatio < 4.1);
+        const auto now = QDateTime::currentDateTimeUtc();
+        const auto cityDate = QDateTime::fromSecsSinceEpoch(now.toSecsSinceEpoch() + 28800, QTimeZone::UTC).date();
+        QVariantList forecast;
+        for (int index = 0; index < 3; ++index)
+            forecast.append(QVariantMap{{QStringLiteral("date"), cityDate.addDays(index).toString(Qt::ISODate)},
+                                        {QStringLiteral("minimum"), 11.2},
+                                        {QStringLiteral("maximum"), 22.4},
+                                        {QStringLiteral("weatherCode"), 3}});
+        const QVariantMap observation{{QStringLiteral("city"), QStringLiteral("Synthetic contrast city")},
+                                      {QStringLiteral("resolvedCity"), QStringLiteral("Synthetic contrast city / Test country")},
+                                      {QStringLiteral("source"), QStringLiteral("open-meteo")},
+                                      {QStringLiteral("status"), QStringLiteral("ready")},
+                                      {QStringLiteral("fetchedAt"), now.toSecsSinceEpoch()},
+                                      {QStringLiteral("observedAt"), now.toSecsSinceEpoch() - 300},
+                                      {QStringLiteral("temperature"), 18.2},
+                                      {QStringLiteral("weatherCode"), 3},
+                                      {QStringLiteral("forecast"), forecast},
+                                      {QStringLiteral("timezone"), QStringLiteral("Test/City")},
+                                      {QStringLiteral("utcOffsetSeconds"), 28800}};
+        QVERIFY(ControlPanel::PanelWeather::validObservation(QJsonObject::fromVariantMap(observation), now.toSecsSinceEpoch()));
+        const auto reportDirectory = qEnvironmentVariable("KDECONNECT_PANEL_CONTRAST_REPORTS");
+        const auto screenshotDirectory = qEnvironmentVariable("KDECONNECT_PANEL_SCREENSHOTS");
+        QStringList failures;
+        for (const auto &size : {QSize(1000, 520), QSize(520, 280)}) {
+            QQuickView view;
+            view.setInitialProperties({{QStringLiteral("city"), observation.value(QStringLiteral("city"))},
+                                       {QStringLiteral("message"), QStringLiteral("Synthetic contrast fixture - not live weather")},
+                                       {QStringLiteral("now"), now},
+                                       {QStringLiteral("weather"), observation}});
+            view.setResizeMode(QQuickView::SizeRootObjectToView);
+            view.setSource(QUrl::fromLocalFile(QFINDTESTDATA("../app/qml/PanelDialPreview.qml")));
+            QCOMPARE(view.status(), QQuickView::Ready);
+            view.resize(size);
+            view.show();
+            QVERIFY(QTest::qWaitForWindowExposed(&view));
+            for (const auto &state : {QStringLiteral("ready"), QStringLiteral("cached"), QStringLiteral("expired")}) {
+                auto weather = observation;
+                if (state == QLatin1String("cached"))
+                    weather.insert(QStringLiteral("status"), QStringLiteral("unavailable"));
+                view.rootObject()->setProperty("weather", weather);
+                view.rootObject()->setProperty("now", state == QLatin1String("expired") ? now.addSecs(7201) : now);
+                for (const auto &dial :
+                     {QStringLiteral("digital"), QStringLiteral("analog"), QStringLiteral("weather"), QStringLiteral("info"), QStringLiteral("car")}) {
+                    view.rootObject()->setProperty("dialId", dial);
+                    if (dial == QLatin1String("info"))
+                        QTRY_VERIFY(view.rootObject()->findChild<QObject *>(QStringLiteral("panelInformationDial")));
+                    QTest::qWait(20);
+                    const auto image = view.grabWindow();
+                    QVERIFY(!image.isNull());
+                    QCOMPARE(image.pixelColor(image.width() / 2, 2).rgb(), view.rootObject()->property("color").value<QColor>().rgb());
+                    const auto name = QStringLiteral("desktop-contrast-%1-%2-%3").arg(dial, state).arg(size.width());
+                    if (!screenshotDirectory.isEmpty()) {
+                        QVERIFY(QDir().mkpath(screenshotDirectory));
+                        QVERIFY(image.save(QDir(screenshotDirectory).filePath(name + QStringLiteral(".png"))));
+                    }
+                    QStringList rows{QStringLiteral("text\tforegroundARGB\tbackgroundARGB\tcontrast")};
+                    QList<QQuickItem *> pending{view.rootObject()};
+                    int checked = 0;
+                    while (!pending.isEmpty()) {
+                        auto *item = pending.takeLast();
+                        pending.append(item->childItems());
+                        if (!item->isVisible() || item->property("text").toString().isEmpty() || !item->property("font").isValid()
+                            || !item->property("color").canConvert<QColor>())
+                            continue;
+                        QList<QColor> layers;
+                        for (auto *parent = item->parentItem(); parent; parent = parent->parentItem()) {
+                            QCOMPARE(parent->opacity(), 1.0);
+                            if (parent->property("color").canConvert<QColor>())
+                                layers.prepend(parent->property("color").value<QColor>());
+                        }
+                        QColor background = view.color();
+                        for (const auto &layer : layers)
+                            background = blend(layer, background);
+                        auto foreground = item->property("color").value<QColor>();
+                        foreground.setAlphaF(foreground.alphaF() * item->opacity());
+                        const auto first = luminance(blend(foreground, background));
+                        const auto second = luminance(background);
+                        const auto ratio = (std::max(first, second) + 0.05) / (std::min(first, second) + 0.05);
+                        const auto text = item->property("text").toString();
+                        rows.append(QStringLiteral("%1\t%2\t%3\t%4")
+                                        .arg(text, foreground.name(QColor::HexArgb), background.name(QColor::HexArgb))
+                                        .arg(ratio, 0, 'g', 16));
+                        if (ratio < 4.5)
+                            failures.append(QStringLiteral("%1: %2 has contrast %3").arg(name, text.left(40)).arg(ratio, 0, 'g', 12));
+                        ++checked;
+                    }
+                    QVERIFY(checked > 0);
+                    if (dial == QLatin1String("info"))
+                        QVERIFY(checked > 10);
+                    if (!reportDirectory.isEmpty()) {
+                        QVERIFY(QDir().mkpath(reportDirectory));
+                        QFile report(QDir(reportDirectory).filePath(name + QStringLiteral(".tsv")));
+                        QVERIFY(report.open(QIODevice::WriteOnly));
+                        const auto bytes = rows.join(QLatin1Char('\n')).toUtf8();
+                        QCOMPARE(report.write(bytes), bytes.size());
+                    }
+                }
+            }
+        }
+        const auto details = failures.join(QLatin1Char('\n')).toUtf8();
+        QVERIFY2(failures.isEmpty(), details.constData());
+    }
     void initTestCase()
     {
         QQuickStyle::setStyle(QStringLiteral("Basic"));

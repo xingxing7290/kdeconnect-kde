@@ -32,7 +32,7 @@ if(WIN32)
     add_executable(panelassetsintegration panelassetsintegration.cpp)
     target_link_libraries(panelassetsintegration PRIVATE kdeconnectpanelactions)
     add_executable(panelemulatorintegration panelemulatorintegration.cpp)
-    target_link_libraries(panelemulatorintegration PRIVATE kdeconnectpanelactions)
+    target_link_libraries(panelemulatorintegration PRIVATE kdeconnectpanelactions KF6::BreezeIcons)
     add_executable(volumeintegration volumeintegration.cpp)
     target_link_libraries(volumeintegration PRIVATE kdeconnectvolume ole32)
     # Requires a desktop session and foreground activation permission; run manually.

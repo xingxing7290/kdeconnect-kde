@@ -1,10 +1,13 @@
 /*
  * SPDX-License-Identifier: GPL-2.0-only OR GPL-3.0-only OR LicenseRef-KDE-Accepted-GPL
  */
-#include <QCoreApplication>
+#include <BreezeIcons>
 #include <QDir>
 #include <QFile>
+#include <QGuiApplication>
+#include <QIcon>
 #include <QImage>
+#include <QJsonArray>
 #include <QJsonDocument>
 #include <QPainter>
 #include <QRegularExpression>
@@ -14,7 +17,10 @@
 
 int main(int argc, char **argv)
 {
-    QCoreApplication app(argc, argv);
+    qputenv("QT_QPA_PLATFORM", "offscreen");
+    QGuiApplication app(argc, argv);
+    BreezeIcons::initIcons();
+    QIcon::setThemeName(QStringLiteral("breeze"));
     const auto args = app.arguments();
     if (args.size() < 3 || !QDir::isAbsolutePath(args[2]))
         return 2;
@@ -42,14 +48,59 @@ int main(int argc, char **argv)
             return 8;
         return 0;
     }
-    if ((args[1] != QLatin1String("--prepare") && args[1] != QLatin1String("--extend-pages")) || args.size() != 3)
+    if (args[1] == QLatin1String("--unified-direction")) {
+        if (args.size() != 4 || (args[3] != QLatin1String("horizontal") && args[3] != QLatin1String("vertical")))
+            return 32;
+        ControlPanel::PanelEditor editor(profile.filePath(QStringLiteral("panel")));
+        const auto pages = editor.config().value(QStringLiteral("pages")).toList();
+        if (!editor.error().isEmpty() || pages.size() != 10)
+            return 33;
+        for (int pageIndex = 0; pageIndex < pages.size(); ++pageIndex) {
+            const auto buttons = pages[pageIndex].toMap().value(QStringLiteral("slots")).toList();
+            if (buttons.size() != 18)
+                return 34;
+            const auto first = buttons[0].toMap();
+            const auto target = first.value(QStringLiteral("target")).toMap();
+            const auto arguments = target.value(QStringLiteral("arguments")).toList();
+            const auto name = pageIndex == 0 ? QStringLiteral("E2E 首页图标") : QStringLiteral("E2E 第%1页图标").arg(pageIndex + 1);
+            if (first.value(QStringLiteral("name")).toString() != name || first.value(QStringLiteral("kind")).toString() != QLatin1String("program")
+                || target.value(QStringLiteral("path")).toString() != app.applicationFilePath() || arguments.size() != 4
+                || arguments[0].toString() != QLatin1String("--probe") || arguments[1].toString() != profile.absolutePath()
+                || !QRegularExpression(QStringLiteral("^[a-f0-9]{32}$")).match(arguments[2].toString()).hasMatch()
+                || arguments[3].toString() != QStringLiteral("E2E 中文参数 with spaces"))
+                return 35;
+            for (int slotIndex = 1; slotIndex < buttons.size(); ++slotIndex) {
+                if (pageIndex == 0 && slotIndex <= 2) {
+                    const auto system = buttons[slotIndex].toMap();
+                    const auto action = slotIndex == 1 ? QStringLiteral("thisPc") : QStringLiteral("recycleBin");
+                    if (system.value(QStringLiteral("kind")).toString() != QLatin1String("system")
+                        || system.value(QStringLiteral("target")).toMap().value(QStringLiteral("action")).toString() != action)
+                        return 36;
+                } else if (!buttons[slotIndex].isNull()) {
+                    return 37;
+                }
+            }
+        }
+        if (!editor.setAppearance(QStringLiteral("swipeDirection"), args[3]))
+            return 38;
+        QFile output;
+        if (!output.open(stdout, QIODevice::WriteOnly))
+            return 39;
+        output.write(QJsonDocument(QJsonObject{{QStringLiteral("direction"), args[3]},
+                                               {QStringLiteral("revision"), QJsonValue::fromVariant(editor.config().value(QStringLiteral("revision")))}})
+                         .toJson(QJsonDocument::Compact));
+        output.flush();
+        return 0;
+    }
+    if ((args[1] != QLatin1String("--prepare") && args[1] != QLatin1String("--extend-pages") && args[1] != QLatin1String("--extend-unified"))
+        || args.size() != 3)
         return 9;
     ControlPanel::PanelEditor editor(profile.filePath(QStringLiteral("panel")));
     const auto config = editor.config();
     if (!editor.error().isEmpty() || config.value(QStringLiteral("pages")).toList().size() != 1)
         return 10;
     const auto slots = editor.currentPage().value(QStringLiteral("slots")).toList();
-    if (args[1] == QLatin1String("--extend-pages")) {
+    if (args[1] == QLatin1String("--extend-pages") || args[1] == QLatin1String("--extend-unified")) {
         const auto first = slots.value(0).toMap();
         const auto target = first.value(QStringLiteral("target")).toMap();
         const auto originalArguments = target.value(QStringLiteral("arguments")).toList();
@@ -86,6 +137,68 @@ int main(int argc, char **argv)
             || !editor.setAppearance(QStringLiteral("background"), QStringLiteral("#DDEBFF")) || !editor.setAppearance(QStringLiteral("showVolume"), false)
             || !editor.setAppearance(QStringLiteral("swipeDirection"), QStringLiteral("vertical")) || !editor.addPage())
             return 20;
+        if (args[1] == QLatin1String("--extend-unified")) {
+            QJsonArray expectedPages;
+            expectedPages.append(QJsonObject{{QStringLiteral("id"), homePage},
+                                             {QStringLiteral("name"), QStringLiteral("E2E 首页图标")},
+                                             {QStringLiteral("token"), originalArguments[2].toString()}});
+            const QList<QPair<QString, QString>> systemButtons{{QStringLiteral("E2E 此电脑"), QStringLiteral("thisPc")},
+                                                               {QStringLiteral("E2E 回收站"), QStringLiteral("recycleBin")}};
+            if (!editor.selectPage(homePage))
+                return 23;
+            QJsonArray systemIcons;
+            for (int index = 0; index < systemButtons.size(); ++index) {
+                const auto &[name, action] = systemButtons[index];
+                if (!editor.setButton(index + 1,
+                                      {{QStringLiteral("kind"), QStringLiteral("system")},
+                                       {QStringLiteral("name"), name},
+                                       {QStringLiteral("target"), QVariantMap{{QStringLiteral("action"), action}}}}))
+                    return 24;
+                const auto saved = editor.currentPage().value(QStringLiteral("slots")).toList()[index + 1].toMap();
+                const auto defaultIcon = saved.value(QStringLiteral("icon")).toString();
+                if (!ControlPanel::PanelAssets::validId(defaultIcon))
+                    return 25;
+                systemIcons.append(QJsonObject{{QStringLiteral("name"), name}, {QStringLiteral("icon"), defaultIcon}});
+            }
+            if (systemIcons[0].toObject().value(QStringLiteral("icon")) == systemIcons[1].toObject().value(QStringLiteral("icon")))
+                return 26;
+            const auto secondPage = editor.config().value(QStringLiteral("pages")).toList()[1].toMap().value(QStringLiteral("id")).toString();
+            if (!editor.selectPage(secondPage))
+                return 27;
+            for (int number = 2; number <= 10; ++number) {
+                if (number > 2 && !editor.addPage())
+                    return 28;
+                const auto pageToken = QUuid::createUuid().toString(QUuid::Id128);
+                auto pageTarget = target;
+                auto pageArguments = originalArguments;
+                pageArguments[2] = pageToken;
+                pageTarget.insert(QStringLiteral("arguments"), pageArguments);
+                const auto name = QStringLiteral("E2E 第%1页图标").arg(number);
+                if (!editor.renamePage(editor.currentPageId(), name, QString())
+                    || !editor.setButton(0,
+                                         {{QStringLiteral("name"), name},
+                                          {QStringLiteral("kind"), QStringLiteral("program")},
+                                          {QStringLiteral("icon"), icon},
+                                          {QStringLiteral("target"), pageTarget}}))
+                    return 29;
+                expectedPages.append(
+                    QJsonObject{{QStringLiteral("id"), editor.currentPageId()}, {QStringLiteral("name"), name}, {QStringLiteral("token"), pageToken}});
+            }
+            const auto beforeLimit = editor.config();
+            if (editor.addPage() || editor.config() != beforeLimit || !editor.selectPage(homePage))
+                return 30;
+            QFile output;
+            if (!output.open(stdout, QIODevice::WriteOnly))
+                return 31;
+            output.write(QJsonDocument(QJsonObject{{QStringLiteral("icon"), icon},
+                                                   {QStringLiteral("pages"), expectedPages},
+                                                   {QStringLiteral("systemIcons"), systemIcons},
+                                                   {QStringLiteral("eleventhPageRefused"), true},
+                                                   {QStringLiteral("revision"), QJsonValue::fromVariant(editor.config().value(QStringLiteral("revision")))}})
+                             .toJson(QJsonDocument::Compact));
+            output.flush();
+            return 0;
+        }
         const auto secondPage = editor.currentPageId();
         auto secondTarget = target;
         auto arguments = originalArguments;

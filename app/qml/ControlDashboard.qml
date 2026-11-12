@@ -61,7 +61,11 @@ Item {
             invalid_page_name: qsTr("请填写不超过 120 个字符的页面名称。"),
             invalid_background: qsTr("背景色应为 #RRGGBB 格式，例如 #FFFFFF。"),
             invalid_idle_timeout: qsTr("空闲时长应为 1000 至 86400000 毫秒。"),
-            invalid_dial_text: qsTr("城市最多 120 个字符，个性化文本最多 240 个字符。")
+            invalid_dial_text: qsTr("城市最多 120 个字符，个性化文本最多 240 个字符。"),
+            store_busy: qsTr("配置正由其他窗口保存，请稍后重试。"),
+            directory_unavailable: qsTr("配置目录不可写，请检查磁盘空间和目录权限。"),
+            write_failed: qsTr("配置写入失败，请检查磁盘空间和目录权限。"),
+            backup_failed: qsTr("无法备份原配置，本次没有保存。请检查磁盘空间和目录权限。")
         };
         return messages[code] || qsTr("无法保存配置：%1").arg(code);
     }
@@ -414,7 +418,7 @@ Item {
                     objectName: "panelBackgroundPicker"; implicitWidth: 38
                     Accessible.name: qsTr("选择背景颜色")
                     contentItem: Rectangle { implicitWidth: 22; implicitHeight: 18; color: config.appearance.background; border.color: "#8793a5" }
-                    onClicked: { colorPicker.selectedColor = config.appearance.background; colorPicker.open(); }
+                    onClicked: { colorPicker.expectedRevision = config.revision; colorPicker.selectedColor = config.appearance.background; colorPicker.open(); }
                 }
                 C.TextField { objectName: "panelBackgroundHex"; text: config.appearance.background; maximumLength: 7; Layout.preferredWidth: 105; Accessible.name: qsTr("背景色十六进制值"); onEditingFinished: editor.setAppearance("background", text) }
                 }
@@ -460,7 +464,7 @@ Item {
         }
     }
     PanelButtonDialog { id: buttonDialog; editor: root.editor; systemPresets: root.systemPresets }
-    ColorDialog { id: colorPicker; onAccepted: editor.setAppearance("background", selectedColor.toString()) }
+    ColorDialog { id: colorPicker; property double expectedRevision: -1; onAccepted: editor.setAppearanceChecked("background", selectedColor.toString(), expectedRevision) }
     C.Dialog {
         id: deletePageDialog; parent: C.Overlay.overlay; anchors.centerIn: parent; modal: true; title: qsTr("删除页面？")
         objectName: "panelDeletePageDialog"

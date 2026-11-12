@@ -57,8 +57,10 @@ public:
     Q_INVOKABLE QUrl assetUrl(const QString &id) const;
     Q_INVOKABLE bool setMode(const QString &mode);
     Q_INVOKABLE bool setAppearance(const QString &key, const QVariant &value);
+    Q_INVOKABLE bool setAppearanceChecked(const QString &key, const QVariant &value, double expectedRevision);
     Q_INVOKABLE bool setIdle(const QString &key, const QVariant &value);
     Q_INVOKABLE bool setIdleOptions(const QVariantMap &values);
+    Q_INVOKABLE bool setIdleOptionsChecked(const QVariantMap &values, double expectedRevision);
     Q_INVOKABLE bool restoreBackup();
 
 Q_SIGNALS:

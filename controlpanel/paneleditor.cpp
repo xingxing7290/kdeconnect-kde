@@ -402,6 +402,11 @@ bool PanelEditor::setAppearance(const QString &key, const QVariant &value)
     return save(config);
 }
 
+bool PanelEditor::setAppearanceChecked(const QString &key, const QVariant &value, double expectedRevision)
+{
+    return expectedRevision == double(m_store.document().revision()) ? setAppearance(key, value) : fail(QStringLiteral("edit_conflict"));
+}
+
 bool PanelEditor::setIdle(const QString &key, const QVariant &value)
 {
     return setIdleOptions({{key, value}});
@@ -419,6 +424,11 @@ bool PanelEditor::setIdleOptions(const QVariantMap &values)
     }
     config.insert(QStringLiteral("idle"), options);
     return save(config);
+}
+
+bool PanelEditor::setIdleOptionsChecked(const QVariantMap &values, double expectedRevision)
+{
+    return expectedRevision == double(m_store.document().revision()) ? setIdleOptions(values) : fail(QStringLiteral("edit_conflict"));
 }
 
 bool PanelEditor::restoreBackup()

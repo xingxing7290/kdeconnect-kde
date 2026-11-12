@@ -7,6 +7,7 @@
 #include <QFontDatabase>
 #include <QJsonArray>
 #include <QJsonDocument>
+#include <QLockFile>
 #include <QQmlContext>
 #include <QQuickItem>
 #include <QQuickStyle>
@@ -29,14 +30,93 @@ class PanelDialsUiTest : public QObject
         return nullptr;
     }
 private Q_SLOTS:
-    void selectionSettingsAndPreviewsUseProductionQml()
+    void initTestCase()
     {
-        QTest::failOnWarning();
         QQuickStyle::setStyle(QStringLiteral("Basic"));
 #ifdef Q_OS_WIN
         QVERIFY(QFontDatabase::addApplicationFont(QStringLiteral("C:/Windows/Fonts/msyh.ttc")) >= 0);
         QGuiApplication::setFont(QFont(QStringLiteral("Microsoft YaHei")));
 #endif
+    }
+    void delayedDialEditsKeepDialogAndInputsOnConflictOrStoreFailure()
+    {
+        QTest::failOnWarning();
+        QTemporaryDir directory;
+        ControlPanel::PanelEditor editor(directory.path());
+        QQuickView view;
+        view.setInitialProperties({{QStringLiteral("editor"), QVariant::fromValue(&editor)}});
+        view.setResizeMode(QQuickView::SizeRootObjectToView);
+        view.setSource(QUrl::fromLocalFile(QFINDTESTDATA("../app/qml/PanelDialGallery.qml")));
+        QCOMPARE(view.status(), QQuickView::Ready);
+        view.resize(1000, 780);
+        view.show();
+        QVERIFY(QTest::qWaitForWindowExposed(&view));
+        auto find = [&](const QString &name) {
+            return view.rootObject()->findChild<QObject *>(name);
+        };
+        auto click = [&](const QString &name) {
+            auto *item = qobject_cast<QQuickItem *>(find(name));
+            QVERIFY2(item, qPrintable(name));
+            QTest::mouseClick(&view, Qt::LeftButton, Qt::NoModifier, item->mapToScene(QPointF(item->width() / 2, item->height() / 2)).toPoint());
+        };
+        auto *featured = qobject_cast<QQuickItem *>(find(QStringLiteral("panelDialFeatured")));
+        auto *confirmation = find(QStringLiteral("panelDialConfirmation"));
+        auto *settings = find(QStringLiteral("panelDialSettings"));
+        QVERIFY(featured && confirmation && settings);
+        featured->forceActiveFocus();
+        QTest::keyClick(&view, Qt::Key_Return);
+        QTRY_VERIFY(confirmation->property("visible").toBool());
+        QVERIFY(editor.setAppearance(QStringLiteral("showLabels"), false));
+        const auto concurrent = editor.config();
+        click(QStringLiteral("panelDialSelectSave"));
+        QVERIFY(confirmation->property("visible").toBool());
+        QVERIFY(!confirmation->property("validationError").toString().isEmpty());
+        QCOMPARE(editor.config(), concurrent);
+        click(QStringLiteral("panelDialSelectCancel"));
+        QTRY_VERIFY(!confirmation->property("visible").toBool());
+        click(QStringLiteral("panelDialFeatured"));
+        QTRY_VERIFY(confirmation->property("visible").toBool());
+        ControlPanel::PanelStore store(directory.path());
+        QLockFile lock(store.filePath() + QStringLiteral(".lock"));
+        QVERIFY(lock.tryLock(0));
+        click(QStringLiteral("panelDialSelectSave"));
+        QVERIFY(confirmation->property("visible").toBool());
+        QCOMPARE(editor.error(), QStringLiteral("store_busy"));
+        QCOMPARE(editor.config(), concurrent);
+        lock.unlock();
+        click(QStringLiteral("panelDialSelectSave"));
+        QTRY_VERIFY(!confirmation->property("visible").toBool());
+        QCOMPARE(editor.config().value(QStringLiteral("idle")).toMap().value(QStringLiteral("dialId")).toString(), QStringLiteral("analog"));
+        click(QStringLiteral("panelDialSettingsButton"));
+        QTRY_VERIFY(settings->property("visible").toBool());
+        auto *city = find(QStringLiteral("panelDialCity"));
+        QVERIFY(city);
+        city->setProperty("text", QStringLiteral("Unsaved city"));
+        QVERIFY(editor.setAppearance(QStringLiteral("showVolume"), false));
+        const auto beforeSettings = editor.config();
+        click(QStringLiteral("panelDialSettingsSave"));
+        QVERIFY(settings->property("visible").toBool());
+        QCOMPARE(city->property("text").toString(), QStringLiteral("Unsaved city"));
+        QCOMPARE(editor.config(), beforeSettings);
+        click(QStringLiteral("panelDialSettingsCancel"));
+        QTRY_VERIFY(!settings->property("visible").toBool());
+        click(QStringLiteral("panelDialSettingsButton"));
+        QTRY_VERIFY(settings->property("visible").toBool());
+        city->setProperty("text", QStringLiteral("Retained city"));
+        QVERIFY(lock.tryLock(0));
+        click(QStringLiteral("panelDialSettingsSave"));
+        QVERIFY(settings->property("visible").toBool());
+        QVERIFY(!settings->property("validationError").toString().isEmpty());
+        QCOMPARE(city->property("text").toString(), QStringLiteral("Retained city"));
+        QCOMPARE(editor.config(), beforeSettings);
+        lock.unlock();
+        click(QStringLiteral("panelDialSettingsSave"));
+        QTRY_VERIFY(!settings->property("visible").toBool());
+        QCOMPARE(editor.config().value(QStringLiteral("idle")).toMap().value(QStringLiteral("city")).toString(), QStringLiteral("Retained city"));
+    }
+    void selectionSettingsAndPreviewsUseProductionQml()
+    {
+        QTest::failOnWarning();
         QTemporaryDir directory;
         ControlPanel::PanelEditor editor(directory.path());
         QQuickView view;

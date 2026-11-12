@@ -2,6 +2,8 @@
 
 ## KDE 控制台开发分支
 
+当前 master 在体验版后继续开发：[表盘/外观保存保护及 Android 失焦处理](docs/control-panel/DEVELOPMENT-14-DIAL-OPTIONS.zh-CN.md) 尚未构建或运行验证。下方体验版标签和附件保持不变，不代表当前 master 的测试状态。
+
 现提供 [0.1.0-alpha.1 功能体验版](docs/control-panel/PREVIEW-0.1.0-alpha.1.zh-CN.md)：按用户要求先输出阶段性小版本，仅完成打包所需编译与最小核验，不是完整测试或正式发行。Android 调试 APK 见预发布；Windows 先提供本地内部包，GitHub 同步对应源码，公开二进制发行材料仍待收口。后续继续全部功能开发，再统一回归。
 
 本 fork 正在开发 Windows 控制面板编辑器及 Android 配套协议：固定 6 x 3 槽位、多页面、应用跟随、音量及空闲表盘。当前处于开发阶段，尚未完成交付或完整测试。
@@ -27,6 +29,7 @@
 - [离线进程恢复、图标附件与多页联调](docs/control-panel/MILESTONE-11-RESTORE.zh-CN.md)
 - [全功能开发清单与最后统一测试的执行顺序](docs/control-panel/DEVELOPMENT-12-FUNCTIONS.zh-CN.md)
 - [原生动作、跟随反馈与三角色音量开发（未测试）](docs/control-panel/DEVELOPMENT-13-NATIVE.zh-CN.md)
+- [表盘、外观设置与焦点边界开发（未测试）](docs/control-panel/DEVELOPMENT-14-DIAL-OPTIONS.zh-CN.md)
 - [Windows 智能跟随使用说明](docs/control-panel/FOLLOW.zh-CN.md)
 - [配套 Android 端](https://github.com/xingxing7290/kdeconnect-android)
 

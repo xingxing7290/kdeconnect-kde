@@ -194,6 +194,26 @@ private Q_SLOTS:
         QCOMPARE(restored.config(), editor.config());
         QVERIFY(!editor.dropFile(5, QUrl(QStringLiteral("https://example.com/file.exe"))));
     }
+    void delayedAppearanceAndIdleEditsRejectChangedRevision()
+    {
+        QTemporaryDir directory;
+        PanelEditor editor(directory.path());
+        const auto revision = editor.config().value(QStringLiteral("revision")).toDouble();
+        QVERIFY(editor.setIdleOptionsChecked({{QStringLiteral("city"), QStringLiteral("First city")}}, revision));
+        const auto saved = editor.config();
+        QVERIFY(!editor.setIdleOptionsChecked({{QStringLiteral("dialId"), QStringLiteral("analog")}}, revision));
+        QCOMPARE(editor.error(), QStringLiteral("edit_conflict"));
+        QCOMPARE(editor.config(), saved);
+        QVERIFY(!editor.setAppearanceChecked(QStringLiteral("background"), QStringLiteral("#112233"), revision));
+        QCOMPARE(editor.config(), saved);
+        const auto current = saved.value(QStringLiteral("revision")).toDouble();
+        QVERIFY(!editor.setIdleOptionsChecked({{QStringLiteral("timeoutMs"), 0}}, current));
+        QCOMPARE(editor.config(), saved);
+        QVERIFY(editor.setAppearanceChecked(QStringLiteral("background"), QStringLiteral("#112233"), current));
+        QCOMPARE(editor.config().value(QStringLiteral("appearance")).toMap().value(QStringLiteral("background")).toString(), QStringLiteral("#112233"));
+        ControlPanel::PanelEditor restarted(directory.path());
+        QCOMPARE(restarted.config(), editor.config());
+    }
 };
 
 QTEST_GUILESS_MAIN(PanelEditorTest)

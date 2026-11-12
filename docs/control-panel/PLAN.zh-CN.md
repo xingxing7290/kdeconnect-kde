@@ -4,6 +4,8 @@
 
 ## 已完成的准备
 
+Windows 交付工程新增进展：独立目录内部候选包已通过不含 Craft 的进程搜索路径启动、中文/空格路径、实际 DLL 来源和五项生命周期检查，见 MILESTONE-07-PACKAGING.zh-CN.md。尚未完成干净 Windows VM、完整功能/配对、发行第三方声明与对应源码、最终安装/卸载，不勾选整体交付验收。
+
 - [x] 核对用户 Android fork 和干净本地仓库。
 - [x] 核对桌面 fork 已存在，克隆至 E:/git/kdeconnect-kde。
 - [x] 桌面补充 upstream，合并官方 master 并推送用户 fork。

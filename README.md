@@ -2,6 +2,8 @@
 
 ## KDE 控制台开发分支
 
+当前小版本为 [0.1.0-alpha.2](docs/control-panel/PREVIEW-0.1.0-alpha.2.zh-CN.md)：包括默认图标、字体/温度范围裁切和重连天气推送顺序修复。Android 274 项、Windows 22/22 通过；Lint 仍有 493 错误，完整验收未完成。Android 提供调试 APK，Windows 二进制仅本地内部使用，GitHub 提供对应源码。后面的 alpha.1 和阶段十八内容保留为历史记录，以本段和[阶段十九](docs/control-panel/MILESTONE-19-WEATHER-ORDER.zh-CN.md)为当前状态。
+
 当前 master 继续统一验证：[阶段十八](docs/control-panel/MILESTONE-18-VISUAL-DIALS.zh-CN.md) 补四入口/弹窗的两尺寸截图、真实五表盘空闲与首次触摸唤醒，并修复信息表盘温度范围裁切。Android 全量 273 项、Windows 21/21 通过；Lint 仍有 493 项错误。天气缓存重推时序、全部视觉/无障碍、普通 LAN、原生平台动作、多设备长时及发行仍待完成；[视觉对照](docs/control-panel/VISUAL-18-COMPARISON.zh-CN.md) 明确列出设计差异与边界。下方体验版标签和附件保持不变。
 
 现提供 [0.1.0-alpha.1 功能体验版](docs/control-panel/PREVIEW-0.1.0-alpha.1.zh-CN.md)：按用户要求先输出阶段性小版本，当时仅完成打包所需编译与最小核验，不是完整测试或正式发行。Android 调试 APK 见预发布；Windows 为本地内部包，GitHub 提供对应源码，公开二进制发行材料仍待收口。后续开发与验证进度以上方当前 master 记录为准。

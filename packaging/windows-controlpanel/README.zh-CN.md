@@ -14,7 +14,7 @@
 
 为避免碰到其他文件，首次指定的目录必须不存在或为空。每个数据目录只允许一个启动器会话。配置目录不能是盘符根目录或网络 UNC 路径。
 
-启动器为本会话建立仅监听本机回环的 nonce-tcp D-Bus、启动后台服务和主界面。关闭主界面后停止本会话的包内后台进程，不停止其他 KDE Connect 实例，也不终止按钮打开的外部应用。不要直接关闭启动器控制台；强制终止启动器可能绕过 finally 清理。此时确认路径后，在任务管理器关闭该候选包目录下的 kdeconnectd、kdeconnect-indicator 和 dbus-daemon，再重新启动。
+启动器为本会话建立仅监听本机回环的 nonce-tcp D-Bus、启动后台服务和主界面。在 Windows PowerShell 5.1 下明确加载该宿主自带的 Security/CimCmdlets，避免从 PowerShell 7 启动时误选 Core 模块；不改 PSModulePath 或传给应用/外部脚本的环境。关闭主界面后停止本会话的包内后台进程，不停止其他 KDE Connect 实例，也不终止按钮打开的外部应用。不要直接关闭启动器控制台；强制终止启动器可能绕过 finally 清理。此时确认路径后，在任务管理器关闭该候选包目录下的 kdeconnectd、kdeconnect-indicator 和 dbus-daemon，再重新启动。
 
 该候选包使用独立身份和配对配置，不自动复制已安装正式版的配对密钥。连接入口使用 KDE Connect 原有配对界面。需与配套 Android fork 连接才能使用新增控制面板协议；普通官方 Android 客户端不包含新增模块。当前连接的华为手机按用户要求未安装、未用于本轮配对测试。
 

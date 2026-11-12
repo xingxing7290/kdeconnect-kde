@@ -5,6 +5,12 @@ param(
     [switch]$SelfTest
 )
 $ErrorActionPreference = 'Stop'
+if ($PSVersionTable.PSEdition -eq 'Desktop') {
+    # A PowerShell 7 parent can prepend incompatible Core modules to PSModulePath.
+    foreach ($moduleName in @('Microsoft.PowerShell.Security', 'CimCmdlets')) {
+        Import-Module (Join-Path (Join-Path $PSHOME 'Modules') "$moduleName/$moduleName.psd1") -ErrorAction Stop
+    }
+}
 $packageRoot = $PSScriptRoot
 $packageBin = Join-Path $packageRoot 'bin'
 if (!$DataDirectory) { $DataDirectory = Join-Path $packageRoot 'profile' }

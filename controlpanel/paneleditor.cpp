@@ -153,6 +153,34 @@ bool PanelEditor::moveButtonChecked(int source, int destination, const QVariantM
     return matchesContext(source, context) ? moveButton(source, destination) : fail(QStringLiteral("edit_conflict"));
 }
 
+QVariantMap PanelEditor::pageEditContext(const QString &pageId) const
+{
+    for (const auto &page : m_store.document().privateConfig().value(QStringLiteral("pages")).toArray()) {
+        if (page.toObject().value(QStringLiteral("id")).toString() == pageId)
+            return {{QStringLiteral("pageId"), pageId}, {QStringLiteral("revision"), m_store.document().revision()}};
+    }
+    return {};
+}
+
+bool PanelEditor::matchesPageContext(const QString &pageId, const QVariantMap &context) const
+{
+    const auto expected = pageEditContext(pageId);
+    const auto json = QJsonObject::fromVariantMap(context);
+    return !expected.isEmpty() && json.value(QStringLiteral("pageId")).isString() && json.value(QStringLiteral("revision")).isDouble()
+        && json.value(QStringLiteral("pageId")).toString() == pageId
+        && json.value(QStringLiteral("revision")).toDouble() == expected.value(QStringLiteral("revision")).toDouble();
+}
+
+bool PanelEditor::renamePageChecked(const QString &pageId, const QString &name, const QString &application, const QVariantMap &context)
+{
+    return matchesPageContext(pageId, context) ? renamePage(pageId, name, application) : fail(QStringLiteral("edit_conflict"));
+}
+
+bool PanelEditor::deletePageChecked(const QString &pageId, const QVariantMap &context)
+{
+    return matchesPageContext(pageId, context) ? deletePage(pageId) : fail(QStringLiteral("edit_conflict"));
+}
+
 bool PanelEditor::selectPage(const QString &pageId)
 {
     for (const auto &page : m_store.document().privateConfig().value(QStringLiteral("pages")).toArray()) {

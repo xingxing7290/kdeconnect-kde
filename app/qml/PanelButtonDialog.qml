@@ -52,9 +52,16 @@ C.Dialog {
             stale_revision: qsTr("配置已被另一窗口修改。请取消并重新打开按钮。"),
             target_missing: qsTr("找不到目标文件或文件夹，请检查位置。"),
             invalid_target: qsTr("目标类型或内容无效，请检查路径、网址或快捷键。"),
+            invalid_image: qsTr("请选择有效的 JPG 或 PNG 图片，尺寸不能超过 4096 像素。"),
+            image_too_large_or_unreadable: qsTr("图片无法读取或文件过大，请选择较小的 JPG 或 PNG。"),
             icon_unavailable: qsTr("所选图标不可用，请重新选择或恢复默认图标。")
         };
         validationError = messages[code] || qsTr("无法保存：%1").arg(code || qsTr("请检查输入"));
+    }
+    function targetPath() {
+        let value = targetField.text.trim();
+        if (value.length >= 2 && value.startsWith('"') && value.endsWith('"')) value = value.slice(1, -1);
+        return value;
     }
     function saveButton() {
         validationError = "";
@@ -72,9 +79,7 @@ C.Dialog {
         } else if (kind === "system") target.action = systemPresets[systemBox.currentIndex].target.action;
         else if (kind === "command") target.key = targetField.text.trim();
         else {
-            let path = targetField.text.trim();
-            if (path.length >= 2 && path.startsWith('"') && path.endsWith('"')) path = path.slice(1,-1);
-            target.path = path;
+            target.path = targetPath();
             if (kind === "program") {
                 let args;
                 try { args = JSON.parse(argumentsField.text || "[]"); }
@@ -117,14 +122,13 @@ C.Dialog {
         C.ComboBox { id: typeBox; objectName: "panelButtonType"; model: [qsTr("程序"), qsTr("网站"), qsTr("文件"), qsTr("文件夹"), qsTr("快捷键"), qsTr("系统功能"), qsTr("KDE 远程命令")]; Layout.fillWidth: true }
         C.Label { text: qsTr("名称（留空时自动填写）") }
         C.TextField { id: nameField; objectName: "panelButtonName"; maximumLength: 120; Layout.fillWidth: true }
-        RowLayout {
+        Flow {
             Layout.fillWidth: true
-            Image { source: dialog.iconId ? editor.assetUrl(dialog.iconId) : ""; Layout.preferredWidth: 48; Layout.preferredHeight: 48; fillMode: Image.PreserveAspectFit }
+            spacing: 8
+            Image { source: dialog.iconId ? editor.assetUrl(dialog.iconId) : ""; width: 48; height: 48; fillMode: Image.PreserveAspectFit }
             C.Button { text: qsTr("选择 JPG / PNG 图标"); onClicked: iconPicker.open() }
-            C.Button { text: dialog.kind === "program" ? qsTr("读取程序图标") : qsTr("恢复默认图标"); onClicked: {
-                if (dialog.kind === "program") { const id = editor.programIcon(targetField.text); if (id) dialog.iconId = id; }
-                else dialog.iconId = "";
-            } }
+            C.Button { visible: dialog.kind === "program"; text: qsTr("读取程序图标"); onClicked: { const id = editor.programIcon(dialog.targetPath()); if (id) dialog.iconId = id; } }
+            C.Button { text: qsTr("恢复默认图标"); onClicked: dialog.iconId = "" }
         }
         RowLayout {
             visible: dialog.kind !== "shortcut" && dialog.kind !== "system"
@@ -169,10 +173,20 @@ C.Dialog {
     FileDialog {
         id: filePicker
         nameFilters: dialog.kind === "program" ? [qsTr("应用程序 (*.exe *.lnk)")] : [qsTr("所有文件 (*)")]
-        onAccepted: { const value = editor.inspectFile(selectedFile); targetField.text = value.target.path; if (!nameField.text) nameField.text = value.name; }
+        onAccepted: {
+            const value = editor.inspectFile(selectedFile);
+            if (!value.target?.path) { dialog.validationError = qsTr("所选文件已不可用，请重新选择。"); return; }
+            targetField.text = value.target.path;
+            if (!nameField.text) nameField.text = value.name;
+        }
     }
     FolderDialog {
         id: folderPicker
-        onAccepted: { const value = editor.inspectFile(selectedFolder); targetField.text = value.target.path; if (!nameField.text) nameField.text = value.name; }
+        onAccepted: {
+            const value = editor.inspectFile(selectedFolder);
+            if (!value.target?.path) { dialog.validationError = qsTr("所选文件夹已不可用，请重新选择。"); return; }
+            targetField.text = value.target.path;
+            if (!nameField.text) nameField.text = value.name;
+        }
     }
 }

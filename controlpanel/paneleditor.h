@@ -38,6 +38,9 @@ public:
     Q_INVOKABLE bool addPage();
     Q_INVOKABLE bool deletePage(const QString &pageId);
     Q_INVOKABLE bool renamePage(const QString &pageId, const QString &name, const QString &application);
+    Q_INVOKABLE QVariantMap pageEditContext(const QString &pageId) const;
+    Q_INVOKABLE bool renamePageChecked(const QString &pageId, const QString &name, const QString &application, const QVariantMap &context);
+    Q_INVOKABLE bool deletePageChecked(const QString &pageId, const QVariantMap &context);
     Q_INVOKABLE bool setButton(int index, const QVariantMap &button);
     Q_INVOKABLE QVariantMap editContext(int index) const;
     Q_INVOKABLE bool setButtonChecked(int index, const QVariantMap &button, const QVariantMap &context);
@@ -68,6 +71,7 @@ private:
     bool fail(const QString &error);
     int pageIndex(const QJsonArray &pages) const;
     bool matchesContext(int index, const QVariantMap &context) const;
+    bool matchesPageContext(const QString &pageId, const QVariantMap &context) const;
     PanelStore m_store;
     PanelForeground m_foreground;
     PanelAssets m_assets;

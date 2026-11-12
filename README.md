@@ -2,6 +2,8 @@
 
 ## KDE 控制台开发分支
 
+执行顺序已按用户要求调整为“先完成全部功能开发，最后统一测试”。当前开发改动未构建或运行验证；历史阶段十一的 257/21 项结果不覆盖当前代码，也没有为本批改动生成新安装包。
+
 本 fork 正在开发 Windows 控制面板编辑器及 Android 配套协议：固定 6 x 3 槽位、多页面、应用跟随、音量及空闲表盘。当前处于开发阶段，尚未完成交付或完整测试。
 
 - [需求与参考分析](docs/control-panel/REQUIREMENTS.zh-CN.md)
@@ -23,6 +25,7 @@
 - [Android 兼容修复、243 项回归与触摸测试](docs/control-panel/MILESTONE-09-COMPAT.zh-CN.md)
 - [隔离模拟器双端配对、执行与重连验证](docs/control-panel/MILESTONE-10-EMULATOR.zh-CN.md)
 - [离线进程恢复、图标附件与多页联调](docs/control-panel/MILESTONE-11-RESTORE.zh-CN.md)
+- [全功能开发清单与最后统一测试的执行顺序](docs/control-panel/DEVELOPMENT-12-FUNCTIONS.zh-CN.md)
 - [Windows 智能跟随使用说明](docs/control-panel/FOLLOW.zh-CN.md)
 - [配套 Android 端](https://github.com/xingxing7290/kdeconnect-android)
 

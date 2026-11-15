@@ -2,6 +2,8 @@
 
 ## KDE 控制台开发分支
 
+Windows 最新发布构建为 [0.1.0-alpha.4](docs/control-panel/RELEASE-0.1.0-alpha.4.zh-CN.md)：替换可再分发 FFmpeg，补齐对应源码/版权材料；22/22 桌面回归、12 项实际 Qt 音视频检查及安装后复测、安装卸载与身份保留通过。[Windows 下载页](https://github.com/xingxing7290/kdeconnect-kde/releases/tag/controlpanel-release-v0.1.0-alpha.4)；配套 [Android 签名 Release APK](https://github.com/xingxing7290/kdeconnect-android/releases/tag/controlpanel-release-v0.1.0-alpha.3)。Windows 未代码签名，完整产品验收仍未结束；以下阶段记录保留为历史快照。
+
 最新[阶段二十二](docs/control-panel/MILESTONE-22-CONTRAST-STARTUP.zh-CN.md) 已修复双端信息表盘次要字色及 Android 浅色离线提示，表盘文字统一 4.5:1 检查通过；Android 298 项、Windows 22/22 通过。新 Windows 内部包还修复首次自检身份就绪和旧版 PowerShell 模块加载问题，三轮无窗口自检通过。Lint 仍有 493 错误，完整无障碍/功能/发行验收未完成；本轮新包仅本地，不覆盖 alpha.2。
 
 当前 master 已[修复小屏大字表盘裁切](docs/control-panel/MILESTONE-21-DIAL-ACCESSIBILITY.zh-CN.md)：Android 全量 45 套件/294 项通过，中英文、最长输入、640dp 窄屏与离线天气检查通过；实际模拟器两倍字号对照及五表盘唤醒通过。Lint 重新生成后仍有 493 错误，完整无障碍和整体验收未完成。本轮新 APK 仅为本地内部候选，已发布 alpha.2 不包含此修复，标签与附件不覆盖。

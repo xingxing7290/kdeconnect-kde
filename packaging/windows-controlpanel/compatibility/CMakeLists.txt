@@ -1,0 +1,7 @@
+cmake_minimum_required(VERSION 3.21)
+project(ControlPanelMediaCompatibility LANGUAGES CXX)
+set(CMAKE_CXX_STANDARD 17)
+find_package(Qt6 6.8 REQUIRED COMPONENTS Core Gui Multimedia)
+add_executable(media-compatibility media-compatibility.cpp)
+target_compile_definitions(media-compatibility PRIVATE NOMINMAX WIN32_LEAN_AND_MEAN)
+target_link_libraries(media-compatibility PRIVATE Qt6::Core Qt6::Gui Qt6::Multimedia)

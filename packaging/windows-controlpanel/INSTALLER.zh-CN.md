@@ -12,9 +12,10 @@ profile 中的个人身份、配对与配置。不要把多个版本安装到同
 目前没有 Windows 代码签名证书，安装器和个人应用未经发行者代码签名，系统
 可能显示未知发布者或 SmartScreen 警告；不要为了运行而关闭系统安全保护。
 
-公开二进制发布的前置检查仍未完成：依赖的完整版本/版权/许可证声明及所需
-对应源码、干净 Windows 普通用户安装卸载与全部功能验收。现有依赖目录中仅
-有 SDL2 许可证，不能视为完整材料。未补齐前只生成本地安装候选或个人仓库
-的未发布草稿，不公开该 Windows 二进制。源码可同步个人 fork，不提交 KDE 官方 MR。
+公开包使用独立的可再分发 FFmpeg、匹配的应用私有 CRT，以及归档的完整对应源码、
+配方/补丁、82 个开源组件版权声明和 Microsoft CRT/SDK 许可。package.ps1 强制
+传入这些输入，并核验实际 DLL，不从共享 Craft 前缀悄悄保留 nonfree 构建。
+干净 Windows 普通用户、全部功能验收和代码签名仍是预发布限制，不伪称已完成。
+源码仅同步个人 fork，不提交 KDE 官方 MR。
 
 安装权限说明：https://jrsoftware.org/inno-setup/documentation/topic_setup_privilegesrequired.htm

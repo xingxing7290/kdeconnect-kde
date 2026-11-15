@@ -1,6 +1,15 @@
-# Windows 独立目录候选包
+# Windows 个人控制面板预发布包
 
-这是个人 fork 的内部开发候选包，不是 KDE 官方发行版，也不是已通过完整验收的最终安装包。不得把一次启动通过当作全部功能、真机配对或干净 Windows 安装通过。
+这是个人 fork 的功能预发布，不是 KDE 官方发行版，也不是已通过完整产品验收的稳定版。不得把一次启动通过当作全部功能、真机配对或干净 Windows 安装通过。安装器不请求管理员权限，默认 D:/Apps/KDE-ControlPanel，可选其他可写本地目录；卸载保留 profile 数据。
+
+## 许可证与对应源码
+
+本次应用发行选择 GPLv3，FFmpeg 8.1.1 为 GPLv3-or-later 构建，未启用 --enable-nonfree。原有开源组件保留各自许可证；Microsoft CRT/SDK 可再分发文件保留微软许可。安装器未做发行者代码签名，可能显示未知发布者，不应为此关闭安全保护。
+
+THIRD-PARTY-NOTICES.txt、source-index.json 和 licenses 目录包含通知、准确版本和来源。完整对应源码、Craft 配方/补丁、FFmpeg 构建脚本以及应用源码在同一公开 Release：
+https://github.com/xingxing7290/kdeconnect-kde/releases/tag/controlpanel-release-v0.1.0-alpha.4
+
+源码主附件名为 kdeconnect-controlpanel-0.1.0-alpha.4-third-party-sources.zip；请同时下载全部 third-party-sources-part-N.zip 并解压到同一目录，无需拼接二进制文件。动态库可替换、重链接，不附加逆向工程限制。不要把本包的通知和许可证删除后再分发，也不要把用户私钥夹进再打包文件。
 
 ## 启动与数据
 
@@ -53,11 +62,14 @@
 ```powershell
 & './packaging/windows-controlpanel/package.ps1' `
   -BuildDirectory 'D:/KDEBuild/desktop' -DependencyRoot 'D:/KDECraft' `
-  -OutputDirectory 'D:/KDEBuild/packages/new-candidate'
+  -OutputDirectory 'D:/KDEBuild/packages/new-candidate' `
+  -FFmpegRoot 'D:/KDEBuild/redistributable-ffmpeg/install' `
+  -RuntimeRoot 'D:/KDEBuild/toolchains/runtime-14.44' `
+  -DistributionMaterialsRoot 'D:/KDEBuild/public-materials-20261115'
 ```
 
 输出目录必须新建。脚本使用项目 CMake 安装规则、Qt windeployqt 及递归 PE 依赖收集；保留 KDE 原插件和动态 QML/KIO 支持。qt.conf 使用相对目录；私有 D-Bus 配置不包含 Craft 的绝对路径。除 windeployqt 已修补路径的 Qt6Core 外，同名但不同内容的依赖必须报错，不能悄悄选一个。
 
-## 发行前仍须完成
+## 预发布限制
 
-干净 Windows VM/普通账户验证、配对/重连与全部原 KDE 功能、完整参考视觉/动作/无障碍/长期测试、第三方组件版本和许可证/版权声明及对应源码归档、最终签名/安装与卸载验证。现有 licenses 文本和运行依赖列表不是完整发行合规审计。本候选包只供本地内部验证，不作为已完成合规的公开发行物。
+干净 Windows VM/普通账户验证、配对/重连与全部原 KDE 功能、完整参考视觉/动作/无障碍/长期测试和发行者代码签名仍未完成。本次包必须通过实际 FFmpeg DLL 许可证核验、Qt 音视频兼容和安装/卸载检查才公开；这不构成覆盖所有司法辖区的法律意见，也不代表完整产品验收结束。

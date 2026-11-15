@@ -21,7 +21,9 @@ Kirigami.Page
     Kirigami.ColumnView.preventStealing: true
 
     Component.onCompleted: {
-        PointerLocker.window = applicationWindow()
+        // The embedded device view has no Kirigami.ApplicationWindow. Keep the standalone
+        // window path working, and leave pointer locking unset when there is no such window.
+        PointerLocker.window = typeof applicationWindow === "function" ? applicationWindow() : null;
     }
 
     ColumnLayout

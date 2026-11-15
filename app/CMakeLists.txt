@@ -34,6 +34,7 @@ ecm_add_qml_module(kdeconnect-app URI org.kde.kdeconnect.app)
 ecm_target_qml_sources(kdeconnect-app SOURCES
     qml/Main.qml
     qml/DeviceManager.qml
+    qml/EmbeddedDevices.qml
     qml/ControlDashboard.qml
     qml/PanelButtonDialog.qml
     qml/PanelDialGallery.qml

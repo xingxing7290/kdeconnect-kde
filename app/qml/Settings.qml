@@ -70,7 +70,7 @@ Kirigami.ScrollablePage
 
             FormCard.FormButtonDelegate {
                 text: i18n("About KDE Connect")
-                onClicked: applicationWindow().pageStack.layers.push(Qt.createComponent("org.kde.kirigamiaddons.formcard", "AboutPage"))
+                onClicked: page.pageStack.layers.push(Qt.createComponent("org.kde.kirigamiaddons.formcard", "AboutPage"))
                 icon.name: 'kdeconnect'
             }
 
@@ -78,7 +78,7 @@ Kirigami.ScrollablePage
 
             FormCard.FormButtonDelegate {
                 text: i18n("About KDE")
-                onClicked: applicationWindow().pageStack.layers.push(Qt.createComponent("org.kde.kirigamiaddons.formcard", "AboutKDEPage"))
+                onClicked: page.pageStack.layers.push(Qt.createComponent("org.kde.kirigamiaddons.formcard", "AboutKDEPage"))
                 icon.name: 'kde'
             }
         }

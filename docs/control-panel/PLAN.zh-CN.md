@@ -1,5 +1,7 @@
 # 开发计划与验收进度
 
+2026-11-15 接续入口：[换机开发指南](DEVELOPER-HANDOFF.zh-CN.md)、[Windows alpha.4 发布记录](RELEASE-0.1.0-alpha.4.zh-CN.md)。两端源码及公开安装包已同步个人 GitHub；下方旧“当前”保留为阶段快照，不能据公开预发布就勾选全部验收。
+
 当前结果见[阶段二十二](MILESTONE-22-CONTRAST-STARTUP.zh-CN.md)：双端表盘文字对比度修复、Android 45 套件/298 项、Windows 22/22 与新包三轮无窗口自检通过。修复前颜色不足及 r1/r2 首次启动失败均保留，r3 包含限时身份等待和旧版 PowerShell 内置模块来源修复。Lint 新报告仍为 493 错误；这里只收口当前纯色表盘和交付自检子项，主控制页自定义背景、完整辅助技术与原整体验收不因此通过。alpha.2 不覆盖，下方旧状态为历史记录。
 
 最新见[阶段二十一](MILESTONE-21-DIAL-ACCESSIBILITY.zh-CN.md)：仅 Android 表盘行高/响应式排布修复，45 套件/294 项通过，新内部 APK 的实际两倍字号对照与五表盘唤醒通过。Lint 本轮重新生成仍为 493 错误；TalkBack、颜色对比度及原整体验收范围继续保留。Windows 运行代码未改、全量未重跑；下方旧“当前”与测试数为历史节点，alpha.2 维持原版。

@@ -1,0 +1,9 @@
+afd1ed21a70595e244d134aca75a48cded500b00bae723b25e3cc8cb526ab964  kdeconnect-controlpanel-0.1.0-alpha.4-third-party-sources-part-1.zip
+1b7c83cb42a29aae682d8b575aadd82c5c8baa6c9753a8a2d657867535084386  kdeconnect-controlpanel-0.1.0-alpha.4-third-party-sources-part-2.zip
+39c97505a65b42e6a4d8b44847bf1581fe723000ed282c436db87de1797f7e6c  kdeconnect-controlpanel-0.1.0-alpha.4-third-party-sources-part-3.zip
+83d007551468cc4db657152c78e176c707dc342d73e7d29fdaa4dacc7d70eafd  kdeconnect-controlpanel-0.1.0-alpha.4-third-party-sources-part-4.zip
+4a81ce83862b553dbc4142a1f05eb862ce5bb5e4018f4ea26d26575c923b005e  kdeconnect-controlpanel-0.1.0-alpha.4-third-party-sources.zip
+f04971c6f7cea31440bb4b239f9df1a4cbeb5f7c1a17e273d67e4d8635f04791  kdeconnect-controlpanel-0.1.0-alpha.4-windows-x64-setup.exe
+dcccb82f6536b35295de01301fc4384d215adf655e2a7c8d3814caa894159f86  kdeconnect-kde-controlpanel-0.1.0-alpha.4-source.zip
+01d9fd0541b6c5bad9050cbc9fa0fc78a1ee2031ef78966fda128936a817e9c3  RELEASE-CHECKS.json
+ded319fde9e139f3b7738d7fa0316a5b96c2e9236064ba61418035b6a351c8b6  RELEASE.zh-CN.md

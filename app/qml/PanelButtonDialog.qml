@@ -16,6 +16,8 @@ C.Dialog {
     property string iconId: ""
     property var editSnapshot: ({})
     property string validationError: ""
+    property bool iconTouched: false
+    property string pendingWebsiteIconUrl: ""
     readonly property var kinds: ["program", "website", "file", "folder", "shortcut", "system", "command"]
     readonly property string kind: kinds[typeBox.currentIndex]
     parent: C.Overlay.overlay
@@ -31,6 +33,8 @@ C.Dialog {
         editSnapshot = editor.editContext(index);
         validationError = "";
         iconId = original.icon || "";
+        iconTouched = false;
+        pendingWebsiteIconUrl = "";
         typeBox.currentIndex = Math.max(0, kinds.indexOf(original.kind || "program"));
         nameField.text = original.name || "";
         targetField.text = original.target?.url || original.target?.path || original.target?.key || "";
@@ -58,6 +62,25 @@ C.Dialog {
         };
         validationError = messages[code] || qsTr("无法保存：%1").arg(code || qsTr("请检查输入"));
     }
+    function websiteAddress() {
+        const value = targetField.text.trim();
+        if (!value) return "";
+        return value.indexOf("://") < 0 ? "https://" + value : value;
+    }
+    function requestWebsiteIcon() {
+        if (dialog.kind !== "website" || dialog.iconTouched) return;
+        const address = websiteAddress();
+        if (!address || address === "https://") return;
+        dialog.pendingWebsiteIconUrl = address;
+        dialog.editor.fetchWebsiteIcon(address);
+    }
+    function websiteIconMessage() {
+        const status = editor.websiteIconStatus;
+        if (status === "loading") return qsTr("正在从网站获取图标…");
+        if (status === "ready") return qsTr("已自动获取网站图标，保存后生效。");
+        if (status === "disabled") return qsTr("当前未启用联网图标获取。");
+        return qsTr("未能自动获取图标，已保留默认图标，可重试或手动选择图片。");
+    }
     function targetPath() {
         let value = targetField.text.trim();
         if (value.length >= 2 && value.startsWith('"') && value.endsWith('"')) value = value.slice(1, -1);
@@ -67,8 +90,7 @@ C.Dialog {
         validationError = "";
         let target = {};
         if (kind === "website") {
-            const value = targetField.text.trim();
-            target.url = value.indexOf("://") < 0 ? "https://" + value : value;
+            target.url = websiteAddress();
         } else if (kind === "shortcut") {
             target.keys = [];
             if (ctrl.checked) target.keys.push("CTRL");
@@ -126,13 +148,32 @@ C.Dialog {
             Layout.fillWidth: true
             spacing: 8
             Image { source: dialog.iconId ? editor.assetUrl(dialog.iconId) : ""; width: 48; height: 48; fillMode: Image.PreserveAspectFit }
-            C.Button { text: qsTr("选择 JPG / PNG 图标"); onClicked: iconPicker.open() }
-            C.Button { visible: dialog.kind === "program"; text: qsTr("读取程序图标"); onClicked: { const id = editor.programIcon(dialog.targetPath()); if (id) dialog.iconId = id; } }
-            C.Button { text: qsTr("恢复默认图标"); onClicked: dialog.iconId = "" }
+            C.Button { text: qsTr("选择 JPG / PNG 图标"); onClicked: { dialog.iconTouched = true; iconPicker.open(); } }
+            C.Button { visible: dialog.kind === "program"; text: qsTr("读取程序图标"); onClicked: { dialog.iconTouched = true; const id = editor.programIcon(dialog.targetPath()); if (id) dialog.iconId = id; } }
+            C.Button { visible: dialog.kind === "website"; text: qsTr("自动获取网站图标"); onClicked: { dialog.iconTouched = false; dialog.requestWebsiteIcon(); } }
+            C.Button { text: qsTr("恢复默认图标"); onClicked: { dialog.iconTouched = true; dialog.iconId = ""; } }
+        }
+        C.Label {
+            visible: dialog.kind === "website" && editor.websiteIconStatus !== "idle"
+            text: dialog.websiteIconMessage()
+            color: editor.websiteIconStatus === "unavailable" ? "#a25712" : "#69778b"
+            Layout.fillWidth: true; wrapMode: Text.WordWrap
         }
         RowLayout {
             visible: dialog.kind !== "shortcut" && dialog.kind !== "system"
-            C.TextField { id: targetField; objectName: "panelButtonTarget"; maximumLength: 32767; Layout.fillWidth: true; placeholderText: dialog.kind === "website" ? "https://example.com/path?query=1" : qsTr("目标路径 / 命令标识") }
+            C.TextField {
+                id: targetField
+                objectName: "panelButtonTarget"
+                maximumLength: 32767
+                Layout.fillWidth: true
+                placeholderText: dialog.kind === "website" ? "https://example.com/path?query=1" : qsTr("目标路径 / 命令标识")
+                onEditingFinished: if (dialog.kind === "website") dialog.requestWebsiteIcon()
+                onTextEdited: {
+                    const previous = dialog.original?.target?.url || "";
+                    if (dialog.kind === "website" && !dialog.iconTouched && previous && text.trim() !== previous)
+                        dialog.iconId = "";
+                }
+            }
             C.Button { visible: ["program", "file", "folder"].indexOf(dialog.kind) >= 0; text: qsTr("浏览..."); onClicked: dialog.kind === "folder" ? folderPicker.open() : filePicker.open() }
         }
         C.CheckBox { id: advanced; objectName: "panelProgramAdvanced"; text: qsTr("高级启动选项"); visible: dialog.kind === "program" }
@@ -187,6 +228,14 @@ C.Dialog {
             if (!value.target?.path) { dialog.validationError = qsTr("所选文件夹已不可用，请重新选择。"); return; }
             targetField.text = value.target.path;
             if (!nameField.text) nameField.text = value.name;
+        }
+    }
+    Connections {
+        target: dialog.editor
+        function onWebsiteIconReady(url, iconId) {
+            if (!dialog.visible || dialog.kind !== "website" || dialog.iconTouched) return;
+            if (url !== dialog.pendingWebsiteIconUrl) return;
+            dialog.iconId = iconId;
         }
     }
 }

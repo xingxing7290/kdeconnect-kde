@@ -14,11 +14,12 @@
 
 namespace ControlPanel
 {
-PanelEditor::PanelEditor(const QString &directory, QObject *parent, bool weatherNetworking)
+PanelEditor::PanelEditor(const QString &directory, QObject *parent, bool networking)
     : QObject(parent)
     , m_store(directory)
     , m_assets(QFileInfo(m_store.filePath()).absolutePath())
-    , m_weather(QFileInfo(m_store.filePath()).absolutePath(), this, nullptr, weatherNetworking)
+    , m_weather(QFileInfo(m_store.filePath()).absolutePath(), this, nullptr, networking)
+    , m_favicon(QFileInfo(m_store.filePath()).absolutePath(), this, nullptr, networking)
 {
     connect(&m_store, &PanelStore::errorOccurred, this, [this](const QString &error) {
         fail(error);
@@ -83,6 +84,11 @@ bool PanelEditor::foregroundSupported() const
 QString PanelEditor::foregroundError() const
 {
     return m_foreground.error();
+}
+
+QString PanelEditor::websiteIconStatus() const
+{
+    return m_websiteIconStatus;
 }
 
 bool PanelEditor::copyForegroundApplication()
@@ -286,6 +292,10 @@ bool PanelEditor::setButton(int index, const QVariantMap &value)
     // Existing identity belongs to this slot; a new library/drop button gets a fresh ID.
     const auto oldId = buttons[index].toObject().value(QStringLiteral("id")).toString();
     button.insert(QStringLiteral("id"), oldId.isEmpty() ? QUuid::createUuid().toString(QUuid::WithoutBraces) : oldId);
+    // A website without a user-supplied icon is saved with the generic browser icon first,
+    // then its favicon replaces that icon once the network fetch finishes.
+    const bool needsWebsiteIcon = button.value(QStringLiteral("kind")).toString() == QLatin1String("website")
+        && button.value(QStringLiteral("icon")).toString().isEmpty();
     if (!button.contains(QStringLiteral("icon")))
         button.insert(QStringLiteral("icon"), QString());
     if (button.value(QStringLiteral("icon")).toString().isEmpty())
@@ -296,7 +306,16 @@ bool PanelEditor::setButton(int index, const QVariantMap &value)
     page.insert(QStringLiteral("slots"), buttons);
     pages[pageNumber] = page;
     config.insert(QStringLiteral("pages"), pages);
-    return save(config);
+    if (!save(config))
+        return false;
+    if (needsWebsiteIcon) {
+        const auto address = button.value(QStringLiteral("target")).toObject().value(QStringLiteral("url")).toString();
+        const QUrl url = PanelFavicon::normalize(address);
+        if (!url.isEmpty())
+            startWebsiteIcon(address, url, page.value(QStringLiteral("id")).toString(), index,
+                             button.value(QStringLiteral("id")).toString(), true);
+    }
+    return true;
 }
 
 bool PanelEditor::clearButton(int index)
@@ -384,6 +403,81 @@ QString PanelEditor::programIcon(const QString &path)
     if (id.isEmpty())
         fail(error);
     return id;
+}
+
+void PanelEditor::setWebsiteIconStatus(const QString &status)
+{
+    if (m_websiteIconStatus == status)
+        return;
+    m_websiteIconStatus = status;
+    Q_EMIT websiteIconStatusChanged();
+}
+
+void PanelEditor::fetchWebsiteIcon(const QString &url)
+{
+    const auto address = url.trimmed();
+    const QUrl parsed = PanelFavicon::normalize(address);
+    if (parsed.isEmpty()) {
+        setWebsiteIconStatus(QStringLiteral("unavailable"));
+        return;
+    }
+    startWebsiteIcon(address, parsed, {}, -1, {}, false);
+}
+
+void PanelEditor::startWebsiteIcon(const QString &address,
+                                  const QUrl &url,
+                                  const QString &pageId,
+                                  int index,
+                                  const QString &buttonId,
+                                  bool apply)
+{
+    setWebsiteIconStatus(QStringLiteral("loading"));
+    m_favicon.fetch(url, [this, address, pageId, index, buttonId, apply](const QString &iconId, const QString &error) {
+        if (iconId.isEmpty()) {
+            setWebsiteIconStatus(error == QLatin1String("favicon_disabled") ? QStringLiteral("disabled")
+                                                                           : QStringLiteral("unavailable"));
+            return;
+        }
+        setWebsiteIconStatus(QStringLiteral("ready"));
+        Q_EMIT websiteIconReady(address, iconId);
+        if (apply)
+            applyWebsiteIcon(pageId, index, buttonId, address, iconId);
+    });
+}
+
+void PanelEditor::applyWebsiteIcon(const QString &pageId,
+                                   int index,
+                                   const QString &buttonId,
+                                   const QString &url,
+                                   const QString &iconId)
+{
+    // The button may have been edited, moved or deleted while the network request was running.
+    // Only the exact button that started the fetch may be updated, using the current revision.
+    if (pageId.isEmpty() || buttonId.isEmpty() || index < 0 || index >= PanelDocument::SlotCount || !m_assets.read(iconId))
+        return;
+    auto config = m_store.document().privateConfig();
+    auto pages = config.value(QStringLiteral("pages")).toArray();
+    for (qsizetype number = 0; number < pages.size(); ++number) {
+        auto page = pages[number].toObject();
+        if (page.value(QStringLiteral("id")).toString() != pageId)
+            continue;
+        auto buttons = page.value(QStringLiteral("slots")).toArray();
+        if (index >= buttons.size())
+            return;
+        auto button = buttons[index].toObject();
+        if (button.value(QStringLiteral("id")).toString() != buttonId
+            || button.value(QStringLiteral("kind")).toString() != QLatin1String("website")
+            || button.value(QStringLiteral("target")).toObject().value(QStringLiteral("url")).toString() != url
+            || button.value(QStringLiteral("icon")).toString() == iconId)
+            return;
+        button.insert(QStringLiteral("icon"), iconId);
+        buttons[index] = button;
+        page.insert(QStringLiteral("slots"), buttons);
+        pages[number] = page;
+        config.insert(QStringLiteral("pages"), pages);
+        save(config);
+        return;
+    }
 }
 
 QString PanelEditor::defaultButtonIcon(const QJsonObject &button) const

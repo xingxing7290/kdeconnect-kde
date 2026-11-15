@@ -3,6 +3,7 @@
  */
 #pragma once
 #include "panelassets.h"
+#include "panelfavicon.h"
 #include "panelforeground.h"
 #include "panelstore.h"
 #include "panelweather.h"
@@ -24,8 +25,10 @@ class PanelEditor : public QObject
     Q_PROPERTY(bool foregroundSupported READ foregroundSupported CONSTANT)
     Q_PROPERTY(QString foregroundError READ foregroundError NOTIFY foregroundChanged)
     Q_PROPERTY(QVariantMap weather READ weather NOTIFY weatherChanged)
+    Q_PROPERTY(QString websiteIconStatus READ websiteIconStatus NOTIFY websiteIconStatusChanged)
 public:
-    explicit PanelEditor(const QString &directory = {}, QObject *parent = nullptr, bool weatherNetworking = false);
+    /** Both the weather and the website-icon fetcher use this switch; tests keep networking off. */
+    explicit PanelEditor(const QString &directory = {}, QObject *parent = nullptr, bool networking = false);
     QVariantMap weather() const;
     QVariantMap config() const;
     QVariantMap currentPage() const;
@@ -35,6 +38,7 @@ public:
     QString foregroundApplication() const;
     bool foregroundSupported() const;
     QString foregroundError() const;
+    QString websiteIconStatus() const;
     Q_INVOKABLE bool copyForegroundApplication();
     Q_INVOKABLE bool selectPage(const QString &pageId);
     Q_INVOKABLE bool addPage();
@@ -54,6 +58,8 @@ public:
     Q_INVOKABLE QVariantMap inspectFile(const QUrl &url) const;
     Q_INVOKABLE QString importIcon(const QUrl &url);
     Q_INVOKABLE QString programIcon(const QString &path);
+    /** Preview-only fetch: emits websiteIconReady(url, iconId) without changing the configuration. */
+    Q_INVOKABLE void fetchWebsiteIcon(const QString &url);
     Q_INVOKABLE QUrl assetUrl(const QString &id) const;
     Q_INVOKABLE bool setMode(const QString &mode);
     Q_INVOKABLE bool setAppearance(const QString &key, const QVariant &value);
@@ -70,10 +76,15 @@ Q_SIGNALS:
     void errorChanged();
     void foregroundChanged();
     void weatherChanged();
+    void websiteIconStatusChanged();
+    void websiteIconReady(const QString &url, const QString &iconId);
 
 private:
     bool save(const QJsonObject &config);
     bool fail(const QString &error);
+    void setWebsiteIconStatus(const QString &status);
+    void startWebsiteIcon(const QString &address, const QUrl &url, const QString &pageId, int index, const QString &buttonId, bool apply);
+    void applyWebsiteIcon(const QString &pageId, int index, const QString &buttonId, const QString &url, const QString &iconId);
     int pageIndex(const QJsonArray &pages) const;
     bool matchesContext(int index, const QVariantMap &context) const;
     bool matchesPageContext(const QString &pageId, const QVariantMap &context) const;
@@ -82,7 +93,9 @@ private:
     PanelForeground m_foreground;
     PanelAssets m_assets;
     PanelWeather m_weather;
+    PanelFavicon m_favicon;
     QString m_currentPageId;
     QString m_error;
+    QString m_websiteIconStatus = QStringLiteral("idle");
 };
 }

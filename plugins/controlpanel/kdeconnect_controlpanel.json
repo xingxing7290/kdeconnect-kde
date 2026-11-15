@@ -12,6 +12,7 @@
         "kdeconnect.controlpanel.state",
         "kdeconnect.controlpanel.asset",
         "kdeconnect.controlpanel.dial",
+        "kdeconnect.controlpanel.progress",
         "kdeconnect.controlpanel.result"
     ]
 }

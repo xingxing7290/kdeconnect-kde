@@ -64,6 +64,50 @@ QJsonObject project(const QJsonObject &source, const QStringList &keys)
     }
     return result;
 }
+
+/** idle.info mixes public display options with desktop-private progress source settings. */
+bool infoValid(const QJsonObject &info)
+{
+    static const QSet<QString> sources{QStringLiteral("none"), QStringLiteral("file"), QStringLiteral("url")};
+    const QJsonValue notes = info.value(QStringLiteral("notes"));
+    if (!notes.isUndefined()) {
+        if (!notes.isArray() || notes.toArray().size() > 4) {
+            return false;
+        }
+        for (const QJsonValue &note : notes.toArray()) {
+            if (!text(note, 120)) {
+                return false;
+            }
+        }
+    }
+    for (const QString &key : {QStringLiteral("showForecast"), QStringLiteral("showProgress")}) {
+        const QJsonValue value = info.value(key);
+        if (!value.isUndefined() && !value.isBool()) {
+            return false;
+        }
+    }
+    const QJsonValue stale = info.value(QStringLiteral("staleMs"));
+    if (!stale.isUndefined() && !integer(stale, 5000, 120000)) {
+        return false;
+    }
+    const QJsonValue interval = info.value(QStringLiteral("intervalMs"));
+    if (!interval.isUndefined() && !integer(interval, 1000, 60000)) {
+        return false;
+    }
+    const QJsonValue source = info.value(QStringLiteral("source"));
+    if (!source.isUndefined() && (!source.isString() || !sources.contains(source.toString()))) {
+        return false;
+    }
+    const QJsonValue path = info.value(QStringLiteral("path"));
+    if (!path.isUndefined() && !text(path, 4096)) {
+        return false;
+    }
+    const QJsonValue url = info.value(QStringLiteral("url"));
+    if (!url.isUndefined() && !text(url, 2048)) {
+        return false;
+    }
+    return true;
+}
 }
 
 PanelDocument::PanelDocument(const QJsonObject &config)
@@ -207,6 +251,10 @@ bool PanelDocument::validate(const QJsonObject &config, QString *error)
     if (!text(idle.value(QStringLiteral("city")), 120) || !text(idle.value(QStringLiteral("message")), 240)) {
         return fail(QStringLiteral("invalid_dial_text"));
     }
+    const QJsonValue info = idle.value(QStringLiteral("info"));
+    if (!info.isUndefined() && (!info.isObject() || !infoValid(info.toObject()))) {
+        return fail(QStringLiteral("invalid_dial_text"));
+    }
     return true;
 }
 
@@ -238,7 +286,16 @@ PanelDocument PanelDocument::empty()
                      {QStringLiteral("timeoutMs"), 5000},
                      {QStringLiteral("dialId"), QStringLiteral("digital")},
                      {QStringLiteral("city"), QString()},
-                     {QStringLiteral("message"), QString()}}},
+                     {QStringLiteral("message"), QString()},
+                     {QStringLiteral("info"),
+                      QJsonObject{{QStringLiteral("notes"), QJsonArray()},
+                                  {QStringLiteral("showForecast"), true},
+                                  {QStringLiteral("showProgress"), false},
+                                  {QStringLiteral("staleMs"), 15000},
+                                  {QStringLiteral("source"), QStringLiteral("none")},
+                                  {QStringLiteral("path"), QString()},
+                                  {QStringLiteral("url"), QString()},
+                                  {QStringLiteral("intervalMs"), 2000}}}}},
     });
 }
 
@@ -272,10 +329,18 @@ QJsonObject PanelDocument::publicConfig() const
     result.insert(QStringLiteral("appearance"),
                   project(m_config.value(QStringLiteral("appearance")).toObject(),
                           {QStringLiteral("background"), QStringLiteral("showLabels"), QStringLiteral("showVolume"), QStringLiteral("swipeDirection")}));
-    result.insert(
-        QStringLiteral("idle"),
-        project(m_config.value(QStringLiteral("idle")).toObject(),
-                {QStringLiteral("enabled"), QStringLiteral("timeoutMs"), QStringLiteral("dialId"), QStringLiteral("city"), QStringLiteral("message")}));
+    const QJsonObject sourceIdle = m_config.value(QStringLiteral("idle")).toObject();
+    QJsonObject idle = project(
+        sourceIdle,
+        {QStringLiteral("enabled"), QStringLiteral("timeoutMs"), QStringLiteral("dialId"), QStringLiteral("city"), QStringLiteral("message")});
+    // Desktop-private progress source (path/url/source/intervalMs) must never reach the phone.
+    const QJsonObject publicInfo = project(
+        sourceIdle.value(QStringLiteral("info")).toObject(),
+        {QStringLiteral("notes"), QStringLiteral("showForecast"), QStringLiteral("showProgress"), QStringLiteral("staleMs")});
+    if (!publicInfo.isEmpty()) {
+        idle.insert(QStringLiteral("info"), publicInfo);
+    }
+    result.insert(QStringLiteral("idle"), idle);
     return result;
 }
 

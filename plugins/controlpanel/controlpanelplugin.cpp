@@ -11,6 +11,7 @@
 #include <panelactions.h>
 #include <panelassets.h>
 #include <panelforeground.h>
+#include <panelprogress.h>
 #include <panelweather.h>
 
 K_PLUGIN_CLASS_WITH_JSON(ControlPanelPlugin, "kdeconnect_controlpanel.json")
@@ -53,6 +54,23 @@ ControlPanel::PanelWeather *weather()
     }
     return shared;
 }
+ControlPanel::PanelProgress *progressSource()
+{
+    static QPointer<ControlPanel::PanelProgress> shared;
+    if (!shared) {
+        auto *store = runtime()->store();
+        shared = new ControlPanel::PanelProgress(store, nullptr, true);
+        auto *service = shared.data();
+        const auto configure = [store, service] {
+            const QJsonObject idle = store->isUsable() ? store->document().privateConfig().value(QStringLiteral("idle")).toObject() : QJsonObject();
+            service->configure(idle.value(QStringLiteral("info")).toObject());
+        };
+        QObject::connect(store, &ControlPanel::PanelStore::changed, service, configure);
+        QObject::connect(store, &ControlPanel::PanelStore::errorOccurred, service, configure);
+        configure();
+    }
+    return shared;
+}
 }
 
 ControlPanelPlugin::ControlPanelPlugin(QObject *parent, const QVariantList &args)
@@ -65,11 +83,14 @@ ControlPanelPlugin::ControlPanelPlugin(QObject *parent, const QVariantList &args
           this))
 {
     connect(weather(), &ControlPanel::PanelWeather::changed, this, &ControlPanelPlugin::publishWeather);
+    connect(progressSource(), &ControlPanel::PanelProgress::changed, this, &ControlPanelPlugin::publishProgress);
     connect(m_peer, &ControlPanel::PanelPeer::packetReady, this, [this](const QString &type, const QJsonObject &body) {
         if (device()->isPaired() && device()->isReachable()) {
             NetworkPacket packet(type, body.toVariantMap());
-            if (sendPacket(packet) && type == QLatin1String("kdeconnect.controlpanel.config"))
+            if (sendPacket(packet) && type == QLatin1String("kdeconnect.controlpanel.config")) {
                 publishWeather();
+                publishProgress();
+            }
         }
     });
     connect(m_peer, &ControlPanel::PanelPeer::assetRequested, this, [this](const QString &id, qint64 revision, const QString &session) {
@@ -113,6 +134,25 @@ void ControlPanelPlugin::publishWeather()
     if (!m_peer->sessionId().isEmpty())
         data.insert(QStringLiteral("sessionId"), m_peer->sessionId());
     NetworkPacket packet(QStringLiteral("kdeconnect.controlpanel.dial"), data.toVariantMap());
+    sendPacket(packet);
+}
+
+void ControlPanelPlugin::publishProgress()
+{
+    auto *store = runtime()->store();
+    if (!device()->isPaired() || !device()->isReachable() || !store->isUsable()) {
+        return;
+    }
+    auto data = progressSource()->state();
+    if (data.isEmpty()) {
+        return;
+    }
+    data.insert(QStringLiteral("protocolVersion"), 1);
+    data.insert(QStringLiteral("revision"), store->document().revision());
+    if (!m_peer->sessionId().isEmpty()) {
+        data.insert(QStringLiteral("sessionId"), m_peer->sessionId());
+    }
+    NetworkPacket packet(QStringLiteral("kdeconnect.controlpanel.progress"), data.toVariantMap());
     sendPacket(packet);
 }
 

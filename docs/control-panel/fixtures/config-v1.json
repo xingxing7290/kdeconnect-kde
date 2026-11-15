@@ -77,6 +77,12 @@
     "timeoutMs": 5000,
     "dialId": "digital",
     "city": "长沙市",
-    "message": "今天也要保持专注"
+    "message": "今天也要保持专注",
+    "info": {
+      "notes": ["今天也要保持专注", "18:00 前提交周报"],
+      "showForecast": true,
+      "showProgress": false,
+      "staleMs": 15000
+    }
   }
 }

@@ -19,6 +19,7 @@ PanelEditor::PanelEditor(const QString &directory, QObject *parent, bool network
     , m_store(directory)
     , m_assets(QFileInfo(m_store.filePath()).absolutePath())
     , m_weather(QFileInfo(m_store.filePath()).absolutePath(), this, nullptr, networking)
+    , m_progress(this, nullptr, networking)
     , m_favicon(QFileInfo(m_store.filePath()).absolutePath(), this, nullptr, networking)
 {
     connect(&m_store, &PanelStore::errorOccurred, this, [this](const QString &error) {
@@ -38,13 +39,21 @@ PanelEditor::PanelEditor(const QString &directory, QObject *parent, bool network
     connect(&m_foreground, &PanelForeground::applicationChanged, this, &PanelEditor::foregroundChanged);
     connect(&m_foreground, &PanelForeground::errorChanged, this, &PanelEditor::foregroundChanged);
     connect(&m_weather, &PanelWeather::changed, this, &PanelEditor::weatherChanged);
+    connect(&m_progress, &PanelProgress::changed, this, &PanelEditor::progressChanged);
     const auto updateWeather = [this] {
         m_weather.configure(m_store.isUsable() ? m_store.document().privateConfig().value(QStringLiteral("idle")).toObject() : QJsonObject());
     };
+    const auto updateProgress = [this] {
+        const QJsonObject idle = m_store.isUsable() ? m_store.document().privateConfig().value(QStringLiteral("idle")).toObject() : QJsonObject();
+        m_progress.configure(idle.value(QStringLiteral("info")).toObject());
+    };
     connect(&m_store, &PanelStore::changed, this, updateWeather);
     connect(&m_store, &PanelStore::errorOccurred, this, updateWeather);
+    connect(&m_store, &PanelStore::changed, this, updateProgress);
+    connect(&m_store, &PanelStore::errorOccurred, this, updateProgress);
     m_store.load();
     updateWeather();
+    updateProgress();
     if (m_currentPageId.isEmpty())
         m_currentPageId = m_store.document().privateConfig().value(QStringLiteral("homePageId")).toString();
 }
@@ -52,6 +61,11 @@ PanelEditor::PanelEditor(const QString &directory, QObject *parent, bool network
 QVariantMap PanelEditor::weather() const
 {
     return m_weather.state().toVariantMap();
+}
+
+QVariantMap PanelEditor::progress() const
+{
+    return m_progress.state().toVariantMap();
 }
 
 QVariantMap PanelEditor::config() const
@@ -571,10 +585,30 @@ bool PanelEditor::setIdleOptions(const QVariantMap &values)
 {
     auto config = m_store.document().privateConfig();
     auto options = config.value(QStringLiteral("idle")).toObject();
+    static const QStringList scalarKeys{QStringLiteral("enabled"), QStringLiteral("timeoutMs"), QStringLiteral("dialId"),
+                                        QStringLiteral("city"), QStringLiteral("message")};
+    static const QStringList infoKeys{QStringLiteral("notes"), QStringLiteral("showForecast"), QStringLiteral("showProgress"),
+                                      QStringLiteral("staleMs"), QStringLiteral("source"), QStringLiteral("path"),
+                                      QStringLiteral("url"), QStringLiteral("intervalMs")};
     for (auto it = values.begin(); it != values.end(); ++it) {
-        if (!QStringList{QStringLiteral("enabled"), QStringLiteral("timeoutMs"), QStringLiteral("dialId"), QStringLiteral("city"), QStringLiteral("message")}
-                 .contains(it.key()))
+        if (it.key() == QStringLiteral("info")) {
+            const QVariantMap incoming = it.value().toMap();
+            if (incoming.isEmpty()) {
+                return fail(QStringLiteral("invalid_option"));
+            }
+            QJsonObject info = options.value(QStringLiteral("info")).toObject();
+            for (auto field = incoming.constBegin(); field != incoming.constEnd(); ++field) {
+                if (!infoKeys.contains(field.key())) {
+                    return fail(QStringLiteral("invalid_option"));
+                }
+                info.insert(field.key(), QJsonValue::fromVariant(field.value()));
+            }
+            options.insert(QStringLiteral("info"), info);
+            continue;
+        }
+        if (!scalarKeys.contains(it.key())) {
             return fail(QStringLiteral("invalid_option"));
+        }
         options.insert(it.key(), QJsonValue::fromVariant(it.value()));
     }
     config.insert(QStringLiteral("idle"), options);

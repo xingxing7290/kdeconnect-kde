@@ -9,6 +9,8 @@ Rectangle {
     property string city: ""
     property string message: ""
     property var weather: ({})
+    property var info: ({})
+    property var progress: ({})
     property var now: new Date()
     readonly property bool light: dialId === "info"
     readonly property color ink: light ? "#202722" : "#f5f7fa"
@@ -116,6 +118,7 @@ Rectangle {
         active: root.dialId === "info"; anchors.fill: parent; anchors.margins: 12
         sourceComponent: PanelInformationDial {
             city: root.city; message: root.message; weather: root.weather; now: root.now; fresh: root.freshWeather
+            info: root.info; progress: root.progress
             statusText: (root.freshWeather && root.weather.status !== "ready" ? qsTr("缓存 · ") : "") + root.weatherLabel
             codeText: root.codeText
         }

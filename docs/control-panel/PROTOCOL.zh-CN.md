@@ -14,6 +14,7 @@
 - 按钮 kind 为 program/website/file/folder/shortcut/system/command。icon 为空或 64 位小写十六进制 SHA-256。
 - appearance 的 background 为 #RRGGBB；showLabels/showVolume 为布尔；swipeDirection 为 horizontal/vertical。
 - idle 的 enabled 为布尔；timeoutMs 为 1000..86400000 的整数毫秒；dialId 为 digital/analog/weather/info/car；city 最长 120，message 最长 240 字符。以上范围为本 fork 的明确设计限制，不声称参考软件相同。
+- idle.info 为「信息表盘右侧信息区」的可选配置对象，缺省时按旧行为渲染（单条 message 备注 + 三日预报，不显示工作进度）。公共投影只下发 notes、showForecast、showProgress、staleMs 四键：notes 为最多 4 条、每条最长 120 字符的字符串数组；showForecast/showProgress 为布尔；staleMs 为 5000..120000 的整数毫秒。桌面私有的进度源字段（source、path、url、intervalMs）**绝不投影到手机**，详见下文「信息表盘右侧信息区」。
 - 配置 UTF-8 编码不超过 256 KiB，JSON 容器嵌套不超过 64 层（包括未知字段）。不支持的版本、类型错误、重复 ID 或越界配置整体拒绝，不能替换上个有效配置。
 - 桌面私有文件可在按钮中包含 target 对象（路径、网址、快捷键或既有命令引用）。发送配置由白名单投影生成，绝不向手机下发 target 或未知私有字段。动作目标另由执行器按 kind 验证。
 - 新增未知字段允许兼容读取，但不会未经白名单投影重新发布。必需字段不能缺失。
@@ -37,6 +38,7 @@
 | kdeconnect.controlpanel.request | operation=asset, sessionId, revision, assetId | 获取当前配置引用图标 |
 | kdeconnect.controlpanel.asset | sessionId, revision, assetId, mime, size, error + payload | 256 x 256 PNG，接收端校验哈希与实际解码；错误响应无附件 |
 | kdeconnect.controlpanel.dial | revision, city, source, status；可选 resolvedCity, observedAt, fetchedAt, temperature, weatherCode | 当前配置的模型天气快照；不得以伪造数据代替网络失败 |
+| kdeconnect.controlpanel.progress | revision, source, status, title, stage, detail；可选 percent, sequence, updatedAt, fetchedAt | WorkBuddy 工作进度快照；实时状态，不写配置、不改 revision |
 
 sessionId、requestId 使用小写 UUID。Android 每次重新建立插件会话生成新的 sessionId，配置重取沿用当前 sessionId；sequence 从 1 单调递增，最大为安全 JSON 整数上限。同一会话最近 256 个动作请求保留原始请求和结果：相同请求返回原结果，ID 冲突返回 invalid_request。结果缓存淘汰后仍保留最高 sequence，更早或乱序请求返回 request_expired，不能重新执行。每个连接最多记录 4096 个已退休会话 ID，退休会话不能通过重复握手复活。
 
@@ -80,3 +82,49 @@ success 必须与 error 为空一致，矛盾结果不确认待处理动作。�
 音量继续使用 kdeconnect.systemvolume 和 kdeconnect.systemvolume.request，不混入面板 action/sessionId/revision。Windows sinkList 的 name 为稳定端点 ID，description 为友好名称，volume 为整数 0..100，maxVolume=100，muted/enabled 为布尔。没有默认输出时不自动选列表首项。
 
 请求为 requestSinks=true，或 name 加 volume、muted、enabled。Windows 写入前完整校验字段与类型，拒绝越界和已消失目标。仅在配对且可达时接受和发布；原生状态按变化发送，包括空列表以清理旧设备。手机拖动以 80 毫秒节流并发送最终值，使用手势初始设备 ID。默认切换角色及原协议没有逐次结果确认的边界见 VOLUME.zh-CN.md。
+
+## 信息表盘右侧信息区与工作进度
+
+完整设计与职责边界见 INFO.zh-CN.md；本节规定线上格式。
+
+### 左右两侧的职责划分
+
+| 区域 | 内容 | 数据来源 | 配置影响 |
+| --- | --- | --- | --- |
+| 左侧（固定） | 手机本机电量、主时钟与秒、当前天气（图标、温度、状态、今日温度区间） | 本机 ACTION_BATTERY_CHANGED 广播、本机时钟、`kdeconnect.controlpanel.dial` 天气快照 | **不变**：布局、内容、字体、控件标识全部保持原样，不接受 info 配置 |
+| 右侧（可配置） | 用户自定义备注、WorkBuddy 工作进度、三日预报 | `idle.info` 配置 + `kdeconnect.controlpanel.progress` 快照 + 天气快照的 forecast | 备注条数/内容、进度开关与过期阈值、是否保留预报均可配置 |
+| 页脚（跨整宽，不属于左右分区） | 日期、解析城市、Open-Meteo 来源、模型/获取时间 | 本机时钟 + 天气快照 | 不变 |
+
+旧版配置不含 `idle.info` 时，右侧按旧行为渲染：单条 `idle.message` 备注 + 三日预报，不显示工作进度；这样旧桌面端、旧配置与既有 UI/可访问性测试都保持兼容。`showForecast` 缺省为 true，因此 `panel-forecast-0..2` 等控件标识继续存在。
+
+### 右侧信息的展示方式
+
+- **备注卡**：`info.notes` 逐条显示（最多 4 条，每条最长 120 字符，纯文本、自动换行、超出省略）；列表为空时回退到 `idle.message`，仍为空时显示提示文案。备注属于配置，随 `panel.json` 修订同步，不参与实时推送。
+- **进度卡**（仅 `showProgress=true`）：标题 `title`、阶段 `stage`、补充说明 `detail`、百分比 `percent` 的进度条、`status` 文案与「N 秒前更新」相对时间。百分比缺省时只显示阶段文本，不臆造数值。新鲜度由 `staleMs` 判定：超时显示「进度已过期，等待更新」并保留最后一次内容；连接断开时额外标注「离线」，不伪造数据。
+- **预报卡**（`showForecast=false` 可隐藏）：沿用原有三日预报行与控件标识。
+- 紧凑高度（小于 200dp/字体放大）时走紧凑布局：保留原有四列结构，备注合并为首条，进度压缩为单行摘要（阶段 + 百分比 + 更新时间），不放大行高、不裁剪关键数值。
+
+### WorkBuddy 进度源与刷新机制
+
+`idle.info` 的桌面私有字段：`source` = `none`/`file`/`url`，`path` 为本地 JSON 文件绝对路径，`url` 为 HTTP(S) 地址，`intervalMs` 为 1000..60000 的轮询间隔（默认 2000）。这四项**只存在于桌面 `panel.json`**，公共投影不发送路径或 URL。WorkBuddy 侧通过自动化任务或脚本把当前工作状态写入该 JSON（或由本地 HTTP 端点提供）；桌面端只读取、不执行其中任何内容。
+
+进度文件示例（UTF-8，不超过 64 KiB）：
+
+```json
+{
+  "status": "running",
+  "title": "整理季度报告",
+  "stage": "生成图表",
+  "detail": "已完成 3/8 个文件",
+  "percent": 38,
+  "updatedAt": 1763200000
+}
+```
+
+`status` 为 running/idle/done/error/paused；`title` ≤120、`stage` ≤120、`detail` ≤240 字符且不含控制字符；`percent` 为 0..100 的可选整数；`updatedAt` 为可选 Unix 秒，缺省时使用文件修改时间/读取时刻。`source` 固定为 `workbuddy`。
+
+- **桌面端**：`QFileSystemWatcher` 监听文件，写入后毫秒级触发读取；`QTimer` 按 `intervalMs` 兜底轮询（HTTP 源按同一间隔 GET，3 秒超时、拒绝重定向、64 KiB 上限）。解析后规范化为快照，内容变化时立即发出 `changed()`，内容不变时按 2 秒心跳重推（`fetchedAt` 刷新、`sequence` 递增），既保证手机端不过期，又避免每轮轮询都发包。HTTP 失败或文件缺失时发 `status=unavailable`，按间隔重试，不保留伪造的旧进度值。
+- **发送**：`kdeconnect.controlpanel.progress` 无附件，含 `protocolVersion=1`、当前 `revision`、可选 `sessionId`；仅配对且可达时发送。与天气一致，CONFIG 成功进入发送队列后重推一次当前进度，避免手机因未来 revision 拒绝而丢失状态。此包不写 `panel.json`、不递增修订号、不触发配置广播。
+- **手机端**：16 KiB/64 层限制、字段线类型与范围校验、`status` 白名单、`sequence` 不倒退、`revision` 必须匹配当前配置、连接必须 READY；非法包直接忽略，不影响动作会话或按钮可用性。表盘已有每秒刷新的时钟，因此相对更新时间每秒重算，即使没有新包也能立即看出陈旧。新鲜度只看 `fetchedAt`（链路是否还在持续收到心跳）；`updatedAt` 是 WorkBuddy 产生数据的时间，仅用于「N 秒前更新」文案，固定不变也不会把正常链路误判为过期。`staleMs`（默认 15000 毫秒）内为新鲜；超时或断线保留最后一次快照并明确标注，不做跨进程持久化（过期进度没有离线价值）。
+
+配置与实时状态严格分离：备注与开关走带修订号的 `panel.json`，进度数值走独立 packet。桌面私有源地址、轮询间隔和过期阈值中的私有部分不会出现在发给手机的配置里。

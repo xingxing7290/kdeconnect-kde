@@ -10,6 +10,8 @@ Rectangle {
     property string city: ""
     property string message: ""
     property var weather: ({})
+    property var info: ({})
+    property var progress: ({})
     property var now: new Date()
     property bool fresh: false
     property string statusText: ""
@@ -17,6 +19,20 @@ Rectangle {
     readonly property real u: Math.max(0.1, Math.min(width/720, height/360))
     readonly property color ink: "#202722"
     readonly property color quiet: "#5f655f"
+    readonly property var noteList: Array.from(info.notes || [])
+    readonly property bool showProgress: info.showProgress === true
+    readonly property bool showForecast: info.showForecast !== false
+    readonly property int staleMs: info.staleMs || 15000
+    readonly property bool progressUsable: !!progress.status && progress.status !== "unavailable" && progress.source === "workbuddy"
+    readonly property real progressAge: now.getTime() / 1000 - (progress.fetchedAt || 0)
+    readonly property bool progressFresh: progressUsable && progressAge >= -60 && progressAge * 1000 <= staleMs
+    readonly property string progressState: !progressUsable ? qsTr("等待 WorkBuddy 进度")
+        : !progressFresh ? qsTr("进度已过期，等待更新")
+        : progress.status === "running" ? qsTr("进行中")
+        : progress.status === "idle" ? qsTr("空闲")
+        : progress.status === "done" ? qsTr("已完成")
+        : progress.status === "error" ? qsTr("出错")
+        : progress.status === "paused" ? qsTr("已暂停") : qsTr("暂不可用")
     readonly property string cityToday: new Date(now.getTime() + (weather.utcOffsetSeconds || 0) * 1000).toISOString().slice(0,10)
     readonly property var days: fresh && weather.forecast ? Array.from(weather.forecast).filter(day => day.date >= cityToday) : []
     readonly property var today: days.length && days[0].date === cityToday ? days[0] : null
@@ -56,13 +72,79 @@ Rectangle {
                     }
                 }
             }
+            // ---- RIGHT: configurable information area (notes, WorkBuddy progress, forecast). ----
             ColumnLayout {
                 Layout.fillWidth: true; Layout.fillHeight: true; Layout.preferredWidth: 350*root.u; spacing: 6*root.u
                 Rectangle {
                     Layout.fillWidth: true; Layout.preferredHeight: 74*root.u; color: "transparent"; border.color: root.ink
-                    Text { objectName: "panelInfoMessage"; anchors.fill: parent; anchors.margins: 6*root.u; text: root.message || qsTr("可在电脑端设置个性化文本"); textFormat: Text.PlainText; color: root.ink; font.pixelSize: Math.max(9,18*root.u); wrapMode: Text.WrapAnywhere; maximumLineCount: 3; elide: Text.ElideRight; verticalAlignment: Text.AlignVCenter }
+                    ColumnLayout {
+                        anchors.fill: parent; anchors.margins: 6*root.u; spacing: 2*root.u
+                        Text {
+                            objectName: "panelInfoMessage"; Layout.fillWidth: true; Layout.fillHeight: true
+                            text: root.noteList.length ? root.noteList[0] : (root.message || qsTr("可在电脑端设置个性化文本"))
+                            textFormat: Text.PlainText; color: root.noteList.length || root.message ? root.ink : root.quiet
+                            font.pixelSize: Math.max(9, 18*root.u); wrapMode: Text.WrapAnywhere
+                            maximumLineCount: root.noteList.length > 1 ? 2 : 3
+                            elide: Text.ElideRight; verticalAlignment: Text.AlignVCenter
+                        }
+                        Repeater {
+                            model: root.noteList.length > 1 ? root.noteList.slice(1) : []
+                            Text {
+                                required property int index
+                                required property string modelData
+                                objectName: "panelInfoNote-" + (index + 1)
+                                Layout.fillWidth: true
+                                text: "· " + modelData; textFormat: Text.PlainText; color: root.ink
+                                font.pixelSize: Math.max(9, 18*root.u); wrapMode: Text.WrapAnywhere
+                                maximumLineCount: 1; elide: Text.ElideRight
+                            }
+                        }
+                    }
                 }
                 Rectangle {
+                    visible: root.showProgress
+                    Layout.fillWidth: true; Layout.preferredHeight: 82*root.u; color: "transparent"; border.color: root.ink
+                    ColumnLayout {
+                        anchors.fill: parent; anchors.margins: 5*root.u; spacing: 2*root.u
+                        RowLayout {
+                            Layout.fillWidth: true
+                            Text { objectName: "panelInfoProgressTitle"; text: qsTr("工作进度"); color: root.ink; font.pixelSize: Math.max(9, 14*root.u); Layout.fillWidth: true }
+                            Text { objectName: "panelInfoProgressState"; text: root.progressState; color: root.progressFresh ? root.ink : root.quiet; font.pixelSize: Math.max(8, 10*root.u) }
+                        }
+                        Text {
+                            objectName: "panelInfoProgressStage"; visible: root.progressUsable; Layout.fillWidth: true
+                            text: (root.progress.title || "") + (root.progress.stage ? " · " + root.progress.stage : "")
+                            textFormat: Text.PlainText; color: root.ink; font.pixelSize: Math.max(8, 15*root.u)
+                            maximumLineCount: 1; elide: Text.ElideRight
+                        }
+                        RowLayout {
+                            Layout.fillWidth: true
+                            Text {
+                                objectName: "panelInfoProgressDetail"; Layout.fillWidth: true
+                                text: root.progressUsable ? (root.progress.detail || "") : qsTr("等待 WorkBuddy 写入进度")
+                                textFormat: Text.PlainText; color: root.quiet; font.pixelSize: Math.max(8, 11*root.u)
+                                maximumLineCount: 1; elide: Text.ElideRight
+                            }
+                            Text {
+                                visible: root.progressUsable && Number.isFinite(root.progress.percent)
+                                objectName: "panelInfoProgressPercent"
+                                text: Math.round(root.progress.percent || 0) + "%"; color: root.ink
+                                font.family: "monospace"; font.pixelSize: Math.max(9, 14*root.u)
+                            }
+                        }
+                        Rectangle {
+                            visible: root.progressUsable && Number.isFinite(root.progress.percent)
+                            Layout.fillWidth: true; Layout.preferredHeight: Math.max(4, 6*root.u); radius: 3
+                            color: Qt.rgba(root.ink.r, root.ink.g, root.ink.b, 0.18)
+                            Rectangle {
+                                width: parent.width * Math.min(100, Math.max(0, Number(root.progress.percent) || 0)) / 100
+                                height: parent.height; radius: 3; color: root.ink
+                            }
+                        }
+                    }
+                }
+                Rectangle {
+                    visible: root.showForecast
                     Layout.fillWidth: true; Layout.fillHeight: true; color: "transparent"; border.color: root.ink
                     ColumnLayout {
                         anchors.fill: parent; anchors.margins: 5*root.u; spacing: 2*root.u

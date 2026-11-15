@@ -5,6 +5,7 @@
 #include "panelassets.h"
 #include "panelfavicon.h"
 #include "panelforeground.h"
+#include "panelprogress.h"
 #include "panelstore.h"
 #include "panelweather.h"
 #include <QUrl>
@@ -25,11 +26,13 @@ class PanelEditor : public QObject
     Q_PROPERTY(bool foregroundSupported READ foregroundSupported CONSTANT)
     Q_PROPERTY(QString foregroundError READ foregroundError NOTIFY foregroundChanged)
     Q_PROPERTY(QVariantMap weather READ weather NOTIFY weatherChanged)
+    Q_PROPERTY(QVariantMap progress READ progress NOTIFY progressChanged)
     Q_PROPERTY(QString websiteIconStatus READ websiteIconStatus NOTIFY websiteIconStatusChanged)
 public:
-    /** Both the weather and the website-icon fetcher use this switch; tests keep networking off. */
+    /** Weather, website icons and the WorkBuddy progress source all use this switch; tests keep networking off. */
     explicit PanelEditor(const QString &directory = {}, QObject *parent = nullptr, bool networking = false);
     QVariantMap weather() const;
+    QVariantMap progress() const;
     QVariantMap config() const;
     QVariantMap currentPage() const;
     QString currentPageId() const;
@@ -76,6 +79,7 @@ Q_SIGNALS:
     void errorChanged();
     void foregroundChanged();
     void weatherChanged();
+    void progressChanged();
     void websiteIconStatusChanged();
     void websiteIconReady(const QString &url, const QString &iconId);
 
@@ -93,6 +97,7 @@ private:
     PanelForeground m_foreground;
     PanelAssets m_assets;
     PanelWeather m_weather;
+    PanelProgress m_progress;
     PanelFavicon m_favicon;
     QString m_currentPageId;
     QString m_error;

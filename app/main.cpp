@@ -26,6 +26,7 @@
 #include <KLocalizedQmlContext>
 #include <KLocalizedString>
 #include <KWindowSystem>
+#include "appearance.h"
 #include <paneleditor.h>
 #include <volumecontroller.h>
 
@@ -133,9 +134,11 @@ int main(int argc, char *argv[])
     }
     KDBusService dbusService(flags);
     ControlPanel::PanelEditor panelEditor({}, nullptr, true);
+    ControlPanel::Appearance appearance;
     QQmlApplicationEngine engine;
     engine.rootContext()->setContextProperty(QStringLiteral("panelEditor"), &panelEditor);
     engine.rootContext()->setContextProperty(QStringLiteral("localVolume"), SystemVolume::VolumeController::instance());
+    engine.rootContext()->setContextProperty(QStringLiteral("appearance"), &appearance);
     KLocalization::setupLocalizedContext(&engine);
     engine.loadFromModule("org.kde.kdeconnect.app", "Main");
 

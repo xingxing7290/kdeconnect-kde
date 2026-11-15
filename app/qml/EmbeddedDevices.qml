@@ -16,6 +16,7 @@ import org.kde.kdeconnect
  */
 Item {
     id: root
+    AppTheme { id: ui }
     property string pendingDeviceId: ""
     property string pendingPluginConfig: ""
 
@@ -66,24 +67,26 @@ Item {
 
     RowLayout {
         anchors.fill: parent
-        spacing: 0
+        spacing: ui.spacing
 
-        Rectangle {
+        AppCard {
             Layout.preferredWidth: Math.min(250, Math.max(180, root.width * 0.28))
             Layout.fillHeight: true
-            color: "#ffffff"
-            border.width: 1
-            border.color: "#dce1e8"
 
             ColumnLayout {
                 anchors.fill: parent
+                anchors.margins: 1
                 spacing: 0
 
                 QQC2.ToolBar {
                     Layout.fillWidth: true
+                    background: Rectangle { color: ui.surfaceAlt }
                     contentItem: RowLayout {
                         QQC2.Label {
                             text: i18nd("kdeconnect-app", "Devices")
+                            color: ui.text
+                            font.pixelSize: 14
+                            font.bold: true
                             Layout.fillWidth: true
                             Layout.leftMargin: Kirigami.Units.largeSpacing
                         }
@@ -108,9 +111,15 @@ Item {
                             sourceModel: devicesModel
                         }
                         delegate: QQC2.ItemDelegate {
+                            id: deviceItem
                             width: ListView.view.width
                             icon.name: model.iconName
                             text: model.name
+                            hoverEnabled: true
+                            background: Rectangle {
+                                radius: ui.radiusSmall
+                                color: deviceItem.hovered ? ui.surfaceHover : "transparent"
+                            }
                             onClicked: {
                                 deviceStack.clear();
                                 deviceStack.push(deviceComponent, {currentDevice: model.device});
@@ -126,9 +135,11 @@ Item {
                 QQC2.ToolBar {
                     Layout.fillWidth: true
                     position: QQC2.ToolBar.Footer
+                    background: Rectangle { color: ui.surfaceAlt }
                     contentItem: RowLayout {
                         QQC2.Label {
                             text: announcedName.value
+                            color: ui.textMuted
                             elide: Text.ElideRight
                             Layout.fillWidth: true
                         }
@@ -145,17 +156,25 @@ Item {
             }
         }
 
-        Kirigami.PageRow {
-            id: deviceStack
+        AppCard {
             Layout.fillWidth: true
             Layout.fillHeight: true
-            clip: true
-            initialPage: Qt.resolvedUrl("WelcomePage.qml")
-            globalToolBar.canContainHandles: true
-            globalToolBar.showNavigationButtons: deviceStack.currentIndex > 0 ? Kirigami.ApplicationHeaderStyle.ShowBackButton : 0
-            Keys.onEscapePressed: {
-                if (deviceStack.currentIndex)
-                    deviceStack.removePage(deviceStack.currentIndex);
+            // Form-card pages use Kirigami's own colour set; switch it with the theme.
+            Kirigami.Theme.colorSet: ui.dark ? Kirigami.Theme.Complementary : Kirigami.Theme.Window
+            Kirigami.Theme.inherit: false
+
+            Kirigami.PageRow {
+                id: deviceStack
+                anchors.fill: parent
+                anchors.margins: 1
+                clip: true
+                initialPage: Qt.resolvedUrl("WelcomePage.qml")
+                globalToolBar.canContainHandles: true
+                globalToolBar.showNavigationButtons: deviceStack.currentIndex > 0 ? Kirigami.ApplicationHeaderStyle.ShowBackButton : 0
+                Keys.onEscapePressed: {
+                    if (deviceStack.currentIndex)
+                        deviceStack.removePage(deviceStack.currentIndex);
+                }
             }
         }
     }

@@ -6,8 +6,9 @@ import QtQuick.Controls as C
 import QtQuick.Layouts
 import QtQuick.Dialogs
 
-C.Dialog {
+AppDialog {
     id: dialog
+    AppTheme { id: ui }
     objectName: "panelButtonDialog"
     property var editor
     property var systemPresets
@@ -147,16 +148,24 @@ C.Dialog {
         Flow {
             Layout.fillWidth: true
             spacing: 8
-            Image { source: dialog.iconId ? editor.assetUrl(dialog.iconId) : ""; width: 48; height: 48; fillMode: Image.PreserveAspectFit }
-            C.Button { text: qsTr("选择 JPG / PNG 图标"); onClicked: { dialog.iconTouched = true; iconPicker.open(); } }
-            C.Button { visible: dialog.kind === "program"; text: qsTr("读取程序图标"); onClicked: { dialog.iconTouched = true; const id = editor.programIcon(dialog.targetPath()); if (id) dialog.iconId = id; } }
-            C.Button { visible: dialog.kind === "website"; text: qsTr("自动获取网站图标"); onClicked: { dialog.iconTouched = false; dialog.requestWebsiteIcon(); } }
-            C.Button { text: qsTr("恢复默认图标"); onClicked: { dialog.iconTouched = true; dialog.iconId = ""; } }
+            Rectangle {
+                width: 52; height: 52; radius: ui.radiusSmall
+                color: ui.surfaceAlt; border.width: 1; border.color: ui.border
+                Image {
+                    anchors.centerIn: parent
+                    source: dialog.iconId ? editor.assetUrl(dialog.iconId) : ""
+                    width: 44; height: 44; fillMode: Image.PreserveAspectFit
+                }
+            }
+            AppButton { text: qsTr("选择 JPG / PNG 图标"); onClicked: { dialog.iconTouched = true; iconPicker.open(); } }
+            AppButton { visible: dialog.kind === "program"; text: qsTr("读取程序图标"); onClicked: { dialog.iconTouched = true; const id = editor.programIcon(dialog.targetPath()); if (id) dialog.iconId = id; } }
+            AppButton { visible: dialog.kind === "website"; text: qsTr("自动获取网站图标"); onClicked: { dialog.iconTouched = false; dialog.requestWebsiteIcon(); } }
+            AppButton { text: qsTr("恢复默认图标"); onClicked: { dialog.iconTouched = true; dialog.iconId = ""; } }
         }
         C.Label {
             visible: dialog.kind === "website" && editor.websiteIconStatus !== "idle"
             text: dialog.websiteIconMessage()
-            color: editor.websiteIconStatus === "unavailable" ? "#a25712" : "#69778b"
+            color: editor.websiteIconStatus === "unavailable" ? ui.warning : ui.textMuted
             Layout.fillWidth: true; wrapMode: Text.WordWrap
         }
         RowLayout {
@@ -174,7 +183,7 @@ C.Dialog {
                         dialog.iconId = "";
                 }
             }
-            C.Button { visible: ["program", "file", "folder"].indexOf(dialog.kind) >= 0; text: qsTr("浏览..."); onClicked: dialog.kind === "folder" ? folderPicker.open() : filePicker.open() }
+            AppButton { visible: ["program", "file", "folder"].indexOf(dialog.kind) >= 0; text: qsTr("浏览..."); onClicked: dialog.kind === "folder" ? folderPicker.open() : filePicker.open() }
         }
         C.CheckBox { id: advanced; objectName: "panelProgramAdvanced"; text: qsTr("高级启动选项"); visible: dialog.kind === "program" }
         C.Label { text: qsTr("启动参数（JSON 字符串数组，空数组为 []）"); visible: dialog.kind === "program" && advanced.checked; Layout.fillWidth: true; wrapMode: Text.WordWrap }
@@ -190,20 +199,20 @@ C.Dialog {
             C.ComboBox { id: keyBox; objectName: "panelShortcutKey"; model: dialog.editor.keyNames.filter(key => ["CTRL", "ALT", "SHIFT", "WIN"].indexOf(key) < 0); Layout.fillWidth: true }
         }
         C.ComboBox { id: systemBox; objectName: "panelButtonSystem"; visible: dialog.kind === "system"; model: dialog.systemPresets.map(item => item.name); Layout.fillWidth: true }
-        C.Label { visible: dialog.kind === "shortcut"; text: qsTr("快捷键发送到电脑当前前台程序。"); color: "#69778b" }
-        C.Label { objectName: "panelButtonError"; visible: !!dialog.validationError; text: dialog.validationError; textFormat: Text.PlainText; color: "#b3261e"; Layout.fillWidth: true; wrapMode: Text.WordWrap }
+        C.Label { visible: dialog.kind === "shortcut"; text: qsTr("快捷键发送到电脑当前前台程序。"); color: ui.textMuted }
+        C.Label { objectName: "panelButtonError"; visible: !!dialog.validationError; text: dialog.validationError; textFormat: Text.PlainText; color: ui.danger; Layout.fillWidth: true; wrapMode: Text.WordWrap }
         }
     }
     footer: Item {
         implicitHeight: 52
         RowLayout {
             anchors.fill: parent; anchors.margins: 8
-            C.Button { objectName: "panelButtonDelete"; text: qsTr("删除按钮"); enabled: !!dialog.original.id; onClicked: {
+            AppButton { objectName: "panelButtonDelete"; text: qsTr("删除按钮"); danger: true; enabled: !!dialog.original.id; onClicked: {
                 if (editor.clearButtonChecked(slotIndex, editSnapshot)) dialog.close(); else dialog.reportError(editor.error);
             } }
             Item { Layout.fillWidth: true }
-            C.Button { objectName: "panelButtonCancel"; text: qsTr("取消"); onClicked: dialog.close() }
-            C.Button { objectName: "panelButtonSave"; text: qsTr("保存"); highlighted: true; palette.dark: "#286fe0"; palette.mid: "#205ab8"; palette.brightText: "#ffffff"; onClicked: if (dialog.saveButton()) dialog.close() }
+            AppButton { objectName: "panelButtonCancel"; text: qsTr("取消"); onClicked: dialog.close() }
+            AppButton { objectName: "panelButtonSave"; text: qsTr("保存"); primary: true; onClicked: if (dialog.saveButton()) dialog.close() }
         }
     }
     FileDialog {

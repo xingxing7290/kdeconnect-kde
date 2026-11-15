@@ -78,6 +78,14 @@ Android 使用横屏沉浸式控制面板，保持屏幕常亮，尊重系统返
 
 Windows 实现采用 200 毫秒采样、400 毫秒连续稳定去抖。手机手动选页保持到下次稳定程序变化，模式变化或所选页面删除时重新选择有效页。匹配和公共投影均仅保留程序名，不发送完整路径；相同绑定按页面顺序取第一项。使用及限制见 FOLLOW.zh-CN.md，真实焦点切换检查仍未通过。
 
+### 桌面外观主题
+
+Windows 控制面板窗口由 `AppTheme.qml` 提供统一设计令牌（颜色、圆角、间距、动效时长），`main.cpp` 把 `ControlPanel::Appearance` 注册为 `appearance` 上下文属性。Appearance 用 QSettings（`KDEConnect/ControlPanel` 的 `appearance/theme`）保存选择，**不写进会同步到手机的 panel.json**，因此切换主题不会改变配置修订号，也不会让 Android 端误以为配置变化。
+
+可选六项：跟随系统（按 Qt 6.5+ 的系统深浅色自动选晴空蓝/夜幕蓝）、晴空蓝、暖砂白（浅色），夜幕蓝、石墨紫、松林绿（深色）。侧边栏底部的主题选择器即时切换，主窗口 `palette` 与各控件通过设计令牌联动，颜色变化带短过渡动画。没有 `appearance` 上下文（例如 UI 测试单独加载 `ControlDashboard.qml`）时回退到内置浅色配色，控件行为与 objectName 保持不变。
+
+`AppButton.qml`、`AppCard.qml`、`AppDialog.qml` 分别统一按钮、卡片与弹窗外观；`ThemeSwitcher.qml` 负责选择界面。`EmbeddedDevices.qml` 中 Kirigami 的 FormCard 页面通过 `Kirigami.Theme.colorSet`（深色主题切到 Complementary）跟随，具体色值仍由系统 Kirigami 配色决定。表盘内部背景色是手机端配置字段 `appearance.background`，不受桌面主题影响。
+
 ## 兼容及迁移
 
 - 原 KDE Connect 插件继续工作；对方缺少面板能力时不显示可执行的假面板。

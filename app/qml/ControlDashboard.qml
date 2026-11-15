@@ -11,6 +11,8 @@ Item {
     id: root
     signal openConnections()
     property int section: 1
+    AppTheme { id: ui }
+    readonly property var navigationIcons: ["\u25c9", "\u25a6", "\u21c4", "\u24d8"]
     readonly property var editor: panelEditor
     readonly property var config: editor.config
     readonly property var page: editor.currentPage
@@ -145,11 +147,41 @@ Item {
         if (saved) event.accept(action);
     }
 
-    Rectangle { width: 190; height: parent.height; color: "#eef1f6" }
+    Rectangle {
+        width: ui.sidebarWidth
+        height: parent.height
+        gradient: Gradient {
+            GradientStop { position: 0.0; color: ui.sidebarTop }
+            GradientStop { position: 1.0; color: ui.sidebarBottom }
+        }
+        Rectangle {
+            width: 1; height: parent.height
+            anchors.right: parent.right
+            color: Qt.rgba(ui.sidebarText.r, ui.sidebarText.g, ui.sidebarText.b, 0.09)
+        }
+    }
     ColumnLayout {
-        x: 18; y: 28; width: 154; height: parent.height - 48; spacing: 12
-        Kirigami.Icon { source: "qrc:/icons/kdeconnect/kdeconnect.svg"; Layout.preferredWidth: 42; Layout.preferredHeight: 42; Layout.leftMargin: 10 }
-        C.Label { text: "KDE Connect"; font.pixelSize: 19; font.bold: true; color: "#273448"; Layout.leftMargin: 10; Layout.bottomMargin: 30 }
+        x: 16; y: 24; width: ui.sidebarWidth - 32; height: parent.height - 44; spacing: 6
+
+        RowLayout {
+            Layout.fillWidth: true; Layout.bottomMargin: 24; spacing: 11
+            Rectangle {
+                Layout.preferredWidth: 42; Layout.preferredHeight: 42
+                radius: 12
+                color: Qt.rgba(ui.sidebarText.r, ui.sidebarText.g, ui.sidebarText.b, 0.12)
+                Kirigami.Icon {
+                    source: "qrc:/icons/kdeconnect/kdeconnect.svg"
+                    anchors.centerIn: parent
+                    width: 26; height: 26
+                }
+            }
+            ColumnLayout {
+                spacing: 2
+                C.Label { text: "KDE Connect"; color: ui.sidebarText; font.pixelSize: 17; font.bold: true }
+                C.Label { text: qsTr("控制面板"); color: ui.sidebarMuted; font.pixelSize: 11 }
+            }
+        }
+
         Repeater {
             model: [qsTr("表盘选择"), qsTr("桌面控制"), qsTr("开启连接"), qsTr("关于")]
             delegate: C.ItemDelegate {
@@ -158,32 +190,77 @@ Item {
                 required property int index
                 required property string modelData
                 text: modelData; Layout.fillWidth: true; highlighted: root.section === index
-                implicitHeight: 44
-                contentItem: C.Label { text: navigation.text; color: root.section === index ? "#286fe0" : "#354158"; verticalAlignment: Text.AlignVCenter; font.pixelSize: 15 }
+                implicitHeight: 46
+                hoverEnabled: true
                 onClicked: root.section = index
-                background: Rectangle { radius: 9; color: root.section === index ? "#dce7fb" : parent.hovered ? "#e5eaf2" : "transparent" }
+                contentItem: RowLayout {
+                    spacing: 12
+                    C.Label {
+                        text: root.navigationIcons[navigation.index] || "\u25cf"
+                        color: root.section === navigation.index ? ui.sidebarIndicator : ui.sidebarMuted
+                        font.pixelSize: 16
+                        Layout.preferredWidth: 20
+                        horizontalAlignment: Text.AlignHCenter
+                    }
+                    C.Label {
+                        text: navigation.text
+                        color: root.section === navigation.index ? ui.sidebarText : ui.sidebarMuted
+                        font.pixelSize: 14
+                        font.bold: root.section === navigation.index
+                        verticalAlignment: Text.AlignVCenter
+                        Layout.fillWidth: true
+                    }
+                    Rectangle {
+                        visible: root.section === navigation.index
+                        width: 3; height: 20; radius: 2
+                        color: ui.sidebarIndicator
+                    }
+                }
+                background: Rectangle {
+                    radius: ui.radiusSmall
+                    color: root.section === navigation.index ? ui.sidebarActive : (navigation.hovered ? ui.sidebarHover : "transparent")
+                    Behavior on color { ColorAnimation { duration: ui.animation } }
+                }
             }
         }
+
         Item { Layout.fillHeight: true }
-        C.Label { text: qsTr("配置自动同步到\n已配对的 Android 设备"); wrapMode: Text.WordWrap; color: "#7b8799"; font.pixelSize: 11; Layout.fillWidth: true }
+        Rectangle {
+            Layout.fillWidth: true; Layout.preferredHeight: 48
+            radius: ui.radiusSmall
+            color: Qt.rgba(ui.sidebarText.r, ui.sidebarText.g, ui.sidebarText.b, 0.07)
+            C.Label {
+                anchors.fill: parent; anchors.margins: 10
+                text: qsTr("配置自动同步到\n已配对的 Android 设备")
+                wrapMode: Text.WordWrap
+                color: ui.sidebarMuted
+                font.pixelSize: 11
+                verticalAlignment: Text.AlignVCenter
+            }
+        }
+        ThemeSwitcher { Layout.fillWidth: true }
     }
 
     StackLayout {
-        anchors { left: parent.left; leftMargin: 214; right: parent.right; rightMargin: 24; top: parent.top; topMargin: 26; bottom: parent.bottom; bottomMargin: 20 }
+        anchors { left: parent.left; leftMargin: ui.sidebarWidth; right: parent.right; rightMargin: 24; top: parent.top; topMargin: 26; bottom: parent.bottom; bottomMargin: 20 }
         currentIndex: root.section
         PanelDialGallery { editor: root.editor }
         ColumnLayout {
-            spacing: 14
+            spacing: ui.spacing
             RowLayout {
-                Layout.fillWidth: true
-                C.Label { text: qsTr("桌面控制"); font.pixelSize: 26; font.bold: true; color: "#273448"; Layout.fillWidth: true }
-                C.Button { text: qsTr("撤回上次修改"); onClicked: editor.restoreBackup() }
+                Layout.fillWidth: true; spacing: 14
+                Rectangle { Layout.preferredWidth: 4; Layout.preferredHeight: 34; radius: 2; color: ui.accent }
+                ColumnLayout {
+                    spacing: 3; Layout.fillWidth: true
+                    C.Label { text: qsTr("桌面控制"); font.pixelSize: 24; font.bold: true; color: ui.text }
+                    C.Label { text: qsTr("点击槽位编辑，拖动按钮换位，或从资源管理器拖入程序、文件和文件夹。"); color: ui.textMuted; font.pixelSize: 12; wrapMode: Text.WordWrap; Layout.fillWidth: true }
+                }
+                AppButton { text: qsTr("撤回上次修改"); onClicked: editor.restoreBackup() }
             }
-            C.Label { text: qsTr("点击槽位编辑，拖动按钮换位，或从资源管理器拖入程序、文件和文件夹。"); color: "#7b8799"; wrapMode: Text.WordWrap; Layout.fillWidth: true }
-            C.Label { visible: !!editor.error; text: root.configurationError(editor.error); color: "#b3261e"; Layout.fillWidth: true; wrapMode: Text.WordWrap }
+            C.Label { visible: !!editor.error; text: root.configurationError(editor.error); color: ui.danger; Layout.fillWidth: true; wrapMode: Text.WordWrap }
             RowLayout {
                 Layout.fillWidth: true; Layout.fillHeight: true; spacing: 22
-                Item {
+                AppCard {
                     Layout.fillWidth: true; Layout.fillHeight: true; Layout.minimumWidth: 420
                     Repeater {
                         model: 3
@@ -191,14 +268,14 @@ Item {
                             required property int index
                             anchors.centerIn: phone; anchors.verticalCenterOffset: 7
                             width: phone.width + 6 + index * 7; height: phone.height + 6 + index * 7
-                            radius: 28 + index * 3; color: "#0b1728"; opacity: 0.035 * (3 - index); z: -1
+                            radius: 28 + index * 3; color: ui.shadow; opacity: 0.035 * (3 - index); z: -1
                         }
                     }
                     Rectangle {
                         id: phone
                         objectName: "panelPhonePreview"
                         width: Math.min(parent.width - 20, parent.height * 2.1 - 20); height: width / 2.1
-                        anchors.centerIn: parent; color: "#090b0e"; radius: 24
+                        anchors.centerIn: parent; color: ui.phoneFrame; radius: 24
                         Rectangle {
                             anchors.fill: parent; anchors.margins: 8; radius: 16; color: config.appearance.background
                             RowLayout {
@@ -214,8 +291,8 @@ Item {
                                             property var button: page.slots?.[index] || null
                                             property var dragContext: ({})
                                             Layout.fillWidth: true; Layout.fillHeight: true; Layout.preferredWidth: 70; Layout.preferredHeight: 75
-                                            radius: 10; color: drop.containsDrag ? "#dceaff" : "#fbfcfe"
-                                            border.width: drop.containsDrag || activeFocus ? 2 : 1; border.color: drop.containsDrag || activeFocus ? "#4988f1" : "#dce1e8"
+                                            radius: 10; color: drop.containsDrag ? ui.slotHover : ui.slot
+                                            border.width: drop.containsDrag || activeFocus ? 2 : 1; border.color: drop.containsDrag || activeFocus ? ui.accent : ui.border
                                             activeFocusOnTab: true
                                             Accessible.role: Accessible.Button
                                             Accessible.name: button ? button.name : qsTr("添加按钮，槽位 %1").arg(index + 1)
@@ -226,8 +303,8 @@ Item {
                                                 anchors.centerIn: parent; width: parent.width - 8; spacing: 4
                                                 Image { id: slotImage; visible: status === Image.Ready; source: cell.button?.icon ? editor.assetUrl(cell.button.icon) : ""; width: Math.min(40, cell.width * 0.6); height: visible ? width : 0; fillMode: Image.PreserveAspectFit; anchors.horizontalCenter: parent.horizontalCenter }
                                                 Kirigami.Icon { visible: cell.button !== null && slotImage.status !== Image.Ready; source: root.buttonIcon(cell.button); width: Math.min(32, cell.width * 0.5); height: visible ? width : 0; anchors.horizontalCenter: parent.horizontalCenter }
-                                                C.Label { visible: !cell.button; text: "+"; font.pixelSize: 27; color: "#99a3b1"; anchors.horizontalCenter: parent.horizontalCenter }
-                                                C.Label { visible: config.appearance.showLabels && cell.button !== null; text: cell.button?.name || ""; textFormat: Text.PlainText; width: parent.width; elide: Text.ElideRight; horizontalAlignment: Text.AlignHCenter; font.pixelSize: 11; color: "#344158" }
+                                                C.Label { visible: !cell.button; text: "+"; font.pixelSize: 27; color: ui.textSubtle; anchors.horizontalCenter: parent.horizontalCenter }
+                                                C.Label { visible: config.appearance.showLabels && cell.button !== null; text: cell.button?.name || ""; textFormat: Text.PlainText; width: parent.width; elide: Text.ElideRight; horizontalAlignment: Text.AlignHCenter; font.pixelSize: 11; color: ui.text }
                                             }
                                             Drag.active: drag.active && !!cell.dragContext.pageId
                                             Drag.dragType: Drag.Automatic
@@ -255,13 +332,13 @@ Item {
                                         Accessible.name: qsTr("电脑音量")
                                         background: Rectangle {
                                             x: previewVolume.leftPadding + (previewVolume.availableWidth - width) / 2
-                                            y: previewVolume.topPadding; width: 4; height: previewVolume.availableHeight; radius: 2; color: "#dde5f1"
-                                            Rectangle { anchors.bottom: parent.bottom; width: parent.width; height: (1 - previewVolume.visualPosition) * parent.height; radius: 2; color: "#3984f5" }
+                                            y: previewVolume.topPadding; width: 4; height: previewVolume.availableHeight; radius: 2; color: ui.border
+                                            Rectangle { anchors.bottom: parent.bottom; width: parent.width; height: (1 - previewVolume.visualPosition) * parent.height; radius: 2; color: ui.accent }
                                         }
                                         handle: Rectangle {
                                             x: previewVolume.leftPadding + (previewVolume.availableWidth - width) / 2
                                             y: previewVolume.topPadding + previewVolume.visualPosition * (previewVolume.availableHeight - height)
-                                            implicitWidth: 14; implicitHeight: 14; radius: 7; color: "white"; border.color: "#b7c6dc"
+                                            implicitWidth: 14; implicitHeight: 14; radius: 7; color: ui.surface; border.color: ui.borderStrong
                                         }
                                         onPressedChanged: if (pressed) dragOutput = localVolume.defaultId
                                         onMoved: {
@@ -281,15 +358,15 @@ Item {
                         }
                     }
                 }
-                Rectangle {
-                    Layout.preferredWidth: 210; Layout.fillHeight: true; color: "#ffffff"; radius: 14
+                AppCard {
+                    Layout.preferredWidth: 224; Layout.fillHeight: true
                     C.ScrollView {
                         id: libraryView
                         anchors.fill: parent; anchors.margins: 12; clip: true
                         contentWidth: availableWidth
                         Column {
                             width: libraryView.availableWidth; spacing: 5
-                            C.Label { visible: !!root.libraryMessage; width: parent.width; text: root.libraryMessage; wrapMode: Text.WordWrap; color: "#a25712"; textFormat: Text.PlainText }
+                            C.Label { visible: !!root.libraryMessage; width: parent.width; text: root.libraryMessage; wrapMode: Text.WordWrap; color: ui.warning; textFormat: Text.PlainText }
                             Repeater {
                                 model: root.libraryGroups
                                 delegate: Column {
@@ -303,8 +380,8 @@ Item {
                                         Accessible.description: root.expandedLibraryGroups[libraryGroup.modelData.id] ? qsTr("已展开，点击收起") : qsTr("已收起，点击展开")
                                         onClicked: root.toggleLibraryGroup(libraryGroup.modelData.id)
                                         contentItem: RowLayout {
-                                            C.Label { text: libraryGroup.modelData.title; color: "#354158"; font.bold: true; Layout.fillWidth: true }
-                                            C.Label { text: root.expandedLibraryGroups[libraryGroup.modelData.id] ? "-" : "+"; color: "#69778b" }
+                                            C.Label { text: libraryGroup.modelData.title; color: ui.text; font.bold: true; Layout.fillWidth: true }
+                                            C.Label { text: root.expandedLibraryGroups[libraryGroup.modelData.id] ? "-" : "+"; color: ui.textMuted }
                                         }
                                     }
                                     Repeater {
@@ -352,15 +429,15 @@ Item {
                         required property var modelData
                         required property int index
                         spacing: 1
-                        C.Button {
+                        AppButton {
                         id: pageSelect
                         objectName: "panelPage-" + pageTab.index
                         text: (pageTab.index + 1) + "  " + pageTab.modelData.name
                         highlighted: editor.currentPageId === pageTab.modelData.id
                         enabled: config.mode !== "single"
                         implicitWidth: Math.min(146, Math.max(64, contentItem.implicitWidth + leftPadding + rightPadding)); height: 36
-                        palette.dark: "#286fe0"; palette.mid: "#205ab8"; palette.brightText: "#ffffff"
-                        contentItem: C.Label { text: pageSelect.text; textFormat: Text.PlainText; elide: Text.ElideRight; horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignVCenter; color: pageSelect.highlighted ? "white" : "#354158" }
+                        palette.dark: ui.accent; palette.mid: ui.accentHover; palette.brightText: ui.textOnAccent
+                        contentItem: C.Label { text: pageSelect.text; textFormat: Text.PlainText; elide: Text.ElideRight; horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignVCenter; color: pageSelect.highlighted ? ui.textOnAccent : ui.text }
                         Accessible.name: qsTr("页面 %1：%2").arg(pageTab.index + 1).arg(pageTab.modelData.name)
                         hoverEnabled: true
                         onClicked: editor.selectPage(pageTab.modelData.id)
@@ -379,11 +456,11 @@ Item {
                     }
                     }
                 }
-                C.Button { objectName: "panelAddPage"; text: "+"; visible: config.mode !== "single"; enabled: config.pages.length < 10; Accessible.name: qsTr("添加页面"); onClicked: editor.addPage() }
-                C.Button { objectName: "panelDeletePage"; text: qsTr("删除页"); visible: config.mode !== "single"; enabled: config.pages.length > 1; onClicked: root.requestDeletePage(editor.currentPageId) }
-                C.Label { visible: config.mode === "single" && config.pages.length > 1; text: qsTr("单页显示首页，其他页面仍保留"); color: "#69778b"; Layout.fillWidth: true; wrapMode: Text.WordWrap }
+                AppButton { objectName: "panelAddPage"; text: "+"; visible: config.mode !== "single"; enabled: config.pages.length < 10; Accessible.name: qsTr("添加页面"); onClicked: editor.addPage() }
+                AppButton { objectName: "panelDeletePage"; text: qsTr("删除页"); visible: config.mode !== "single"; enabled: config.pages.length > 1; onClicked: root.requestDeletePage(editor.currentPageId) }
+                C.Label { visible: config.mode === "single" && config.pages.length > 1; text: qsTr("单页显示首页，其他页面仍保留"); color: ui.textMuted; Layout.fillWidth: true; wrapMode: Text.WordWrap }
                 Item { visible: config.mode === "single" && config.pages.length <= 1; Layout.fillWidth: true }
-                C.Button { objectName: "panelPageSettings"; text: qsTr("页面名称 / 应用绑定"); onClicked: {
+                AppButton { objectName: "panelPageSettings"; text: qsTr("页面名称 / 应用绑定"); onClicked: {
                     pageDialog.targetPageId = editor.currentPageId;
                     pageDialog.editSnapshot = editor.pageEditContext(editor.currentPageId);
                     pageDialog.validationError = "";
@@ -392,35 +469,40 @@ Item {
                     pageDialog.open();
                 } }
             }
-            Rectangle { Layout.fillWidth: true; height: 1; color: "#e1e6ef" }
-            Flow {
-                Layout.fillWidth: true; spacing: 14
+            AppCard {
+                Layout.fillWidth: true
+                implicitHeight: settingsColumn.implicitHeight + 28
+                ColumnLayout {
+                    id: settingsColumn
+                    anchors.fill: parent; anchors.margins: 14; spacing: 12
+                    Flow {
+                        Layout.fillWidth: true; spacing: 14
                 RowLayout {
                 width: implicitWidth
                 spacing: 8
                 C.Label { text: qsTr("页面模式") }
                 C.ComboBox { objectName: "panelPageMode"; model: [qsTr("默认单页"), qsTr("多页面"), qsTr("智能跟随")]; currentIndex: ["single", "pages", "follow"].indexOf(config.mode); onActivated: editor.setMode(["single", "pages", "follow"][currentIndex]) }
                 }
-                C.Button { text: qsTr("识别当前程序"); visible: config.mode === "follow"; onClicked: foregroundDialog.open() }
+                AppButton { text: qsTr("识别当前程序"); visible: config.mode === "follow"; onClicked: foregroundDialog.open() }
                 C.CheckBox { text: qsTr("音量控制"); checked: config.appearance.showVolume; onClicked: editor.setAppearance("showVolume", checked) }
                 C.CheckBox { text: qsTr("显示名称"); checked: config.appearance.showLabels; onClicked: editor.setAppearance("showLabels", checked) }
-                C.Button { objectName: "panelFillMissingIcons"; text: qsTr("补齐默认图标"); onClicked: editor.fillMissingIcons(); C.ToolTip.visible: hovered; C.ToolTip.text: qsTr("为旧按钮补齐可同步到手机的图标，不替换已设置的图标。") }
+                AppButton { objectName: "panelFillMissingIcons"; text: qsTr("补齐默认图标"); onClicked: editor.fillMissingIcons(); C.ToolTip.visible: hovered; C.ToolTip.text: qsTr("为旧按钮补齐可同步到手机的图标，不替换已设置的图标。") }
             }
             C.Label {
-                visible: config.mode === "follow"; Layout.fillWidth: true; elide: Text.ElideMiddle; color: "#69778b"; font.pixelSize: 11
+                visible: config.mode === "follow"; Layout.fillWidth: true; elide: Text.ElideMiddle; color: ui.textMuted; font.pixelSize: 11
                 text: editor.foregroundSupported ? qsTr("当前程序：%1；手动切页保持到下次程序切换。").arg(editor.foregroundApplication || qsTr("请切到要识别的软件")) : qsTr("当前平台暂不支持前台识别，请使用 Windows 版本。")
             }
-            C.Label { visible: config.mode === "follow" && !!editor.foregroundError; text: root.foregroundErrorText(); color: "#a25712"; Layout.fillWidth: true; wrapMode: Text.WordWrap; font.pixelSize: 11 }
+            C.Label { visible: config.mode === "follow" && !!editor.foregroundError; text: root.foregroundErrorText(); color: ui.warning; Layout.fillWidth: true; wrapMode: Text.WordWrap; font.pixelSize: 11 }
             Flow {
                 Layout.fillWidth: true; spacing: 14
                 RowLayout {
                 width: implicitWidth
                 spacing: 8
                 C.Label { text: qsTr("背景色") }
-                C.Button {
+                AppButton {
                     objectName: "panelBackgroundPicker"; implicitWidth: 38
                     Accessible.name: qsTr("选择背景颜色")
-                    contentItem: Rectangle { implicitWidth: 22; implicitHeight: 18; color: config.appearance.background; border.color: "#8793a5" }
+                    contentItem: Rectangle { implicitWidth: 22; implicitHeight: 18; color: config.appearance.background; border.color: ui.borderStrong }
                     onClicked: { colorPicker.expectedRevision = config.revision; colorPicker.selectedColor = config.appearance.background; colorPicker.open(); }
                 }
                 C.TextField { objectName: "panelBackgroundHex"; text: config.appearance.background; maximumLength: 7; Layout.preferredWidth: 105; Accessible.name: qsTr("背景色十六进制值"); onEditingFinished: editor.setAppearance("background", text) }
@@ -447,28 +529,60 @@ Item {
                     C.ToolTip.visible: hovered
                     C.ToolTip.text: Accessible.description
                 }
-                C.Label { text: qsTr("无默认输出"); color: "#b3261e"; visible: !localVolume.available }
+                C.Label { text: qsTr("无默认输出"); color: ui.danger; visible: !localVolume.available }
             }
-            C.Label { visible: !!localVolume.error; text: root.volumeErrorText(localVolume.error); textFormat: Text.PlainText; wrapMode: Text.WordWrap; color: "#b3261e"; font.pixelSize: 11; Layout.fillWidth: true }
+            C.Label { visible: !!localVolume.error; text: root.volumeErrorText(localVolume.error); textFormat: Text.PlainText; wrapMode: Text.WordWrap; color: ui.danger; font.pixelSize: 11; Layout.fillWidth: true }
+                }
+            }
         }
         ColumnLayout {
-            C.Label { text: qsTr("开启连接"); font.pixelSize: 26; font.bold: true; color: "#273448" }
-            C.Label { text: qsTr("在 Android 和电脑上打开 KDE Connect，连接同一网络，在设备管理中配对。\n配对完成后，手机打开“控制面板”即可读取电脑配置。"); wrapMode: Text.WordWrap; Layout.fillWidth: true; color: "#69778b"; lineHeight: 1.6 }
-            C.Button { objectName: "panelOpenConnections"; text: qsTr("打开设备管理与配对"); highlighted: true; palette.dark: "#286fe0"; palette.mid: "#205ab8"; palette.brightText: "white"; onClicked: root.openConnections() }
+            spacing: ui.spacing
+            RowLayout {
+                Layout.fillWidth: true; spacing: 14
+                Rectangle { Layout.preferredWidth: 4; Layout.preferredHeight: 34; radius: 2; color: ui.accent }
+                C.Label { text: qsTr("开启连接"); font.pixelSize: 24; font.bold: true; color: ui.text; Layout.fillWidth: true }
+            }
+            AppCard {
+                Layout.fillWidth: true
+                implicitHeight: connectColumn.implicitHeight + 32
+                ColumnLayout {
+                    id: connectColumn
+                    anchors.fill: parent; anchors.margins: 16; spacing: 14
+                    C.Label { text: qsTr("在 Android 和电脑上打开 KDE Connect，连接同一网络，在设备管理中配对。\n配对完成后，手机打开“控制面板”即可读取电脑配置。"); wrapMode: Text.WordWrap; Layout.fillWidth: true; color: ui.textMuted; lineHeight: 1.6 }
+                    AppButton { objectName: "panelOpenConnections"; text: qsTr("打开设备管理与配对"); primary: true; onClicked: root.openConnections() }
+                }
+            }
             Item { Layout.fillHeight: true }
         }
         ColumnLayout {
-            C.Label { text: qsTr("关于"); font.pixelSize: 26; font.bold: true; color: "#273448" }
-            C.Label { text: "KDE Connect 控制面板"; font.pixelSize: 22 }
-            C.Label { text: qsTr("Android 与 Windows 控制面板开发分支\n基于 KDE Connect 开源项目，使用 GPL 许可证。"); color: "#69778b"; lineHeight: 1.6 }
-            C.Button { text: qsTr("查看源代码"); onClicked: Qt.openUrlExternally("https://github.com/xingxing7290/kdeconnect-kde") }
-            C.Button { objectName: "panelOriginalFeatures"; text: qsTr("KDE Connect 原有设备功能"); onClicked: root.openConnections() }
+            spacing: ui.spacing
+            RowLayout {
+                Layout.fillWidth: true; spacing: 14
+                Rectangle { Layout.preferredWidth: 4; Layout.preferredHeight: 34; radius: 2; color: ui.accent }
+                C.Label { text: qsTr("关于"); font.pixelSize: 24; font.bold: true; color: ui.text; Layout.fillWidth: true }
+            }
+            AppCard {
+                Layout.fillWidth: true
+                implicitHeight: aboutColumn.implicitHeight + 32
+                ColumnLayout {
+                    id: aboutColumn
+                    anchors.fill: parent; anchors.margins: 16; spacing: 12
+                    C.Label { text: "KDE Connect 控制面板"; font.pixelSize: 20; font.bold: true; color: ui.text }
+                    C.Label { text: qsTr("Android 与 Windows 控制面板开发分支\n基于 KDE Connect 开源项目，使用 GPL 许可证。"); color: ui.textMuted; lineHeight: 1.6; Layout.fillWidth: true; wrapMode: Text.WordWrap }
+                    RowLayout {
+                        spacing: 10
+                        AppButton { text: qsTr("查看源代码"); onClicked: Qt.openUrlExternally("https://github.com/xingxing7290/kdeconnect-kde") }
+                        AppButton { objectName: "panelOriginalFeatures"; text: qsTr("KDE Connect 原有设备功能"); onClicked: root.openConnections() }
+                        Item { Layout.fillWidth: true }
+                    }
+                }
+            }
             Item { Layout.fillHeight: true }
         }
     }
     PanelButtonDialog { id: buttonDialog; editor: root.editor; systemPresets: root.systemPresets }
     ColorDialog { id: colorPicker; property double expectedRevision: -1; onAccepted: editor.setAppearanceChecked("background", selectedColor.toString(), expectedRevision) }
-    C.Dialog {
+    AppDialog {
         id: deletePageDialog; parent: C.Overlay.overlay; anchors.centerIn: parent; modal: true; title: qsTr("删除页面？")
         objectName: "panelDeletePageDialog"
         property string targetPageId: ""
@@ -479,18 +593,18 @@ Item {
         ColumnLayout {
             width: parent.width
             C.Label { text: qsTr("将删除“%1”及其中的按钮，可用“撤回上次修改”恢复。").arg(deletePageDialog.targetPageName); textFormat: Text.PlainText; wrapMode: Text.WordWrap; Layout.fillWidth: true }
-            C.Label { visible: !!deletePageDialog.validationError; text: deletePageDialog.validationError; textFormat: Text.PlainText; color: "#b3261e"; wrapMode: Text.WordWrap; Layout.fillWidth: true }
+            C.Label { visible: !!deletePageDialog.validationError; text: deletePageDialog.validationError; textFormat: Text.PlainText; color: ui.danger; wrapMode: Text.WordWrap; Layout.fillWidth: true }
             RowLayout {
                 Item { Layout.fillWidth: true }
-                C.Button { text: qsTr("取消"); onClicked: deletePageDialog.close() }
-                C.Button { objectName: "panelDeletePageConfirm"; text: qsTr("删除页面"); highlighted: true; palette.dark: "#286fe0"; palette.mid: "#205ab8"; palette.brightText: "white"; onClicked: {
+                AppButton { text: qsTr("取消"); onClicked: deletePageDialog.close() }
+                AppButton { objectName: "panelDeletePageConfirm"; text: qsTr("删除页面"); highlighted: true; palette.dark: ui.accent; palette.mid: ui.accentHover; palette.brightText: ui.textOnAccent; onClicked: {
                     if (editor.deletePageChecked(deletePageDialog.targetPageId, deletePageDialog.editSnapshot)) deletePageDialog.close();
                     else deletePageDialog.validationError = root.configurationError(editor.error);
                 } }
             }
         }
     }
-    C.Dialog {
+    AppDialog {
         id: pageDialog; parent: C.Overlay.overlay; anchors.centerIn: parent; width: 440; modal: true; title: qsTr("页面设置")
         objectName: "panelPageSettingsDialog"
         property string targetPageId: ""
@@ -500,19 +614,19 @@ Item {
             width: parent.width
             C.TextField { id: pageName; objectName: "panelPageName"; placeholderText: qsTr("页面名称"); maximumLength: 120; Layout.fillWidth: true; Accessible.name: placeholderText }
             C.TextField { id: applicationField; objectName: "panelPageApplication"; placeholderText: qsTr("绑定的程序名，例如 notepad.exe"); maximumLength: 260; Layout.fillWidth: true; Accessible.name: placeholderText }
-            C.Button { text: qsTr("使用当前识别的程序"); visible: config.mode === "follow"; enabled: !!editor.foregroundApplication && !editor.foregroundError; onClicked: applicationField.text = editor.foregroundApplication }
-            C.Label { visible: !!pageDialog.validationError; text: pageDialog.validationError; textFormat: Text.PlainText; color: "#b3261e"; wrapMode: Text.WordWrap; Layout.fillWidth: true }
+            AppButton { text: qsTr("使用当前识别的程序"); visible: config.mode === "follow"; enabled: !!editor.foregroundApplication && !editor.foregroundError; onClicked: applicationField.text = editor.foregroundApplication }
+            C.Label { visible: !!pageDialog.validationError; text: pageDialog.validationError; textFormat: Text.PlainText; color: ui.danger; wrapMode: Text.WordWrap; Layout.fillWidth: true }
             RowLayout {
                 Item { Layout.fillWidth: true }
-                C.Button { text: qsTr("取消"); onClicked: pageDialog.close() }
-                C.Button { objectName: "panelPageSettingsSave"; text: qsTr("保存"); highlighted: true; palette.dark: "#286fe0"; palette.mid: "#205ab8"; palette.brightText: "white"; onClicked: {
+                AppButton { text: qsTr("取消"); onClicked: pageDialog.close() }
+                AppButton { objectName: "panelPageSettingsSave"; text: qsTr("保存"); highlighted: true; palette.dark: ui.accent; palette.mid: ui.accentHover; palette.brightText: ui.textOnAccent; onClicked: {
                     if (editor.renamePageChecked(pageDialog.targetPageId, pageName.text, applicationField.text, pageDialog.editSnapshot)) pageDialog.close();
                     else pageDialog.validationError = root.configurationError(editor.error);
                 } }
             }
         }
     }
-    C.Dialog {
+    AppDialog {
         id: foregroundDialog; parent: C.Overlay.overlay; anchors.centerIn: parent; width: 480; modal: true; title: qsTr("识别当前操作的程序")
         property string targetPageId: ""
         property string targetPageName: ""
@@ -528,18 +642,18 @@ Item {
         ColumnLayout {
             width: parent.width; spacing: 14
             C.Label { text: qsTr("保持此窗口打开，点击要绑定的软件，等待片刻后返回。识别只使用程序名，不读取窗口标题或文档内容。"); wrapMode: Text.WordWrap; Layout.fillWidth: true }
-            C.Label { visible: !!editor.foregroundError; text: root.foregroundErrorText(); color: "#a25712"; wrapMode: Text.WordWrap; Layout.fillWidth: true }
-            C.Label { text: qsTr("最近稳定识别的程序"); color: "#69778b"; Layout.fillWidth: true }
+            C.Label { visible: !!editor.foregroundError; text: root.foregroundErrorText(); color: ui.warning; wrapMode: Text.WordWrap; Layout.fillWidth: true }
+            C.Label { text: qsTr("最近稳定识别的程序"); color: ui.textMuted; Layout.fillWidth: true }
             C.TextField { text: editor.foregroundApplication; readOnly: true; selectByMouse: true; placeholderText: qsTr("等待前台程序"); Layout.fillWidth: true }
             RowLayout {
-                C.Button { text: qsTr("复制程序名称"); enabled: !!editor.foregroundApplication && !editor.foregroundError; onClicked: editor.copyForegroundApplication() }
-                C.Button { text: qsTr("绑定到当前页"); highlighted: true; palette.dark: "#286fe0"; palette.mid: "#205ab8"; palette.brightText: "white"; enabled: !!editor.foregroundApplication && !editor.foregroundError; onClicked: {
+                AppButton { text: qsTr("复制程序名称"); enabled: !!editor.foregroundApplication && !editor.foregroundError; onClicked: editor.copyForegroundApplication() }
+                AppButton { text: qsTr("绑定到当前页"); highlighted: true; palette.dark: ui.accent; palette.mid: ui.accentHover; palette.brightText: ui.textOnAccent; enabled: !!editor.foregroundApplication && !editor.foregroundError; onClicked: {
                     if (editor.renamePageChecked(foregroundDialog.targetPageId, foregroundDialog.targetPageName, editor.foregroundApplication, foregroundDialog.editSnapshot)) foregroundDialog.close();
                     else foregroundDialog.validationError = root.configurationError(editor.error);
                 } }
             }
-            C.Label { visible: !!foregroundDialog.validationError; text: foregroundDialog.validationError; textFormat: Text.PlainText; color: "#b3261e"; wrapMode: Text.WordWrap; Layout.fillWidth: true }
-            C.Label { text: qsTr("未知程序回到首页；同名绑定按页面顺序取第一项。KDE 自身和短暂焦点变化不会打断当前页。"); wrapMode: Text.WordWrap; Layout.fillWidth: true; color: "#69778b"; font.pixelSize: 12 }
+            C.Label { visible: !!foregroundDialog.validationError; text: foregroundDialog.validationError; textFormat: Text.PlainText; color: ui.danger; wrapMode: Text.WordWrap; Layout.fillWidth: true }
+            C.Label { text: qsTr("未知程序回到首页；同名绑定按页面顺序取第一项。KDE 自身和短暂焦点变化不会打断当前页。"); wrapMode: Text.WordWrap; Layout.fillWidth: true; color: ui.textMuted; font.pixelSize: 12 }
         }
     }
     Connections {

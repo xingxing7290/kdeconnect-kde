@@ -21,6 +21,7 @@ endif()
 
 add_executable(kdeconnect-app
     main.cpp
+    appearance.cpp
     ${kdeconnect_SRCS}
     ${kdeconnect_custom_icons_SRCS}
 )
@@ -33,6 +34,11 @@ ecm_add_qml_module(kdeconnect-app URI org.kde.kdeconnect.app)
 
 ecm_target_qml_sources(kdeconnect-app SOURCES
     qml/Main.qml
+    qml/AppTheme.qml
+    qml/AppButton.qml
+    qml/AppCard.qml
+    qml/AppDialog.qml
+    qml/ThemeSwitcher.qml
     qml/DeviceManager.qml
     qml/EmbeddedDevices.qml
     qml/ControlDashboard.qml
@@ -78,6 +84,6 @@ if (APPLE)
     target_link_libraries(kdeconnect-app PRIVATE "-framework AppKit")
 endif()
 
-set_target_properties(kdeconnect-app PROPERTIES MACOSX_BUNDLE FALSE)
+set_target_properties(kdeconnect-app PROPERTIES MACOSX_BUNDLE FALSE AUTOMOC ON)
 install(TARGETS kdeconnect-app ${KDECONNECT_INSTALL_TARGETS_DEFAULT_ARGS_BUNDLE})
 install(PROGRAMS org.kde.kdeconnect.app.desktop DESTINATION ${KDE_INSTALL_APPDIR})

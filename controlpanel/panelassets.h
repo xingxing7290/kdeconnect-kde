@@ -17,13 +17,18 @@ public:
     static constexpr int IconSize = 256;
     explicit PanelAssets(const QString &configDirectory);
     static bool validId(const QString &id);
+    /** Byte-for-byte validation of an already normalized 256x256 PNG asset. */
+    static bool validPng(const QByteArray &bytes);
     QString importImage(const QUrl &url, QString *error = nullptr) const;
     QString importProgramIcon(const QUrl &url, QString *error = nullptr) const;
     QString importPixels(const QImage &image, QString *error = nullptr) const;
+    /** Installs a bundle asset verbatim; the caller must supply the SHA-256 id of these exact bytes. */
+    bool install(const QString &id, const QByteArray &bytes, QString *error = nullptr) const;
     std::optional<QByteArray> read(const QString &id) const;
     QUrl url(const QString &id) const;
 
 private:
+    QString writeAsset(const QByteArray &bytes, QString *error) const;
     QString m_directory;
 };
 QImage extractProgramIcon(const QString &path);

@@ -11,7 +11,7 @@ target_link_libraries(kdeconnectpanelweather PUBLIC Qt::Core Qt::Network)
 target_include_directories(kdeconnectpanelweather PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 set_target_properties(kdeconnectpanelweather PROPERTIES POSITION_INDEPENDENT_CODE ON AUTOMOC ON)
 
-add_library(kdeconnectpanelactions STATIC panelactions.cpp paneleditor.cpp panelassets.cpp panelfavicon.cpp)
+add_library(kdeconnectpanelactions STATIC panelactions.cpp paneleditor.cpp panelassets.cpp panelfavicon.cpp panelportable.cpp)
 set_target_properties(kdeconnectpanelactions PROPERTIES AUTOMOC ON)
 set_target_properties(kdeconnectpanelactions PROPERTIES POSITION_INDEPENDENT_CODE ON)
 target_link_libraries(kdeconnectpanelactions PUBLIC kdeconnectpanel kdeconnectpanelweather Qt::Gui Qt::Network)

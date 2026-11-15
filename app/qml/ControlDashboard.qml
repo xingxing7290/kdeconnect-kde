@@ -70,7 +70,72 @@ Item {
             write_failed: qsTr("配置写入失败，请检查磁盘空间和目录权限。"),
             backup_failed: qsTr("无法备份原配置，本次没有保存。请检查磁盘空间和目录权限。")
         };
-        return messages[code] || qsTr("无法保存配置：%1").arg(code);
+        return messages[code] || root.bundleErrorText(code);
+    }
+    function bundleErrorText(code) {
+        if (!code) return "";
+        const messages = {
+            invalid_target: qsTr("请选择本机上的一个有效文件路径。"),
+            bundle_unreadable: qsTr("无法读取该文档，请确认文件存在且未被占用。"),
+            bundle_too_large: qsTr("文档超过 64 MiB 上限，请精简图标后重试。"),
+            bundle_too_deep: qsTr("文档嵌套层级过深，不是有效的配置文档。"),
+            invalid_json: qsTr("文档不是有效的 JSON，请检查编辑后的格式。"),
+            unsupported_bundle: qsTr("这不是控制面板配置文档（format 不匹配）。"),
+            unsupported_bundle_version: qsTr("文档版本不受支持，当前仅支持格式版本 1。"),
+            bundle_missing_config: qsTr("文档缺少 config 配置段。"),
+            bundle_missing_assets: qsTr("文档缺少 assets 图标段。"),
+            too_many_assets: qsTr("文档中的图标数量超过上限（10 页 × 18 槽位）。"),
+            duplicate_asset: qsTr("文档中存在重复图标 ID。"),
+            asset_too_large: qsTr("某个图标超过 512 KiB 上限。"),
+            invalid_bundle_asset: qsTr("图标数据无效：必须是 256×256 的原始 PNG，并以严格 base64 编码。"),
+            asset_hash_mismatch: qsTr("图标内容与 ID（SHA-256）不一致，文档可能被修改或损坏。"),
+            asset_size_mismatch: qsTr("图标声明的字节数与实际内容不一致。"),
+            asset_missing_in_bundle: qsTr("配置引用的图标既不在文档里、本机也不存在，导入会丢失图标，已阻止。"),
+            asset_missing: qsTr("本机有按钮的图标文件缺失，请先点“补齐默认图标”或更换图标后再导出。"),
+            asset_write_failed: qsTr("图标写入失败，请检查 assets 目录权限与磁盘空间。"),
+            asset_store_unavailable: qsTr("图标目录不可写或被符号链接占用。"),
+            asset_store_full: qsTr("图标仓库已满（128 MiB），请先清理旧图标。"),
+            invalid_asset: qsTr("图标数据无效。"),
+            invalid_image: qsTr("图片无法解码或尺寸超过 4096 像素。"),
+            image_too_large_or_unreadable: qsTr("图片文件无法读取或超过 8 MiB。"),
+            store_unavailable: qsTr("当前配置尚未就绪或读取失败，请修复配置后再试。"),
+            store_busy: qsTr("配置正由其他窗口保存，请稍后重试。"),
+            stale_revision: qsTr("另一窗口已修改配置，请重试导入。"),
+            write_failed: qsTr("配置写入失败，请检查磁盘空间和目录权限。"),
+            bundle_write_failed: qsTr("无法写入导出文档，请检查目标目录权限和磁盘空间。"),
+            config_too_large: qsTr("配置段超过 256 KiB 上限。"),
+            invalid_page_count: qsTr("页面数量必须为 1 到 10。"),
+            invalid_slot_count: qsTr("每个页面必须恰好有 18 个槽位。"),
+            invalid_page_id: qsTr("页面 ID 重复或格式不合法。"),
+            invalid_button_id: qsTr("按钮 ID 重复或格式不合法。"),
+            invalid_icon: qsTr("按钮图标 ID 必须是 64 位小写十六进制。"),
+            invalid_active_page: qsTr("首页或当前页 ID 在页面列表中不存在。"),
+            invalid_page_name: qsTr("页面名称不能为空且不超过 120 个字符。"),
+            invalid_application: qsTr("页面绑定的程序名不合法。"),
+            invalid_button_name: qsTr("按钮名称不能为空且不超过 120 个字符。"),
+            invalid_button_kind: qsTr("按钮类型不合法，应为 program/website/file/folder/shortcut/system/command 之一。"),
+            invalid_mode: qsTr("模式应为 single、pages 或 follow。"),
+            unsupported_version: qsTr("config.schemaVersion 当前仅支持 1。"),
+            invalid_revision: qsTr("配置修订号不合法（导入时会忽略该值）。"),
+            invalid_background: qsTr("背景色应为 #RRGGBB 格式。"),
+            invalid_appearance: qsTr("showLabels / showVolume 必须是布尔值。"),
+            invalid_swipe_direction: qsTr("swipeDirection 应为 horizontal 或 vertical。"),
+            invalid_idle_timeout: qsTr("表盘的 enabled 或 timeoutMs 不合法。"),
+            invalid_dial: qsTr("表盘 ID 不在支持的五种表盘中。"),
+            invalid_dial_text: qsTr("城市、个性化文本或 info 配置超出长度 / 取值范围。"),
+            config_too_deep: qsTr("配置嵌套层级过深。"),
+            directory_unavailable: qsTr("配置目录不可写，请检查磁盘空间和目录权限。"),
+            config_unreadable: qsTr("无法读取本机 panel.json，请检查文件是否损坏。"),
+            missing_config: qsTr("本机 panel.json 缺失，请重启应用后再导入。"),
+            invalid_on_disk: qsTr("磁盘上的 panel.json 已损坏，请先修复再导入。"),
+            revision_rollback: qsTr("检测到修订号回退，请重启应用后再导入。"),
+            revision_collision: qsTr("检测到修订号冲突，请重启应用后再导入。"),
+            revision_exhausted: qsTr("修订号已达上限，无法继续写入。"),
+            invalid_revision_counter: qsTr("修订号计数文件损坏。"),
+            invalid_backup: qsTr("配置备份无效，无法自动回滚。"),
+            preserve_failed: qsTr("无法保留当前配置，导入已中止。")
+        };
+        return messages[code] || qsTr("操作未完成：%1").arg(code);
     }
     function foregroundErrorText() {
         if (editor.foregroundError === "hosted_application_unavailable") return qsTr("未识别出此宿主窗口中的实际程序，请切到目标应用后稍等，或手工填写程序名。");
@@ -255,6 +320,8 @@ Item {
                     C.Label { text: qsTr("桌面控制"); font.pixelSize: 24; font.bold: true; color: ui.text }
                     C.Label { text: qsTr("点击槽位编辑，拖动按钮换位，或从资源管理器拖入程序、文件和文件夹。"); color: ui.textMuted; font.pixelSize: 12; wrapMode: Text.WordWrap; Layout.fillWidth: true }
                 }
+                AppButton { objectName: "panelExportConfig"; text: qsTr("导出配置"); onClicked: exportPicker.open(); C.ToolTip.visible: hovered; C.ToolTip.text: qsTr("把全部页面、按钮与图标打包成一个可导入的 JSON 文档") }
+                AppButton { objectName: "panelImportConfig"; text: qsTr("导入配置"); onClicked: importPicker.open(); C.ToolTip.visible: hovered; C.ToolTip.text: qsTr("从文档恢复全部页面、按钮与图标") }
                 AppButton { text: qsTr("撤回上次修改"); onClicked: editor.restoreBackup() }
             }
             C.Label { visible: !!editor.error; text: root.configurationError(editor.error); color: ui.danger; Layout.fillWidth: true; wrapMode: Text.WordWrap }
@@ -664,8 +731,98 @@ Item {
             else if (pageDialog.visible) pageDialog.validationError = root.configurationError(editor.error);
             else if (deletePageDialog.visible) deletePageDialog.validationError = root.configurationError(editor.error);
             else if (foregroundDialog.visible) foregroundDialog.validationError = root.configurationError(editor.error);
+            else if (importDialog.visible) importDialog.validationError = root.bundleErrorText(editor.error);
             else { errorMessage.text = root.configurationError(editor.error); errorMessage.open(); }
         } }
     }
     MessageDialog { id: errorMessage; title: qsTr("配置需要检查"); buttons: MessageDialog.Ok }
+    MessageDialog { id: bundleResult; title: qsTr("配置导出 / 导入"); buttons: MessageDialog.Ok }
+
+    FileDialog {
+        id: exportPicker
+        fileMode: FileDialog.SaveFile
+        title: qsTr("导出控制面板配置")
+        nameFilters: [qsTr("控制面板配置 (*.kdpanel.json)"), qsTr("JSON 文档 (*.json)")]
+        onAccepted: {
+            const result = editor.exportBundle(selectedFile);
+            bundleResult.text = result.ok
+                ? qsTr("已导出 %1 个页面、%2 个按钮、%3 个图标到：\n%4").arg(result.pages).arg(result.buttons).arg(result.assets).arg(result.path)
+                : root.bundleErrorText(result.error);
+            bundleResult.open();
+        }
+    }
+    FileDialog {
+        id: importPicker
+        fileMode: FileDialog.OpenFile
+        title: qsTr("选择要导入的配置文档")
+        nameFilters: [qsTr("控制面板配置 (*.kdpanel.json *.json)"), qsTr("所有文件 (*)")]
+        onAccepted: {
+            importDialog.bundlePath = selectedFile;
+            importDialog.summary = editor.inspectBundle(selectedFile);
+            importDialog.validationError = "";
+            importDialog.open();
+        }
+    }
+    AppDialog {
+        id: importDialog
+        objectName: "panelImportDialog"
+        parent: C.Overlay.overlay; anchors.centerIn: parent; modal: true
+        width: Math.min(540, parent ? parent.width - 32 : 540)
+        title: qsTr("导入配置文档")
+        property url bundlePath: ""
+        property var summary: ({})
+        property string validationError: ""
+        ColumnLayout {
+            width: parent.width; spacing: 12
+            C.Label {
+                visible: !!importDialog.summary.ok
+                text: qsTr("文档包含 %1 个页面、%2 个按钮、%3 个图标（其中 %4 个图标本机已有）。")
+                    .arg(importDialog.summary.pages || 0).arg(importDialog.summary.buttons || 0)
+                    .arg(importDialog.summary.assets || 0).arg(importDialog.summary.alreadyPresent || 0)
+                font.pixelSize: 15; font.bold: true; color: ui.text; wrapMode: Text.WordWrap; Layout.fillWidth: true
+            }
+            Repeater {
+                model: importDialog.summary.ok ? (importDialog.summary.pageDetails || []) : []
+                delegate: C.Label {
+                    required property int index
+                    required property var modelData
+                    text: qsTr("%1. %2 — %3 个按钮").arg(index + 1).arg(modelData.name).arg(modelData.buttons)
+                    color: ui.textMuted; font.pixelSize: 12; elide: Text.ElideRight; Layout.fillWidth: true
+                }
+            }
+            C.Label {
+                visible: !!importDialog.summary.ok
+                text: qsTr("导出时间：%1").arg(importDialog.summary.exportedAt || qsTr("未记录"))
+                color: ui.textSubtle; font.pixelSize: 11; Layout.fillWidth: true
+            }
+            C.Label {
+                text: qsTr("导入会替换当前的全部页面、按钮、表盘与外观设置；网页图标和桌面应用图标随文档一并恢复。本机已有图标按内容去重保留，不会删除。文档中的程序 / 文件路径不校验是否存在，跨电脑导入后可能需要重新指定。")
+                color: ui.textMuted; font.pixelSize: 12; wrapMode: Text.WordWrap; Layout.fillWidth: true
+            }
+            C.Label {
+                visible: !importDialog.summary.ok || !!importDialog.validationError
+                text: importDialog.validationError || root.bundleErrorText(importDialog.summary.error || "")
+                color: ui.danger; font.pixelSize: 12; wrapMode: Text.WordWrap; Layout.fillWidth: true; textFormat: Text.PlainText
+            }
+            RowLayout {
+                Layout.fillWidth: true
+                Item { Layout.fillWidth: true }
+                AppButton { text: qsTr("取消"); onClicked: importDialog.close() }
+                AppButton {
+                    objectName: "panelImportConfirm"
+                    text: qsTr("导入并替换")
+                    primary: true
+                    enabled: !!importDialog.summary.ok
+                    onClicked: {
+                        const result = editor.importBundle(importDialog.bundlePath);
+                        if (!result.ok) { importDialog.validationError = root.bundleErrorText(result.error); return; }
+                        importDialog.close();
+                        bundleResult.text = qsTr("已导入 %1 个页面、%2 个按钮、%3 个图标。配置修订号更新为 %4，可用“撤回上次修改”恢复。")
+                            .arg(result.pages).arg(result.buttons).arg(result.assets).arg(result.revision);
+                        bundleResult.open();
+                    }
+                }
+            }
+        }
+    }
 }

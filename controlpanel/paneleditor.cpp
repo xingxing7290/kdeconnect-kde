@@ -624,6 +624,28 @@ bool PanelEditor::restoreBackup()
 {
     return m_store.restoreBackup();
 }
+
+QVariantMap PanelEditor::inspectBundle(const QUrl &url)
+{
+    return PanelPortable::inspect(url, m_assets);
+}
+
+QVariantMap PanelEditor::exportBundle(const QUrl &url)
+{
+    return PanelPortable::exportTo(url, m_store, m_assets);
+}
+
+QVariantMap PanelEditor::importBundle(const QUrl &url)
+{
+    // Bundle errors are reported by the dedicated dialog; do not call fail()
+    // here or the generic errorChanged popup would fire as well.
+    const auto result = PanelPortable::importFrom(url, m_store, m_assets);
+    if (result.value(QStringLiteral("ok")).toBool()) {
+        m_currentPageId = m_store.document().privateConfig().value(QStringLiteral("homePageId")).toString();
+        Q_EMIT changed();
+    }
+    return result;
+}
 }
 
 #include "moc_paneleditor.cpp"

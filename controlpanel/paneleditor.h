@@ -5,6 +5,7 @@
 #include "panelassets.h"
 #include "panelfavicon.h"
 #include "panelforeground.h"
+#include "panelportable.h"
 #include "panelprogress.h"
 #include "panelstore.h"
 #include "panelweather.h"
@@ -72,6 +73,10 @@ public:
     Q_INVOKABLE bool setIdleOptionsChecked(const QVariantMap &values, double expectedRevision);
     Q_INVOKABLE bool fillMissingIcons();
     Q_INVOKABLE bool restoreBackup();
+    /** Portable bundles: result maps carry ok/error and a human-readable summary. */
+    Q_INVOKABLE QVariantMap inspectBundle(const QUrl &url);
+    Q_INVOKABLE QVariantMap exportBundle(const QUrl &url);
+    Q_INVOKABLE QVariantMap importBundle(const QUrl &url);
 
 Q_SIGNALS:
     void configChanged();

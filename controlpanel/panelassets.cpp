@@ -22,6 +22,30 @@ QString fail(QString *error, const QString &message)
         *error = message;
     return {};
 }
+
+bool failBool(QString *error, const QString &message)
+{
+    if (error)
+        *error = message;
+    return false;
+}
+
+/** The bundle path must preserve the exact bytes: re-encoding would change the SHA-256 id. */
+bool normalizedPng(const QByteArray &bytes)
+{
+    static const QByteArray signature = QByteArrayLiteral("\x89PNG\r\n\x1a\n");
+    if (!bytes.startsWith(signature))
+        return false;
+    QBuffer buffer;
+    buffer.setData(bytes);
+    buffer.open(QIODevice::ReadOnly);
+    QImageReader reader(&buffer, QByteArrayLiteral("png"));
+    return reader.size() == QSize(PanelAssets::IconSize, PanelAssets::IconSize) && !reader.read().isNull();
+}
+}
+bool PanelAssets::validPng(const QByteArray &bytes)
+{
+    return normalizedPng(bytes);
 }
 PanelAssets::PanelAssets(const QString &directory)
     : m_directory(QDir(directory).filePath(QStringLiteral("assets")))
@@ -82,6 +106,11 @@ QString PanelAssets::importPixels(const QImage &image, QString *error) const
     buffer.open(QIODevice::WriteOnly);
     if (!normalized.save(&buffer, "PNG") || bytes.size() > MaxBytes)
         return fail(error, QStringLiteral("invalid_image"));
+    return writeAsset(bytes, error);
+}
+
+QString PanelAssets::writeAsset(const QByteArray &bytes, QString *error) const
+{
     const auto id = QString::fromLatin1(QCryptographicHash::hash(bytes, QCryptographicHash::Sha256).toHex());
     if (read(id))
         return id;
@@ -101,6 +130,21 @@ QString PanelAssets::importPixels(const QImage &image, QString *error) const
         return fail(error, QStringLiteral("asset_store_unavailable"));
     return id;
 }
+
+bool PanelAssets::install(const QString &id, const QByteArray &bytes, QString *error) const
+{
+    if (error)
+        error->clear();
+    if (!validId(id) || bytes.isEmpty() || bytes.size() > MaxBytes || !normalizedPng(bytes))
+        return failBool(error, QStringLiteral("invalid_asset"));
+    if (QCryptographicHash::hash(bytes, QCryptographicHash::Sha256).toHex() != id.toLatin1())
+        return failBool(error, QStringLiteral("asset_hash_mismatch"));
+    const auto written = writeAsset(bytes, error);
+    if (written.isEmpty())
+        return false;
+    return written == id ? true : failBool(error, QStringLiteral("asset_hash_mismatch"));
+}
+
 std::optional<QByteArray> PanelAssets::read(const QString &id) const
 {
     if (!validId(id) || QFileInfo(m_directory).isSymLink())

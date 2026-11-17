@@ -3,6 +3,9 @@
 此安装器仅包装现有控制面板启动器，不修改原 KDE 功能、系统音频或配对逻辑。
 先单独配置 CMake `CMAKE_BUILD_TYPE=Release` 并完成构建，使用 package.ps1
 收集运行依赖；再以 Inno Setup 7 编译 installer.iss，指定 PackageRoot 和 OutputRoot。
+可额外通过 `AppVersionName` 和 `OutputFilename` 宏为本地候选指定版本与文件名；
+未指定时保留旧 alpha.4 默认值。更改显示版本不会改变 AppId，测试安装到同一目录
+仍可能影响已安装版本，须使用隔离环境和独立目录；不应将本地候选误作正式发行。
 
 目标 Windows 10/11 x64，不请求管理员权限；默认 D:/Apps/KDE-ControlPanel，
 可选择其他有写入权限的本地目录。安装器创建开始菜单入口与卸载项，不设置

@@ -2,6 +2,16 @@
 
 ## KDE 控制台开发分支
 
+### 当前开发源码的使用入口
+
+以下功能针对当前开发源码；已公开的 Android alpha.3 和 Windows alpha.4 发布包来自更早提交，不包含后续新增功能或本轮修复。需要这些功能时，请使用包含相应代码的两端构建，不要假定旧下载包已更新。实际完成情况和最新测试边界见[构建记录](docs/control-panel/BUILD_STATUS.zh-CN.md)。
+
+- 在桌面「开启连接」管理设备和配对；「桌面控制」编辑页面与按钮。新增网站按钮会尝试获取网站图标，失败时保留默认图标，详见[图标说明](docs/control-panel/ASSETS.zh-CN.md)。
+- 「桌面控制」支持导出和导入配置与所引用图标。导入会替换现有配置并保留备份；导出文件包含程序路径、网址及备注等私有信息，跨电脑迁移后需检查本机路径。详见[配置迁移](docs/control-panel/PORTABLE.zh-CN.md)。
+- 「表盘选择」的信息表盘可配置备注、预报和 WorkBuddy 进度。进度需要外部程序写入指定 JSON 文件或提供 HTTP(S) 端点，并不是自动读取 WorkBuddy 任务；配置和格式见[信息表盘](docs/control-panel/INFO.zh-CN.md)。桌面主题只保存在本机。
+
+目前自动测试不能替代完整双端、普通局域网、多设备、真实音频、无障碍和干净系统验收。2026-11-16 本地工作区桌面 CTest 为 26/26，Android 为 51 套件、343 项通过（测试 JVM 使用临时 2 GB 堆，此前一次曾因堆耗尽失败）；最近 Android Lint 有 511 项错误级问题，早于最新测试代码调整。两端当时均有尚未提交或推送的修改，GitHub 克隆不一定包含这些结果对应的代码；勿将测试结果解读为最终稳定版验收通过。
+
 准备在另一台电脑继续开发：从[换机接续指南](docs/control-panel/DEVELOPER-HANDOFF.zh-CN.md)开始，包含两端代码基线、构建入口、文档索引、未完成验收和签名/私密数据迁移边界。
 
 Windows 最新发布构建为 [0.1.0-alpha.4](docs/control-panel/RELEASE-0.1.0-alpha.4.zh-CN.md)：替换可再分发 FFmpeg，补齐对应源码/版权材料；22/22 桌面回归、12 项实际 Qt 音视频检查及安装后复测、安装卸载与身份保留通过。[Windows 下载页](https://github.com/xingxing7290/kdeconnect-kde/releases/tag/controlpanel-release-v0.1.0-alpha.4)；配套 [Android 签名 Release APK](https://github.com/xingxing7290/kdeconnect-android/releases/tag/controlpanel-release-v0.1.0-alpha.3)。Windows 未代码签名，完整产品验收仍未结束；以下阶段记录保留为历史快照。

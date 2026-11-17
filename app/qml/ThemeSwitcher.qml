@@ -101,6 +101,7 @@ Item {
                     id: themeItem
                     required property int index
                     required property string modelData
+                    objectName: "panelThemeOption-" + index
                     width: menu.availableWidth
                     height: 34
                     highlighted: index === ui.themeIndex

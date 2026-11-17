@@ -49,11 +49,11 @@ class PanelPortableTest : public QObject
     {
         QJsonObject target;
         if (kind == QLatin1String("website"))
-            target.insert(QStringLiteral("url"), QStringLiteral("https://example.com/") + id);
+            target.insert(QStringLiteral("url"), QString(QStringLiteral("https://example.com/") + id));
         else
-            target.insert(QStringLiteral("path"), QStringLiteral("C:/Apps/") + id + QStringLiteral(".exe"));
+            target.insert(QStringLiteral("path"), QString(QStringLiteral("C:/Apps/") + id + QStringLiteral(".exe")));
         return QJsonObject{{QStringLiteral("id"), id},
-                           {QStringLiteral("name"), QStringLiteral("Btn ") + id},
+                           {QStringLiteral("name"), QString(QStringLiteral("Btn ") + id)},
                            {QStringLiteral("kind"), kind},
                            {QStringLiteral("icon"), icon},
                            {QStringLiteral("target"), target}};

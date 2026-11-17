@@ -6,10 +6,16 @@
 #ifndef OutputRoot
   #error OutputRoot is required
 #endif
+#ifndef AppVersionName
+  #define AppVersionName "0.1.0-alpha.4"
+#endif
+#ifndef OutputFilename
+  #define OutputFilename "kdeconnect-controlpanel-0.1.0-alpha.4-windows-x64-setup"
+#endif
 [Setup]
 AppId={{F693D92D-5F77-45BB-AB7F-2E77564305EE}
 AppName=KDE Control Panel (personal fork)
-AppVersion=0.1.0-alpha.4
+AppVersion={#AppVersionName}
 AppPublisher=xingxing7290 (unofficial personal fork)
 AppPublisherURL=https://github.com/xingxing7290/kdeconnect-kde
 DefaultDirName=D:\Apps\KDE-ControlPanel
@@ -19,7 +25,7 @@ ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
 MinVersion=10.0
 OutputDir={#OutputRoot}
-OutputBaseFilename=kdeconnect-controlpanel-0.1.0-alpha.4-windows-x64-setup
+OutputBaseFilename={#OutputFilename}
 LicenseFile={#PackageRoot}\licenses\kdeconnect\GPL-3.0-only.txt
 InfoBeforeFile={#PackageRoot}\THIRD-PARTY-NOTICES.txt
 Compression=lzma2/fast

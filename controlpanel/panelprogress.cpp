@@ -11,6 +11,7 @@
 #include <QNetworkReply>
 #include <QNetworkRequest>
 #include <QSet>
+#include <QSharedPointer>
 #include <QUrl>
 #include <cmath>
 #include <limits>
@@ -52,6 +53,7 @@ PanelProgress::PanelProgress(QObject *parent, QNetworkAccessManager *network, bo
     m_timer.setSingleShot(false);
     connect(&m_timer, &QTimer::timeout, this, &PanelProgress::refresh);
     connect(&m_watcher, &QFileSystemWatcher::fileChanged, this, &PanelProgress::refresh);
+    connect(&m_watcher, &QFileSystemWatcher::directoryChanged, this, &PanelProgress::refresh);
     // The heartbeat is independent of the (user configurable) source poll interval so a slow
     // source cannot accidentally make the phone declare a healthy link stale.
     m_heartbeat.setSingleShot(false);
@@ -102,7 +104,7 @@ QJsonObject PanelProgress::normalize(const QByteArray &data, qint64 now, qint64 
     stage = input.value(QStringLiteral("stage")).toString();
     detail = input.value(QStringLiteral("detail")).toString();
 
-    QJsonValue percent;
+    QJsonValue percent(QJsonValue::Undefined);
     const QJsonValue percentValue = input.value(QStringLiteral("percent"));
     if (!percentValue.isUndefined() && !percentValue.isNull()) {
         if (!number(percentValue, 0, 100, true)) {
@@ -167,6 +169,9 @@ void PanelProgress::configure(const QJsonObject &info)
         m_watcher.removePath(m_watchedPath);
         m_watchedPath.clear();
     }
+    if (!m_watcher.directories().isEmpty()) {
+        m_watcher.removePaths(m_watcher.directories());
+    }
     if (m_reply) {
         m_reply->abort();
         m_reply.clear();
@@ -181,12 +186,17 @@ void PanelProgress::configure(const QJsonObject &info)
     m_signature.clear();
     m_lastPublished = 0;
     m_state = unavailable(QDateTime::currentSecsSinceEpoch(), QStringLiteral("waiting"));
+    m_state.insert(QStringLiteral("sequence"), ++m_sequence);
     Q_EMIT changed();
     if (!m_enabled) {
         return;
     }
     if (usableFile) {
         m_watchedPath = m_path;
+        const QString directory = QFileInfo(m_path).absolutePath();
+        if (QFileInfo::exists(directory)) {
+            m_watcher.addPath(directory);
+        }
         if (QFileInfo::exists(m_path)) {
             m_watcher.addPath(m_watchedPath);
         }
@@ -203,6 +213,13 @@ void PanelProgress::refresh()
         return;
     }
     if (m_source == QLatin1String("file")) {
+        const QString directory = QFileInfo(m_path).absolutePath();
+        if (!m_watcher.directories().contains(directory) && QFileInfo::exists(directory)) {
+            m_watcher.addPath(directory);
+        }
+        if (!m_watcher.files().contains(m_watchedPath) && QFileInfo::exists(m_watchedPath)) {
+            m_watcher.addPath(m_watchedPath);
+        }
         readFile();
     } else if (m_source == QLatin1String("url")) {
         requestUrl();
@@ -238,23 +255,41 @@ void PanelProgress::requestUrl()
         return;
     }
     QNetworkRequest request(address);
+    request.setAttribute(QNetworkRequest::RedirectPolicyAttribute, QNetworkRequest::ManualRedirectPolicy);
     request.setTransferTimeout(3000);
-    m_reply = m_network->get(request);
-    connect(m_reply.data(), &QNetworkReply::finished, this, [this] {
-        QNetworkReply *reply = m_reply.data();
-        if (!reply) {
+    auto *reply = m_network->get(request);
+    m_reply = reply;
+    reply->setReadBufferSize(MaxPayload + 1);
+    auto bytes = QSharedPointer<QByteArray>::create();
+    const auto collect = [reply, bytes] {
+        if (bytes->size() <= MaxPayload) {
+            bytes->append(reply->read(MaxPayload + 1 - bytes->size()));
+        }
+        if (bytes->size() > MaxPayload && !reply->isFinished()) {
+            reply->abort();
+        }
+    };
+    connect(reply, &QNetworkReply::readyRead, this, collect);
+    auto *deadline = new QTimer(reply);
+    deadline->setSingleShot(true);
+    connect(deadline, &QTimer::timeout, reply, &QNetworkReply::abort);
+    deadline->start(5000);
+    connect(reply, &QNetworkReply::finished, this, [this, reply, bytes, collect] {
+        if (m_reply != reply) {
+            reply->deleteLater();
             return;
         }
-        const QByteArray data = reply->read(MaxPayload + 1);
+        collect();
         const bool redirected = !reply->attribute(QNetworkRequest::RedirectionTargetAttribute).isNull();
-        const bool ok = reply->error() == QNetworkReply::NoError && !redirected && data.size() <= MaxPayload;
+        const bool ok = reply->error() == QNetworkReply::NoError && !redirected && reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt() == 200
+            && bytes->size() <= MaxPayload;
         reply->deleteLater();
         m_reply.clear();
         if (!ok) {
             failProgress(QStringLiteral("request_failed"));
             return;
         }
-        const QJsonObject snapshot = normalize(data, QDateTime::currentSecsSinceEpoch(), 0);
+        const QJsonObject snapshot = normalize(*bytes, QDateTime::currentSecsSinceEpoch(), 0);
         if (snapshot.isEmpty()) {
             failProgress(QStringLiteral("invalid_payload"));
         } else {

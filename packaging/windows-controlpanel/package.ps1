@@ -8,9 +8,7 @@ param(
 )
 $ErrorActionPreference = 'Stop'
 $sourceRoot = (Resolve-Path (Join-Path $PSScriptRoot '../..')).Path
-foreach ($required in @('source-index.json', 'THIRD-PARTY-NOTICES.txt', 'licenses/third-party')) {
-    if (!(Test-Path -LiteralPath (Join-Path $DistributionMaterialsRoot $required))) { throw "Missing distribution materials: $required" }
-}
+& (Join-Path $PSScriptRoot 'Assert-DistributionMaterials.ps1') -DistributionMaterialsRoot $DistributionMaterialsRoot
 $packageRoot = [IO.Path]::GetFullPath($OutputDirectory)
 if (Test-Path -LiteralPath $packageRoot) {
     throw "Output must be a new directory, not an existing package: $packageRoot"

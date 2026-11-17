@@ -35,6 +35,7 @@ public:
             return true;
         if (packet.type() == QLatin1String("kdeconnect.controlpanel.config")) {
             const auto config = body.value(QStringLiteral("config")).toObject();
+            acceptedConfig = config;
             const auto nextCity = config.value(QStringLiteral("idle")).toObject().value(QStringLiteral("city")).toString();
             if (nextCity != city)
                 acceptedWeather = {};
@@ -43,6 +44,9 @@ public:
         } else if (packet.type() == QLatin1String("kdeconnect.controlpanel.dial") && body.value(QStringLiteral("revision")).toInteger() == revision
                    && body.value(QStringLiteral("city")).toString() == city) {
             acceptedWeather = body;
+        } else if (packet.type() == QLatin1String("kdeconnect.controlpanel.progress") && body.value(QStringLiteral("revision")).toInteger() == revision
+                   && body.value(QStringLiteral("sequence")).toInteger(-1) >= acceptedProgress.value(QStringLiteral("sequence")).toInteger(-1)) {
+            acceptedProgress = body;
         }
         return true;
     }
@@ -51,6 +55,8 @@ public:
     QString city;
     qint64 revision = -1;
     QJsonObject acceptedWeather;
+    QJsonObject acceptedProgress;
+    QJsonObject acceptedConfig;
     QJsonArray packets;
 };
 
@@ -186,6 +192,54 @@ private Q_SLOTS:
         QVERIFY(editor->setIdle(QStringLiteral("message"), QStringLiteral("Unpaired peer")));
         QTRY_COMPARE(second.revision, editor->config().value(QStringLiteral("revision")).toLongLong());
         QVERIFY(first.packets.isEmpty());
+    }
+
+    void progressReconfigurationReachesBothPeersAfterConfiguration()
+    {
+        auto &config = KdeConnectConfig::instance();
+        const auto firstId = QUuid::createUuid().toString(QUuid::Id128);
+        const auto secondId = QUuid::createUuid().toString(QUuid::Id128);
+        config.addTrustedDevice(DeviceInfo(firstId, QSslCertificate(), QStringLiteral("Progress first peer"), DeviceType::Phone));
+        config.addTrustedDevice(DeviceInfo(secondId, QSslCertificate(), QStringLiteral("Progress second peer"), DeviceType::Phone));
+        WeatherPacketDevice first(firstId), second(secondId);
+        auto firstPlugin = create(first);
+        auto secondPlugin = create(second);
+        QVERIFY(firstPlugin);
+        QVERIFY(secondPlugin);
+        QFile source(QDir(directory.path()).filePath(QStringLiteral("progress-fixture.json")));
+        QVERIFY(source.open(QIODevice::WriteOnly));
+        const auto payload = QJsonDocument(QJsonObject{{QStringLiteral("status"), QStringLiteral("running")},
+                                                       {QStringLiteral("title"), QStringLiteral("Fixture task")},
+                                                       {QStringLiteral("stage"), QStringLiteral("Fixture stage")},
+                                                       {QStringLiteral("detail"), QString()},
+                                                       {QStringLiteral("percent"), 42}})
+                                 .toJson(QJsonDocument::Compact);
+        QCOMPARE(source.write(payload), payload.size());
+        source.close();
+        QVERIFY(editor->setIdleOptions({{QStringLiteral("info"),
+                                         QVariantMap{{QStringLiteral("showProgress"), true},
+                                                     {QStringLiteral("source"), QStringLiteral("file")},
+                                                     {QStringLiteral("path"), source.fileName()}}}}));
+        QTRY_COMPARE(first.acceptedProgress.value(QStringLiteral("status")).toString(), QStringLiteral("running"));
+        QTRY_COMPARE(second.acceptedProgress.value(QStringLiteral("status")).toString(), QStringLiteral("running"));
+        const auto publicInfo = first.acceptedConfig.value(QStringLiteral("idle")).toObject().value(QStringLiteral("info")).toObject();
+        QVERIFY(publicInfo.value(QStringLiteral("showProgress")).toBool());
+        QVERIFY(!publicInfo.contains(QStringLiteral("path")));
+        QVERIFY(!publicInfo.contains(QStringLiteral("source")));
+        QVERIFY(!publicInfo.contains(QStringLiteral("url")));
+        const auto previous = first.acceptedProgress.value(QStringLiteral("sequence")).toInteger();
+        first.packets = {};
+        second.packets = {};
+        QVERIFY(editor->setIdleOptions({{QStringLiteral("info"), QVariantMap{{QStringLiteral("source"), QStringLiteral("none")}}}}));
+        const auto revision = editor->config().value(QStringLiteral("revision")).toLongLong();
+        QTRY_COMPARE(first.revision, revision);
+        QTRY_COMPARE(second.revision, revision);
+        QTRY_COMPARE(first.acceptedProgress.value(QStringLiteral("revision")).toInteger(), revision);
+        QTRY_COMPARE(second.acceptedProgress.value(QStringLiteral("revision")).toInteger(), revision);
+        QCOMPARE(first.acceptedProgress.value(QStringLiteral("detail")).toString(), QStringLiteral("waiting"));
+        QCOMPARE(second.acceptedProgress.value(QStringLiteral("detail")).toString(), QStringLiteral("waiting"));
+        QVERIFY(first.acceptedProgress.value(QStringLiteral("sequence")).toInteger() > previous);
+        QVERIFY(second.acceptedProgress.value(QStringLiteral("sequence")).toInteger() > previous);
     }
 };
 QTEST_GUILESS_MAIN(PanelWeatherPluginTest)

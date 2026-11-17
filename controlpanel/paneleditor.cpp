@@ -326,8 +326,13 @@ bool PanelEditor::setButton(int index, const QVariantMap &value)
         const auto address = button.value(QStringLiteral("target")).toObject().value(QStringLiteral("url")).toString();
         const QUrl url = PanelFavicon::normalize(address);
         if (!url.isEmpty())
-            startWebsiteIcon(address, url, page.value(QStringLiteral("id")).toString(), index,
-                             button.value(QStringLiteral("id")).toString(), true);
+            startWebsiteIcon(address,
+                             url,
+                             page.value(QStringLiteral("id")).toString(),
+                             index,
+                             button.value(QStringLiteral("id")).toString(),
+                             true,
+                             button.value(QStringLiteral("icon")).toString());
     }
     return true;
 }
@@ -439,14 +444,15 @@ void PanelEditor::fetchWebsiteIcon(const QString &url)
 }
 
 void PanelEditor::startWebsiteIcon(const QString &address,
-                                  const QUrl &url,
-                                  const QString &pageId,
-                                  int index,
-                                  const QString &buttonId,
-                                  bool apply)
+                                   const QUrl &url,
+                                   const QString &pageId,
+                                   int index,
+                                   const QString &buttonId,
+                                   bool apply,
+                                   const QString &expectedIcon)
 {
     setWebsiteIconStatus(QStringLiteral("loading"));
-    m_favicon.fetch(url, [this, address, pageId, index, buttonId, apply](const QString &iconId, const QString &error) {
+    m_favicon.fetch(url, [this, address, pageId, index, buttonId, apply, expectedIcon](const QString &iconId, const QString &error) {
         if (iconId.isEmpty()) {
             setWebsiteIconStatus(error == QLatin1String("favicon_disabled") ? QStringLiteral("disabled")
                                                                            : QStringLiteral("unavailable"));
@@ -455,7 +461,7 @@ void PanelEditor::startWebsiteIcon(const QString &address,
         setWebsiteIconStatus(QStringLiteral("ready"));
         Q_EMIT websiteIconReady(address, iconId);
         if (apply)
-            applyWebsiteIcon(pageId, index, buttonId, address, iconId);
+            applyWebsiteIcon(pageId, index, buttonId, address, iconId, expectedIcon);
     });
 }
 
@@ -463,7 +469,8 @@ void PanelEditor::applyWebsiteIcon(const QString &pageId,
                                    int index,
                                    const QString &buttonId,
                                    const QString &url,
-                                   const QString &iconId)
+                                   const QString &iconId,
+                                   const QString &expectedIcon)
 {
     // The button may have been edited, moved or deleted while the network request was running.
     // Only the exact button that started the fetch may be updated, using the current revision.
@@ -479,10 +486,9 @@ void PanelEditor::applyWebsiteIcon(const QString &pageId,
         if (index >= buttons.size())
             return;
         auto button = buttons[index].toObject();
-        if (button.value(QStringLiteral("id")).toString() != buttonId
-            || button.value(QStringLiteral("kind")).toString() != QLatin1String("website")
+        if (button.value(QStringLiteral("id")).toString() != buttonId || button.value(QStringLiteral("kind")).toString() != QLatin1String("website")
             || button.value(QStringLiteral("target")).toObject().value(QStringLiteral("url")).toString() != url
-            || button.value(QStringLiteral("icon")).toString() == iconId)
+            || button.value(QStringLiteral("icon")).toString() != expectedIcon || button.value(QStringLiteral("icon")).toString() == iconId)
             return;
         button.insert(QStringLiteral("icon"), iconId);
         buttons[index] = button;

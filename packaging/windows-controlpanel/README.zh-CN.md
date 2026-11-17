@@ -65,10 +65,16 @@ https://github.com/xingxing7290/kdeconnect-kde/releases/tag/controlpanel-release
   -OutputDirectory 'D:/KDEBuild/packages/new-candidate' `
   -FFmpegRoot 'D:/KDEBuild/redistributable-ffmpeg/install' `
   -RuntimeRoot 'D:/KDEBuild/toolchains/runtime-14.44' `
-  -DistributionMaterialsRoot 'D:/KDEBuild/public-materials-20261115'
+  -DistributionMaterialsRoot 'D:/KDEBuild/public-materials-20261115-r3'
 ```
 
 输出目录必须新建。脚本使用项目 CMake 安装规则、Qt windeployqt 及递归 PE 依赖收集；保留 KDE 原插件和动态 QML/KIO 支持。qt.conf 使用相对目录；私有 D-Bus 配置不包含 Craft 的绝对路径。除 windeployqt 已修补路径的 Qt6Core 外，同名但不同内容的依赖必须报错，不能悄悄选一个。
+
+上面的 r3 路径对应 alpha.4 已公开的第三方材料；早期同名无后缀目录的 AMF 索引和材料不是最终版，不应误用于发行。每次新构建仍须重新核对实际依赖与对应源码，不能仅因路径相同就认定材料适用。
+
+打包入口会先检查源码索引的组件名、归档名、SHA-256 格式和分卷文件名；未通过时不会创建包目录。可用 `Test-DistributionMaterials.ps1 -EvidenceDirectory 'D:/KDETests/new-material-check'` 验证这一结构检查。该检查不读取或核验分卷内容，不代表源码对应性或许可证审查完成。
+
+另可用 `python verify-source-bundles.py --index <source-index.json> --parts <分卷目录> --report <新报告路径>` 逐项校验分卷内索引归档的 SHA-256；`test-verify-source-bundles.py` 使用合成 ZIP 检查有效、缺失、散列错误及非法路径。此工具不检查 FFmpeg 主包、上游签名或二进制与源码对应性。
 
 ## 预发布限制
 

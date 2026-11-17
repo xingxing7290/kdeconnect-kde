@@ -34,6 +34,56 @@ class PanelDialsUiTest : public QObject
         return nullptr;
     }
 private Q_SLOTS:
+    void informationDialShowsConfiguredNotesAndProgress()
+    {
+        const auto now = QDateTime::currentDateTimeUtc();
+        const QVariantMap info{{QStringLiteral("notes"), QStringList{QStringLiteral("First note"), QStringLiteral("Second note")}},
+                               {QStringLiteral("showProgress"), true},
+                               {QStringLiteral("showForecast"), false},
+                               {QStringLiteral("staleMs"), 15000}};
+        QVariantMap progress{{QStringLiteral("source"), QStringLiteral("workbuddy")},
+                             {QStringLiteral("status"), QStringLiteral("running")},
+                             {QStringLiteral("title"), QStringLiteral("Test task")},
+                             {QStringLiteral("stage"), QStringLiteral("Test stage")},
+                             {QStringLiteral("detail"), QStringLiteral("Test detail")},
+                             {QStringLiteral("percent"), 42},
+                             {QStringLiteral("fetchedAt"), now.toSecsSinceEpoch()}};
+        QQuickView view;
+        view.setInitialProperties({{QStringLiteral("dialId"), QStringLiteral("info")},
+                                   {QStringLiteral("now"), now},
+                                   {QStringLiteral("info"), info},
+                                   {QStringLiteral("progress"), progress}});
+        view.setResizeMode(QQuickView::SizeRootObjectToView);
+        view.setSource(QUrl::fromLocalFile(QFINDTESTDATA("../app/qml/PanelDialPreview.qml")));
+        QCOMPARE(view.status(), QQuickView::Ready);
+        view.resize(1000, 520);
+        view.show();
+        QVERIFY(QTest::qWaitForWindowExposed(&view));
+        auto *dial = view.rootObject()->findChild<QQuickItem *>(QStringLiteral("panelInformationDial"));
+        QVERIFY(dial);
+        QTRY_VERIFY(visualFind(dial, QStringLiteral("panelInfoNote-1")));
+        auto *note = visualFind(dial, QStringLiteral("panelInfoNote-1"));
+        auto *state = visualFind(dial, QStringLiteral("panelInfoProgressState"));
+        auto *stage = visualFind(dial, QStringLiteral("panelInfoProgressStage"));
+        auto *percent = qobject_cast<QQuickItem *>(visualFind(dial, QStringLiteral("panelInfoProgressPercent")));
+        auto *forecast = qobject_cast<QQuickItem *>(visualFind(dial, QStringLiteral("panelInfoForecast-0")));
+        QVERIFY(note && state && stage && percent && forecast);
+        QVERIFY(note->property("text").toString().endsWith(QStringLiteral("Second note")));
+        QCOMPARE(state->property("text").toString(), QStringLiteral("进行中"));
+        QVERIFY(stage->property("text").toString().contains(QStringLiteral("Test stage")));
+        QCOMPARE(percent->property("text").toString(), QStringLiteral("42%"));
+        QVERIFY(percent->isVisible());
+        QVERIFY(!forecast->isVisible());
+        progress.remove(QStringLiteral("percent"));
+        view.rootObject()->setProperty("progress", progress);
+        QTRY_VERIFY(!percent->isVisible());
+        view.rootObject()->setProperty("now", now.addSecs(20));
+        QTRY_COMPARE(state->property("text").toString(), QStringLiteral("进度已过期，等待更新"));
+        progress.insert(QStringLiteral("status"), QStringLiteral("unavailable"));
+        view.rootObject()->setProperty("progress", progress);
+        QTRY_COMPARE(state->property("text").toString(), QStringLiteral("等待 WorkBuddy 进度"));
+    }
+
     void previewsKeepReadableTextContrast()
     {
         QTest::failOnWarning();

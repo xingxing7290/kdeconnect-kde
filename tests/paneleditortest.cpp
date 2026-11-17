@@ -1,9 +1,12 @@
 /*
  * SPDX-License-Identifier: GPL-2.0-only OR GPL-3.0-only OR LicenseRef-KDE-Accepted-GPL
  */
+#include <QBuffer>
 #include <QDir>
 #include <QFile>
 #include <QJsonArray>
+#include <QTcpServer>
+#include <QTcpSocket>
 #include <QTemporaryDir>
 #include <QTest>
 #include <paneleditor.h>
@@ -25,6 +28,72 @@ private:
         return editor.currentPage().value(QStringLiteral("slots")).toList();
     }
 private Q_SLOTS:
+    void websiteIconDoesNotReplaceManualChoice()
+    {
+        QTemporaryDir directory;
+        QVERIFY(directory.isValid());
+        QTcpServer server;
+        QVERIFY(server.listen(QHostAddress::LocalHost));
+        QImage fetched(64, 64, QImage::Format_ARGB32);
+        fetched.fill(Qt::red);
+        QByteArray png;
+        QBuffer buffer(&png);
+        QVERIFY(buffer.open(QIODevice::WriteOnly));
+        QVERIFY(fetched.save(&buffer, "PNG"));
+        connect(&server, &QTcpServer::newConnection, &server, [&] {
+            while (auto *socket = server.nextPendingConnection()) {
+                connect(socket, &QTcpSocket::readyRead, socket, [socket, png] {
+                    const auto request = socket->readAll();
+                    const QByteArray body = request.startsWith("GET /favicon.ico ") ? png : QByteArrayLiteral("<html><head></head></html>");
+                    socket->write("HTTP/1.1 200 OK\r\nConnection: close\r\nContent-Length: " + QByteArray::number(body.size()) + "\r\n\r\n" + body);
+                    socket->disconnectFromHost();
+                });
+            }
+        });
+        PanelEditor editor(directory.path(), nullptr, true);
+        QImage manual(64, 64, QImage::Format_ARGB32);
+        manual.fill(Qt::blue);
+        ControlPanel::PanelAssets assets(directory.path());
+        const auto manualId = assets.importPixels(manual);
+        QVERIFY(!manualId.isEmpty());
+        auto button = website(QStringLiteral("Website"));
+        const auto url = QStringLiteral("http://127.0.0.1:%1/").arg(server.serverPort());
+        button.insert(QStringLiteral("target"), QVariantMap{{QStringLiteral("url"), url}});
+        bool changed = false;
+        const auto connection = connect(&editor, &PanelEditor::websiteIconReady, &editor, [&](const QString &, const QString &) {
+            button.insert(QStringLiteral("icon"), manualId);
+            changed = editor.setButton(0, button);
+        });
+        QVERIFY(editor.setButton(0, button));
+        QTRY_VERIFY_WITH_TIMEOUT(changed, 5000);
+        QCOMPARE(buttons(editor).at(0).toMap().value(QStringLiteral("icon")).toString(), manualId);
+        disconnect(connection);
+        button.remove(QStringLiteral("icon"));
+        QVERIFY(editor.setButton(1, button));
+        const auto automaticId = buttons(editor).at(1).toMap().value(QStringLiteral("icon")).toString();
+        QVERIFY(!automaticId.isEmpty());
+        QVERIFY(automaticId != manualId);
+
+        QTemporaryDir pendingDirectory;
+        QVERIFY(pendingDirectory.isValid());
+        PanelEditor pendingEditor(pendingDirectory.path(), nullptr, true);
+        ControlPanel::PanelAssets pendingAssets(pendingDirectory.path());
+        const auto pendingManualId = pendingAssets.importPixels(manual);
+        QVERIFY(!pendingManualId.isEmpty());
+        QVERIFY(pendingEditor.setButton(0, button));
+        button.insert(QStringLiteral("icon"), pendingManualId);
+        QVERIFY(pendingEditor.setButton(0, button));
+        QTRY_COMPARE_WITH_TIMEOUT(pendingEditor.websiteIconStatus(), QStringLiteral("ready"), 5000);
+        QCOMPARE(buttons(pendingEditor).at(0).toMap().value(QStringLiteral("icon")).toString(), pendingManualId);
+
+        QTemporaryDir automaticDirectory;
+        QVERIFY(automaticDirectory.isValid());
+        PanelEditor automaticEditor(automaticDirectory.path(), nullptr, true);
+        button.remove(QStringLiteral("icon"));
+        QVERIFY(automaticEditor.setButton(0, button));
+        QTRY_COMPARE_WITH_TIMEOUT(automaticEditor.websiteIconStatus(), QStringLiteral("ready"), 5000);
+        QTRY_COMPARE_WITH_TIMEOUT(buttons(automaticEditor).at(0).toMap().value(QStringLiteral("icon")).toString(), automaticId, 5000);
+    }
     void checkedEditsRejectChangedRevisionPageSlotAndIdentity()
     {
         QTemporaryDir directory;

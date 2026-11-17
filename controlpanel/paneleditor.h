@@ -92,8 +92,14 @@ private:
     bool save(const QJsonObject &config);
     bool fail(const QString &error);
     void setWebsiteIconStatus(const QString &status);
-    void startWebsiteIcon(const QString &address, const QUrl &url, const QString &pageId, int index, const QString &buttonId, bool apply);
-    void applyWebsiteIcon(const QString &pageId, int index, const QString &buttonId, const QString &url, const QString &iconId);
+    void startWebsiteIcon(const QString &address,
+                          const QUrl &url,
+                          const QString &pageId,
+                          int index,
+                          const QString &buttonId,
+                          bool apply,
+                          const QString &expectedIcon = {});
+    void applyWebsiteIcon(const QString &pageId, int index, const QString &buttonId, const QString &url, const QString &iconId, const QString &expectedIcon);
     int pageIndex(const QJsonArray &pages) const;
     bool matchesContext(int index, const QVariantMap &context) const;
     bool matchesPageContext(const QString &pageId, const QVariantMap &context) const;

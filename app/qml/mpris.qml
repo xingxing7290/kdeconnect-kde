@@ -63,8 +63,6 @@ Kirigami.Page
 
     Kirigami.PlaceholderMessage {
         id: noPlayersText
-        // FIXME: not accessible. screen readers won't read this.
-        //        https://invent.kde.org/frameworks/kirigami/-/merge_requests/1482
         text: i18nd("kdeconnect-app", "No players available")
         anchors.centerIn: parent
         visible: pluginInterface.playerList.length == 0
@@ -138,9 +136,21 @@ Kirigami.Page
                 Layout.fillWidth: true
                 icon.name: "media-skip-backward"
                 onClicked: root.pluginInterface.sendAction("Previous")
-                KeyNavigation.right: mediaPlayButton
+                KeyNavigation.right: mediaRewindButton.visible ? mediaRewindButton : mediaPlayButton
                 KeyNavigation.down: positionIndicator
                 // can't use KeyNavigation as it still flips on reading direction even with LayoutMirroring disabled
+                Keys.onRightPressed: (mediaRewindButton.visible ? mediaRewindButton : mediaPlayButton).forceActiveFocus(Qt.TabFocusReason)
+            }
+            Button {
+                id: mediaRewindButton
+                Layout.fillWidth: true
+                icon.name: "media-seek-backward"
+                visible: root.pluginInterface.canRewind
+                onClicked: root.pluginInterface.sendAction("Rewind")
+                KeyNavigation.left: mediaBackButton
+                KeyNavigation.right: mediaPlayButton
+                KeyNavigation.down: positionIndicator
+                Keys.onLeftPressed: mediaBackButton.forceActiveFocus(Qt.TabFocusReason)
                 Keys.onRightPressed: mediaPlayButton.forceActiveFocus(Qt.TabFocusReason)
             }
             Button {
@@ -149,18 +159,31 @@ Kirigami.Page
                 icon.name: root.pluginInterface.isPlaying ? "media-playback-pause" : "media-playback-start"
                 onClicked: root.pluginInterface.sendAction("PlayPause");
                 // can't use KeyNavigation as it still flips on reading direction even with LayoutMirroring disabled
-                Keys.onLeftPressed: mediaBackButton.forceActiveFocus(Qt.TabFocusReason)
-                Keys.onRightPressed: mediaForwardButton.forceActiveFocus(Qt.TabFocusReason)
+                Keys.onLeftPressed: (mediaRewindButton.visible ? mediaRewindButton : mediaBackButton).forceActiveFocus(Qt.TabFocusReason)
+                Keys.onRightPressed: (mediaFastForwardButton.visible ? mediaFastForwardButton : mediaForwardButton).forceActiveFocus(Qt.TabFocusReason)
                 KeyNavigation.down: positionIndicator
+            }
+            Button {
+                id: mediaFastForwardButton
+                Layout.fillWidth: true
+                icon.name: "media-seek-forward"
+                visible: root.pluginInterface.canFastForward
+                onClicked: root.pluginInterface.sendAction("FastForward")
+                KeyNavigation.left: mediaPlayButton
+                KeyNavigation.right: mediaForwardButton
+                KeyNavigation.down: positionIndicator
+                Keys.onLeftPressed: mediaPlayButton.forceActiveFocus(Qt.TabFocusReason)
+                Keys.onRightPressed: mediaForwardButton.forceActiveFocus(Qt.TabFocusReason)
             }
             Button {
                 id: mediaForwardButton
                 Layout.fillWidth: true
                 icon.name: "media-skip-forward"
                 onClicked: root.pluginInterface.sendAction("Next")
+                KeyNavigation.left: mediaFastForwardButton.visible ? mediaFastForwardButton : mediaPlayButton
                 KeyNavigation.down: positionIndicator
                 // can't use KeyNavigation as it still flips on reading direction even with LayoutMirroring disabled
-                Keys.onLeftPressed: mediaPlayButton.forceActiveFocus(Qt.TabFocusReason)
+                Keys.onLeftPressed: (mediaFastForwardButton.visible ? mediaFastForwardButton : mediaPlayButton).forceActiveFocus(Qt.TabFocusReason)
             }
         }
         RowLayout {

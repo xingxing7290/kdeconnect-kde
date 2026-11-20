@@ -9,6 +9,9 @@
 #include "mprisremoteplayermediaplayer2.h"
 #include "mprisremoteplayermediaplayer2player.h"
 #include "mprisremoteplugin.h"
+#ifdef Q_OS_MACOS
+#include "mprisremoteplayernowplaying-macos.h"
+#endif
 
 #include <QDateTime>
 
@@ -25,8 +28,11 @@ MprisRemotePlayer::MprisRemotePlayer(QString id, MprisRemotePlugin *plugin)
     , m_canPause(true)
     , m_canGoPrevious(true)
     , m_canGoNext(true)
+    , m_canFastForward(false)
+    , m_canRewind(false)
     , m_volume(50)
     , m_length(0)
+    , m_rate(1.0)
     , m_lastPosition(0)
     , m_lastPositionTime()
     , m_title()
@@ -40,6 +46,9 @@ MprisRemotePlayer::MprisRemotePlayer(QString id, MprisRemotePlugin *plugin)
     // Expose this player on the newly created connection. This allows multiple mpris services in the same Qt process
     new MprisRemotePlayerMediaPlayer2(this, plugin);
     new MprisRemotePlayerMediaPlayer2Player(this, plugin);
+#ifdef Q_OS_MACOS
+    new MprisRemotePlayerNowPlaying(this, plugin);
+#endif
 
     m_dbusConnection.registerObject(QStringLiteral("/org/mpris/MediaPlayer2"), this);
     // Make sure our service name is unique. Reuse the connection name for this.
@@ -102,6 +111,17 @@ void MprisRemotePlayer::parseNetworkPacket(const NetworkPacket &np)
         }
     }
 
+    // Check rate changes
+    double newRate = np.get<double>(QStringLiteral("rate"), m_rate);
+    if (newRate != m_rate && newRate > 0.0) {
+        if (!np.has(QStringLiteral("pos"))) {
+            // So we don't apply the new rate to all elapsed time since the last position packet
+            setPosition(position());
+        }
+        m_rate = newRate;
+        Q_EMIT rateChanged();
+    }
+
     // Check if we started/stopped playing
     bool newPlaying = np.get<bool>(QStringLiteral("isPlaying"), m_playing);
     if (newPlaying != m_playing) {
@@ -115,12 +135,17 @@ void MprisRemotePlayer::parseNetworkPacket(const NetworkPacket &np)
     bool newCanPause = np.get<bool>(QStringLiteral("canPause"), m_canPause);
     bool newCanGoPrevious = np.get<bool>(QStringLiteral("canGoPrevious"), m_canGoPrevious);
     bool newCanGoNext = np.get<bool>(QStringLiteral("canGoNext"), m_canGoNext);
-    if (newCanSeek != m_canSeek || newCanPlay != m_canPlay || newCanPause != m_canPause || newCanGoPrevious != m_canGoPrevious || newCanGoNext != m_canGoNext) {
+    bool newCanFastForward = np.get<bool>(QStringLiteral("canFastForward"), m_canFastForward);
+    bool newCanRewind = np.get<bool>(QStringLiteral("canRewind"), m_canRewind);
+    if (newCanSeek != m_canSeek || newCanPlay != m_canPlay || newCanPause != m_canPause || newCanGoPrevious != m_canGoPrevious || newCanGoNext != m_canGoNext
+        || newCanFastForward != m_canFastForward || newCanRewind != m_canRewind) {
         m_canSeek = newCanSeek;
         m_canPlay = newCanPlay;
         m_canPause = newCanPause;
         m_canGoPrevious = newCanGoPrevious;
         m_canGoNext = newCanGoNext;
+        m_canFastForward = newCanFastForward;
+        m_canRewind = newCanRewind;
         Q_EMIT controlsChanged();
     }
 }
@@ -128,10 +153,15 @@ void MprisRemotePlayer::parseNetworkPacket(const NetworkPacket &np)
 long MprisRemotePlayer::position() const
 {
     if (m_playing) {
-        return m_lastPosition + (QDateTime::currentMSecsSinceEpoch() - m_lastPositionTime);
+        return m_lastPosition + (QDateTime::currentMSecsSinceEpoch() - m_lastPositionTime) * m_rate;
     } else {
         return m_lastPosition;
     }
+}
+
+double MprisRemotePlayer::rate() const
+{
+    return m_rate;
 }
 
 void MprisRemotePlayer::setPosition(long position)
@@ -205,6 +235,16 @@ bool MprisRemotePlayer::canGoPrevious() const
 bool MprisRemotePlayer::canGoNext() const
 {
     return m_canGoNext;
+}
+
+bool MprisRemotePlayer::canFastForward() const
+{
+    return m_canFastForward;
+}
+
+bool MprisRemotePlayer::canRewind() const
+{
+    return m_canRewind;
 }
 
 QDBusConnection &MprisRemotePlayer::dbus()

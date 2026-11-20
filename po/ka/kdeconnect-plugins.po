@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: kdeconnect-kde\n"
 "Report-Msgid-Bugs-To: https://bugs.kde.org\n"
-"POT-Creation-Date: 2026-10-28 01:00+0000\n"
+"POT-Creation-Date: 2026-11-18 01:09+0000\n"
 "PO-Revision-Date: 2026-07-27 07:49+0200\n"
 "Last-Translator: Temuri Doghonadze <temuri.doghonadze@gmail.com>\n"
 "Language-Team: Georgian <kde-i18n-doc@kde.org>\n"
@@ -119,19 +119,19 @@ msgstr "მიმდინარე დამკვრელი"
 msgid "N/A"
 msgstr "ა/მ"
 
-#: notifications/notification.cpp:120
+#: notifications/notification.cpp:119
 #, kde-format
 msgctxt "@action:button"
 msgid "Reply"
 msgstr "პასუხი"
 
-#: notifications/notification.cpp:123
+#: notifications/notification.cpp:122
 #, kde-format
 msgctxt "@info:placeholder %1 is the name of a group chat"
 msgid "Reply in %1…"
 msgstr "პასუხი %1-ში…"
 
-#: notifications/notification.cpp:125
+#: notifications/notification.cpp:124
 #, kde-format
 msgctxt "@info:placeholder"
 msgid "Reply to %1…"
@@ -447,17 +447,17 @@ msgctxt "@action:button Open URL with default app"
 msgid "Open Link"
 msgstr "ბმულის გახსნა"
 
-#: share/shareplugin.cpp:262 share/shareplugin.cpp:267
+#: share/shareplugin.cpp:263 share/shareplugin.cpp:268
 #, kde-format
 msgid "Could not share file"
 msgstr "ფაილის გაზიარების შეცდომა"
 
-#: share/shareplugin.cpp:262
+#: share/shareplugin.cpp:263
 #, kde-format
 msgid "%1 does not exist"
 msgstr "%1 არ არსებობს"
 
-#: share/shareplugin.cpp:267
+#: share/shareplugin.cpp:268
 #, kde-format
 msgid "Permission denied: %1"
 msgstr "წვდომა აკრძალულია: %1"
@@ -539,115 +539,3 @@ msgstr "ლოკალურ მოწყობილობაზე აუც�
 #, kde-format
 msgid "Cannot start a request without a resolution"
 msgstr "გაფართოების გარეშე მოთხოვნას ვერ გაუშვებთ"
-
-#~ msgid "Clipboard plugin"
-#~ msgstr "ბუფერის დამატება"
-
-#~ msgid "Automatic synchronization"
-#~ msgstr "ავტომატური სინქრონიზაცია"
-
-#~ msgid "Discovery Utilities"
-#~ msgstr "ხელსაწყოების აღმოჩენა"
-
-#~ msgid "Select the sound to play"
-#~ msgstr "აირჩიეთ დასაკრავი ხმა"
-
-#~ msgid "Pause music plugin"
-#~ msgstr "მუსიკის შეჩერების დამატება"
-
-#~ msgid "Condition"
-#~ msgstr "მდგომარეობა"
-
-#~ msgid "Actions"
-#~ msgstr "ქმედებები"
-
-#~ msgid "Automatically resume media when call has finished"
-#~ msgstr "საუბრის დასრულებისა მედიის დაკვრის გაგრძელება"
-
-#~ msgid "Schedule a shutdown"
-#~ msgstr "გათიშვის დაგეგმვა"
-
-#~ msgid "Shutdown now"
-#~ msgstr "ახლა გამორთვა"
-
-#~ msgid "Cancel last shutdown"
-#~ msgstr "ბოლო გამორთვის გაუქმება"
-
-#~ msgid "Schedule a reboot"
-#~ msgstr "გადატვირთვის დაგეგმვა"
-
-#~ msgid "Say Hello"
-#~ msgstr "თქვი: \"გამარჯობა, კინო\""
-
-#~ msgid "Shutdown"
-#~ msgstr "გამორთვა"
-
-#~ msgid "Reboot"
-#~ msgstr "გადატვირთვა"
-
-#~ msgid "Export"
-#~ msgstr "გატანა"
-
-#~ msgid "Import"
-#~ msgstr "შემოტანა"
-
-#~ msgid "Export Commands"
-#~ msgstr "ბრძანებების გატანა"
-
-#~ msgid "Import Commands"
-#~ msgstr "ბრძანებების შემოტანა"
-
-#~ msgid "General"
-#~ msgstr "ძირითადი"
-
-#~ msgid "Synchronize only notifications with a timeout value of 0?"
-#~ msgstr ""
-#~ "მოხდეს მხოლოდ ნულოვანი მოლოდინის მნიშვნელობის მქონე გაფრთხილებების "
-#~ "სინქრონიზაცია?"
-
-#~ msgid ""
-#~ "Append the notification body to the summary when synchronizing "
-#~ "notifications?"
-#~ msgstr ""
-#~ "მივაწერო გაფრთხილების სხეული შეჯამებას გაფრთხილებების სინქრონიზაციისას?"
-
-#~ msgid "Synchronize icons of notifying applications if possible?"
-#~ msgstr ""
-#~ "დავასინქრონო გაფრთხილებების აპლიკაციების ხატულები, თუ ეს შესაძლებელია?"
-
-#~ msgid "Synchronize icons"
-#~ msgstr "ხატულების სინქრონიზაცია"
-
-#~ msgid ""
-#~ "<html><head/><body><p>Minimum urgency level of the notifications</p></"
-#~ "body></html>"
-#~ msgstr ""
-#~ "<html><head/><body><p>შეტყობინებების მინიმალური გადაუდებლობის დონე</p></"
-#~ "body></html>"
-
-#~ msgid "Synchronize only notifications with the given urgency level."
-#~ msgstr "სინქრონიზაცია მხოლოდ შეტყობინებებს მოცემული გადაუდებელი დონით."
-
-#~ msgid "Applications"
-#~ msgstr "აპლიკაციები"
-
-#~ msgid "Share plugin settings"
-#~ msgstr "გაზიარების დამატების მორგება"
-
-#~ msgid "Receiving"
-#~ msgstr "მიღება"
-
-#~ msgid "Blacklisted"
-#~ msgstr "შავ სიაშია"
-
-#~ msgid "Reply"
-#~ msgstr "პასუხი"
-
-#~ msgid "Contents shared to other devices"
-#~ msgstr "სხვა მოწყობილობებთან გაზიარებული შემცველობა"
-
-#~ msgid "Anything else"
-#~ msgstr "ყველაფერი სხვა"
-
-#~ msgid "Use your phone as a touchpad and keyboard"
-#~ msgstr "გამოიყენეთ ტელეფონი, როგორც თაჩპედი და კლავიატურა"

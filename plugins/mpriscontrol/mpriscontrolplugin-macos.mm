@@ -46,7 +46,7 @@ MprisControlPlugin::MprisControlPlugin(QObject *parent, const QVariantList &args
     // Ask user to enable accessibility API
     NSDictionary *options = @{(id)kAXTrustedCheckOptionPrompt: @YES};
     if (!AXIsProcessTrustedWithOptions((CFDictionaryRef)options)) {
-        qCWarning(KDECONNECT_PLUGIN_MPRISCONTROL) << "kdeconnectd is not set as a trusted accessibility, media controls will not work";
+        qCWarning(KDECONNECT_PLUGIN_MPRISCONTROL) << "KDE Connect is not set as a trusted accessibility, media controls will not work";
     }
 }
 
@@ -54,6 +54,7 @@ void MprisControlPlugin::sendPlayerList()
 {
     NetworkPacket np(PACKET_TYPE_MPRIS);
     np.set(QStringLiteral("playerList"), QStringList(DEFAULT_PLAYER));
+    np.set(QStringLiteral("fallbackPlayer"), DEFAULT_PLAYER);
     np.set(QStringLiteral("supportAlbumArtPayload"), false);
     sendPacket(np);
 }
@@ -89,6 +90,7 @@ void MprisControlPlugin::receivePacket(const NetworkPacket &np)
         answer.set(QStringLiteral("pos"), 0);
         answer.set(QStringLiteral("isPlaying"), false);
         answer.set(QStringLiteral("canPause"), false);
+        answer.set(QStringLiteral("canStop"), false);
         answer.set(QStringLiteral("canPlay"), true);
         answer.set(QStringLiteral("canGoNext"), true);
         answer.set(QStringLiteral("canGoPrevious"), true);

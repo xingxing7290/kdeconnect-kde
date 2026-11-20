@@ -17,6 +17,7 @@
 #include <QTimer>
 #include <QWindow>
 
+#include "appearance.h"
 #include "kdeconnect-version.h"
 #include <BreezeIcons>
 #include <KAboutData>
@@ -25,24 +26,10 @@
 #include <KDBusService>
 #include <KLocalizedQmlContext>
 #include <KLocalizedString>
-#include <KWindowSystem>
-#include "appearance.h"
 #include <paneleditor.h>
 #include <volumecontroller.h>
 
-#if defined(Q_OS_MAC)
-#include "macosforegroundapp.h"
-#endif
-
-static void raiseWindow(QWindow *window)
-{
-#if defined(Q_OS_MAC)
-    activateWindowForMacOS(window);
-#else
-    KWindowSystem::updateStartupId(window);
-    KWindowSystem::activateWindow(window);
-#endif
-}
+#include "raisewindow.h"
 
 int main(int argc, char *argv[])
 {
@@ -65,7 +52,7 @@ int main(int argc, char *argv[])
 
     KCrash::initialize();
 
-#if defined(Q_OS_WIN) || defined(Q_OS_MAC)
+#if defined(Q_OS_WIN) || defined(Q_OS_MACOS)
     // Ensure we have a suitable color theme set for light/dark mode. KColorSchemeManager implicitly applies
     // a suitable default theme.
     KColorSchemeManager::instance();
@@ -146,21 +133,21 @@ int main(int argc, char *argv[])
         qWarning() << "Failed to load the app" << engine.hasError();
         return 1;
     }
-    auto obj = qobject_cast<QWindow *>(engine.rootObjects().constFirst());
+    auto window = qobject_cast<QWindow *>(engine.rootObjects().constFirst());
     if (!device.isEmpty()) {
-        auto mo = obj->metaObject();
-        mo->invokeMethod(obj, "openDevice", Qt::QueuedConnection, Q_ARG(QVariant, device), Q_ARG(QVariant, config));
+        auto mo = window->metaObject();
+        mo->invokeMethod(window, "openDevice", Qt::QueuedConnection, Q_ARG(QVariant, device), Q_ARG(QVariant, config));
     }
-    raiseWindow(obj);
+    raiseWindow(window);
     if (!screenshotPath.isEmpty()) {
-        QTimer::singleShot(2000, &app, [obj, screenshotPath] {
-            auto *window = qobject_cast<QQuickWindow *>(obj);
-            const bool saved = window && window->grabWindow().save(screenshotPath, "PNG");
+        QTimer::singleShot(2000, &app, [window, screenshotPath] {
+            auto *quickWindow = qobject_cast<QQuickWindow *>(window);
+            const bool saved = quickWindow && quickWindow->grabWindow().save(screenshotPath, "PNG");
             QCoreApplication::exit(saved ? 0 : 3);
         });
     }
-    QObject::connect(&dbusService, &KDBusService::activateRequested, obj, [obj](const QStringList & /*arguments*/, const QString & /*workingDirectory*/) {
-        raiseWindow(obj);
+    QObject::connect(&dbusService, &KDBusService::activateRequested, window, [window](const QStringList & /*arguments*/, const QString & /*workingDirectory*/) {
+        raiseWindow(window);
     });
     return app.exec();
 }

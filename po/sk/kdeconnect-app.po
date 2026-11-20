@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: kdeconnect-app\n"
 "Report-Msgid-Bugs-To: https://bugs.kde.org\n"
-"POT-Creation-Date: 2026-10-25 00:50+0000\n"
+"POT-Creation-Date: 2026-11-14 01:03+0000\n"
 "PO-Revision-Date: 2026-09-14 20:10+0200\n"
 "Last-Translator: Roman Paholík <wizzardsk@gmail.com>\n"
 "Language-Team: Slovak <kde-i18n-doc@kde.org>\n"
@@ -17,57 +17,57 @@ msgstr ""
 "Plural-Forms: nplurals=3; plural=(n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2;\n"
 "X-Generator: Lokalize 24.02.2\n"
 
-#: main.cpp:45 main.cpp:47
+#: main.cpp:32 main.cpp:34
 #, kde-format
 msgid "KDE Connect"
 msgstr "KDE Connect"
 
-#: main.cpp:49
+#: main.cpp:36
 #, kde-format
 msgid "© 2015–2025 KDE Connect Team"
 msgstr "© 2015 – 2025 Tím KDE Connect"
 
-#: main.cpp:50
+#: main.cpp:37
 #, kde-format
 msgid "Aleix Pol Gonzalez"
 msgstr "Aleix Pol Gonzalez"
 
-#: main.cpp:51
+#: main.cpp:38
 #, kde-format
 msgid "Albert Vaca Cintora"
 msgstr "Albert Vaca Cintora"
 
-#: main.cpp:52
+#: main.cpp:39
 #, kde-format
 msgctxt "NAME OF TRANSLATORS"
 msgid "Your names"
 msgstr "Roman Paholík,Dušan Kazik"
 
-#: main.cpp:52
+#: main.cpp:39
 #, kde-format
 msgctxt "EMAIL OF TRANSLATORS"
 msgid "Your emails"
 msgstr "wizzardsk@gmail.com,prescott66@gmail.com"
 
-#: main.cpp:83
+#: main.cpp:70
 #, kde-format
 msgctxt "@info:shell"
 msgid "Device id to open the app in"
 msgstr "ID zariadenia, v ktorom sa má aplikácia otvoriť"
 
-#: main.cpp:86
+#: main.cpp:73
 #, kde-format
 msgctxt "@info:shell"
 msgid "Configuration module to show, requires --device to be set."
 msgstr "Konfiguračný modul na zobrazenie, vyžaduje nastavenie --device."
 
-#: main.cpp:90
+#: main.cpp:77
 #, kde-format
 msgctxt "command line description"
 msgid "Replace an existing instance"
 msgstr "Replace an existing instance"
 
-#: main.cpp:93
+#: main.cpp:80
 #, kde-format
 msgid "URL to share"
 msgstr "URL na zdieľanie"
@@ -190,65 +190,65 @@ msgstr "Nájsť zariadenie"
 msgid "Send Clipboard"
 msgstr "Odoslať schránku"
 
-#: qml/DevicePage.qml:231
+#: qml/DevicePage.qml:232
 #, kde-format
 msgid "Share File"
 msgstr "Zdieľať súbor"
 
-#: qml/DevicePage.qml:239
+#: qml/DevicePage.qml:240
 #, kde-format
 msgid "Browse this device"
 msgstr "Prehliadať toto zariadenie"
 
-#: qml/DevicePage.qml:247
+#: qml/DevicePage.qml:248
 #, kde-format
 msgid "Stop virtual monitor session"
 msgstr "Zastaviť reláciu virtuálneho monitora"
 
-#: qml/DevicePage.qml:247
+#: qml/DevicePage.qml:248
 #, kde-format
 msgid "Use device as an external monitor"
 msgstr "Použiť zariadenie ako externý monitor"
 
-#: qml/DevicePage.qml:278
+#: qml/DevicePage.qml:279
 #, kde-format
-msgid "Address: %1 via %2"
-msgstr "Adresa: %1 cez %2"
+msgid "Address: %1"
+msgstr "Adresa: %1"
 
-#: qml/DevicePage.qml:288
+#: qml/DevicePage.qml:299
 #, kde-format
 msgid "This device is not paired."
 msgstr "Toto zariadenie nie je spárované"
 
-#: qml/DevicePage.qml:292
+#: qml/DevicePage.qml:303
 #, kde-format
 msgctxt "Request pairing with a given device"
 msgid "Pair"
 msgstr "Spárovať"
 
-#: qml/DevicePage.qml:299 qml/DevicePage.qml:308
+#: qml/DevicePage.qml:310 qml/DevicePage.qml:319
 #, kde-format
 msgid ""
 "Pair requested\n"
 "Key: "
 msgstr "Žiadosť o párovanie"
 
-#: qml/DevicePage.qml:314
+#: qml/DevicePage.qml:325
 #, kde-format
 msgid "Accept"
 msgstr "Prijať"
 
-#: qml/DevicePage.qml:320
+#: qml/DevicePage.qml:331
 #, kde-format
 msgid "Reject"
 msgstr "Odmietnuť"
 
-#: qml/DevicePage.qml:331
+#: qml/DevicePage.qml:340
 #, kde-format
 msgid "This device is not reachable"
 msgstr "Toto zariadenie nie je dosiahnuteľné"
 
-#: qml/DevicePage.qml:339
+#: qml/DevicePage.qml:348
 #, kde-format
 msgid "Please choose a file"
 msgstr "Prosím, vyberte súbor"
@@ -346,12 +346,12 @@ msgstr "Kliknutie pravým tlačidlom"
 msgid "Multimedia Controls"
 msgstr "Multimediálne ovládače"
 
-#: qml/mpris.qml:68
+#: qml/mpris.qml:66
 #, kde-format
 msgid "No players available"
 msgstr "Nie sú dostupné žiadne prehrávače"
 
-#: qml/mpris.qml:128
+#: qml/mpris.qml:126
 #, kde-format
 msgid "%1 - %2"
 msgstr "%1 - %2"
@@ -362,28 +362,34 @@ msgctxt "@title:window"
 msgid "Notifications"
 msgstr "Oznámenia"
 
-#: qml/NotificationPanel.qml:164
+#: qml/NotificationPanel.qml:33
+#, kde-format
+msgctxt "@info:placeholder"
+msgid "No notifications"
+msgstr "Žiadne oznámenia"
+
+#: qml/NotificationPanel.qml:173
 #, kde-format
 msgid "Reply"
 msgstr "Odpovedať"
 
-#: qml/NotificationPanel.qml:179
+#: qml/NotificationPanel.qml:188
 #, kde-format
 msgid "Dismiss"
 msgstr "Zahodiť"
 
-#: qml/NotificationPanel.qml:206
+#: qml/NotificationPanel.qml:215
 #, kde-format
 msgid "Cancel"
 msgstr "Zrušiť"
 
-#: qml/NotificationPanel.qml:224
+#: qml/NotificationPanel.qml:233
 #, kde-format
 msgctxt "@info:placeholder"
 msgid "Reply to %1…"
 msgstr "Odpovedať %1…"
 
-#: qml/NotificationPanel.qml:243
+#: qml/NotificationPanel.qml:252
 #, kde-format
 msgid "Send"
 msgstr "Odoslať"
@@ -415,7 +421,7 @@ msgstr "Upraviť príkazy"
 msgid "You can edit commands on the connected device"
 msgstr "Môžete upraviť príkazy na pripojenom zariadení"
 
-#: qml/runcommand.qml:53
+#: qml/runcommand.qml:51
 #, kde-format
 msgid "No commands defined"
 msgstr "Nie sú určené žiadne príkazy"

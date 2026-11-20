@@ -39,6 +39,8 @@ void MprisRemotePlugin::receivePacket(const NetworkPacket &np)
         return;
     }
 
+    const double previousRate = rate();
+
     if (np.has(QStringLiteral("player"))) {
         const QString player = np.get<QString>(QStringLiteral("player"));
         if (!m_players.contains(player)) {
@@ -73,6 +75,9 @@ void MprisRemotePlugin::receivePacket(const NetworkPacket &np)
         } else if (!m_players.contains(m_currentPlayer)) {
             m_currentPlayer = m_players.firstKey();
         }
+    }
+    if (rate() != previousRate) {
+        Q_EMIT rateChanged(rate());
     }
     Q_EMIT propertiesChanged();
 }
@@ -137,8 +142,12 @@ void MprisRemotePlugin::setPosition(int position)
 void MprisRemotePlugin::setPlayer(const QString &player)
 {
     if (m_currentPlayer != player) {
+        const double previousRate = rate();
         m_currentPlayer = player;
         requestPlayerStatus(player);
+        if (rate() != previousRate) {
+            Q_EMIT rateChanged(rate());
+        }
         Q_EMIT propertiesChanged();
     }
 }
@@ -147,6 +156,12 @@ bool MprisRemotePlugin::isPlaying() const
 {
     auto player = m_players.value(m_currentPlayer);
     return player ? player->playing() : false;
+}
+
+double MprisRemotePlugin::rate() const
+{
+    auto player = m_players.value(m_currentPlayer);
+    return player ? player->rate() : 1.0;
 }
 
 int MprisRemotePlugin::length() const
@@ -201,6 +216,18 @@ bool MprisRemotePlugin::canSeek() const
 {
     auto player = m_players.value(m_currentPlayer);
     return player ? player->canSeek() : false;
+}
+
+bool MprisRemotePlugin::canFastForward() const
+{
+    auto player = m_players.value(m_currentPlayer);
+    return player ? player->canFastForward() : false;
+}
+
+bool MprisRemotePlugin::canRewind() const
+{
+    auto player = m_players.value(m_currentPlayer);
+    return player ? player->canRewind() : false;
 }
 
 #include "moc_mprisremoteplugin.cpp"

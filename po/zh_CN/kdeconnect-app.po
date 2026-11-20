@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: kdeorg\n"
 "Report-Msgid-Bugs-To: https://bugs.kde.org\n"
-"POT-Creation-Date: 2026-10-25 00:50+0000\n"
+"POT-Creation-Date: 2026-11-14 01:03+0000\n"
 "PO-Revision-Date: 2024-04-22 15:59\n"
 "Last-Translator: \n"
 "Language-Team: Chinese Simplified\n"
@@ -17,58 +17,58 @@ msgstr ""
 "X-Crowdin-File: /kf6-trunk/messages/kdeconnect-kde/kdeconnect-app.pot\n"
 "X-Crowdin-File-ID: 49028\n"
 
-#: main.cpp:45 main.cpp:47
+#: main.cpp:32 main.cpp:34
 #, kde-format
 msgid "KDE Connect"
 msgstr "KDE Connect"
 
-#: main.cpp:49
+#: main.cpp:36
 #, kde-format
 msgid "© 2015–2025 KDE Connect Team"
 msgstr "© 2015–2025 KDE Connect Team"
 
-#: main.cpp:50
+#: main.cpp:37
 #, kde-format
 msgid "Aleix Pol Gonzalez"
 msgstr "Aleix Pol Gonzalez"
 
-#: main.cpp:51
+#: main.cpp:38
 #, kde-format
 msgid "Albert Vaca Cintora"
 msgstr "Albert Vaca Cintora"
 
-#: main.cpp:52
+#: main.cpp:39
 #, kde-format
 msgctxt "NAME OF TRANSLATORS"
 msgid "Your names"
 msgstr "KDE China, Coelacanthus, Guo Yunhe, Tyson Tan"
 
-#: main.cpp:52
+#: main.cpp:39
 #, kde-format
 msgctxt "EMAIL OF TRANSLATORS"
 msgid "Your emails"
 msgstr ""
 "kde-china@kde.org, liuhongwu2003@outlook.com, i@guoyunhe.me, tds00@qq.com"
 
-#: main.cpp:83
+#: main.cpp:70
 #, kde-format
 msgctxt "@info:shell"
 msgid "Device id to open the app in"
 msgstr "用于打开此应用的设备 ID"
 
-#: main.cpp:86
+#: main.cpp:73
 #, kde-format
 msgctxt "@info:shell"
 msgid "Configuration module to show, requires --device to be set."
 msgstr "配置需要显示的模块，需要设置 --device 参数。"
 
-#: main.cpp:90
+#: main.cpp:77
 #, kde-format
 msgctxt "command line description"
 msgid "Replace an existing instance"
 msgstr "替换已有实例"
 
-#: main.cpp:93
+#: main.cpp:80
 #, kde-format
 msgid "URL to share"
 msgstr "要分享的 URL"
@@ -191,43 +191,44 @@ msgstr "查找设备"
 msgid "Send Clipboard"
 msgstr "发送剪贴板"
 
-#: qml/DevicePage.qml:231
+#: qml/DevicePage.qml:232
 #, kde-format
 msgid "Share File"
 msgstr "共享文件"
 
-#: qml/DevicePage.qml:239
+#: qml/DevicePage.qml:240
 #, kde-format
 msgid "Browse this device"
 msgstr "浏览此设备"
 
-#: qml/DevicePage.qml:247
+#: qml/DevicePage.qml:248
 #, kde-format
 msgid "Stop virtual monitor session"
 msgstr "停止虚拟监视器会话"
 
-#: qml/DevicePage.qml:247
+#: qml/DevicePage.qml:248
 #, kde-format
 msgid "Use device as an external monitor"
 msgstr "使用设备作为外接监视器"
 
-#: qml/DevicePage.qml:278
-#, kde-format
-msgid "Address: %1 via %2"
+#: qml/DevicePage.qml:279
+#, fuzzy, kde-format
+#| msgid "Address: %1 via %2"
+msgid "Address: %1"
 msgstr "地址：%1 (通过 %2)"
 
-#: qml/DevicePage.qml:288
+#: qml/DevicePage.qml:299
 #, kde-format
 msgid "This device is not paired."
 msgstr "此设备尚未配对。"
 
-#: qml/DevicePage.qml:292
+#: qml/DevicePage.qml:303
 #, kde-format
 msgctxt "Request pairing with a given device"
 msgid "Pair"
 msgstr "配对"
 
-#: qml/DevicePage.qml:299 qml/DevicePage.qml:308
+#: qml/DevicePage.qml:310 qml/DevicePage.qml:319
 #, kde-format
 msgid ""
 "Pair requested\n"
@@ -236,22 +237,22 @@ msgstr ""
 "配对请求已发送\n"
 "密钥："
 
-#: qml/DevicePage.qml:314
+#: qml/DevicePage.qml:325
 #, kde-format
 msgid "Accept"
 msgstr "接受"
 
-#: qml/DevicePage.qml:320
+#: qml/DevicePage.qml:331
 #, kde-format
 msgid "Reject"
 msgstr "拒绝"
 
-#: qml/DevicePage.qml:331
+#: qml/DevicePage.qml:340
 #, kde-format
 msgid "This device is not reachable"
 msgstr "设备不可达"
 
-#: qml/DevicePage.qml:339
+#: qml/DevicePage.qml:348
 #, kde-format
 msgid "Please choose a file"
 msgstr "请选择文件"
@@ -349,12 +350,12 @@ msgstr "右键点击"
 msgid "Multimedia Controls"
 msgstr "多媒体控制"
 
-#: qml/mpris.qml:68
+#: qml/mpris.qml:66
 #, kde-format
 msgid "No players available"
 msgstr "没有可用的播放器"
 
-#: qml/mpris.qml:128
+#: qml/mpris.qml:126
 #, kde-format
 msgid "%1 - %2"
 msgstr "%1 - %2"
@@ -365,28 +366,35 @@ msgctxt "@title:window"
 msgid "Notifications"
 msgstr "通知"
 
-#: qml/NotificationPanel.qml:164
+#: qml/NotificationPanel.qml:33
+#, fuzzy, kde-format
+#| msgid "Notifications"
+msgctxt "@info:placeholder"
+msgid "No notifications"
+msgstr "通知"
+
+#: qml/NotificationPanel.qml:173
 #, kde-format
 msgid "Reply"
 msgstr "回复"
 
-#: qml/NotificationPanel.qml:179
+#: qml/NotificationPanel.qml:188
 #, kde-format
 msgid "Dismiss"
 msgstr "消除"
 
-#: qml/NotificationPanel.qml:206
+#: qml/NotificationPanel.qml:215
 #, kde-format
 msgid "Cancel"
 msgstr "取消"
 
-#: qml/NotificationPanel.qml:224
+#: qml/NotificationPanel.qml:233
 #, kde-format
 msgctxt "@info:placeholder"
 msgid "Reply to %1…"
 msgstr "回复给 %1…"
 
-#: qml/NotificationPanel.qml:243
+#: qml/NotificationPanel.qml:252
 #, kde-format
 msgid "Send"
 msgstr "发送"
@@ -418,7 +426,7 @@ msgstr "编辑命令"
 msgid "You can edit commands on the connected device"
 msgstr "您可以在已连接的设备上编辑命令"
 
-#: qml/runcommand.qml:53
+#: qml/runcommand.qml:51
 #, kde-format
 msgid "No commands defined"
 msgstr "未定义命令"

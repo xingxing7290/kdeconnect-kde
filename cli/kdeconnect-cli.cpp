@@ -149,20 +149,19 @@ int main(int argc, char **argv)
                 DeviceDbusInterface deviceIface(id);
                 const bool isReachable = deviceIface.isReachable();
                 const bool isPaired = deviceIface.isPaired();
-                QTextStream(stdout) << "- " << deviceIface.name() << ": " << deviceIface.id() << ' ';
-                if (isReachable) {
-                    const QString addresses = deviceIface.reachableAddresses().join(QStringLiteral(", "));
-                    const QString providers = deviceIface.activeProviderNames().join(QStringLiteral(", "));
-                    QTextStream(stdout)
-                        << i18nc("Details on how a device is connected eg: on <network address> via Bluetooth", "on %1 via %2", addresses, providers) << ' ';
-                }
+                QTextStream out(stdout);
+                out << "- " << deviceIface.name() << ": " << deviceIface.id() << ' ';
                 if (isReachable && isPaired) {
-                    QTextStream(stdout) << i18n("(paired and reachable)") << Qt::endl;
+                    out << i18n("(paired and reachable)");
                 } else if (isReachable) {
-                    QTextStream(stdout) << i18n("(reachable)") << Qt::endl;
+                    out << i18n("(reachable)");
                 } else if (isPaired) {
-                    QTextStream(stdout) << i18n("(paired)") << Qt::endl;
+                    out << i18n("(paired)");
                 }
+                if (isReachable) {
+                    out << ' ' << i18nc("How a device is connected, eg: via <ip address>", "via %1", deviceIface.connectionDescription());
+                }
+                out << Qt::endl;
             }
         }
         if (displayCount) {

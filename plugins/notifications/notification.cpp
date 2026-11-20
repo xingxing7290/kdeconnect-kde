@@ -42,35 +42,34 @@ Notification::Notification(const NetworkPacket &np, const Device *device, QObjec
     m_imagesDir.setPath(QDir::temp().absoluteFilePath(QStringLiteral("kdeconnect_") + username));
     m_imagesDir.mkpath(m_imagesDir.absolutePath());
     QFile(m_imagesDir.absolutePath()).setPermissions(QFileDevice::ReadOwner | QFileDevice::WriteOwner | QFileDevice::ExeOwner);
-    m_ready = false;
 
-    parseNetworkPacket(np);
-    createKNotification(np);
+    update(np);
 }
 
 void Notification::dismiss()
 {
-    if (m_dismissable) {
+    if (m_contents.dismissable) {
         Q_EMIT dismissRequested(m_internalId);
     }
 }
 
 void Notification::show()
 {
-    m_ready = true;
-    Q_EMIT ready();
-    if (!m_silent && m_notification) {
+    // Emitting ready() makes every D-Bus client re-read the notification, so only do it if something changed
+    if (m_lastPublishedContents != m_contents) {
+        m_lastPublishedContents = m_contents;
+        Q_EMIT ready();
+    }
+    // Silent notifications don't need a KNotification, unless there's already one shown that we need to update
+    if (m_notification || !m_silent) {
+        updateKNotification();
+    }
+    if (!m_silent) {
         m_notification->sendEvent();
     }
 }
 
-void Notification::update(const NetworkPacket &np)
-{
-    parseNetworkPacket(np);
-    createKNotification(np);
-}
-
-void Notification::createKNotification(const NetworkPacket &np)
+void Notification::updateKNotification()
 {
     if (!m_notification) {
         m_notification = new KNotification(QStringLiteral("notification"), KNotification::CloseOnTimeout, this);
@@ -81,9 +80,9 @@ void Notification::createKNotification(const NetworkPacket &np)
 
     const bool supportsMarkup = NotificationServerInfo::instance().supportedHints().testFlag(NotificationServerInfo::BODY_MARKUP);
 
-    QString ticker = m_ticker;
-    QString title = m_title;
-    QString text = isConversation() ? getConversationMessages(supportsMarkup) : m_text;
+    QString ticker = m_contents.ticker;
+    QString title = m_contents.title;
+    QString text = isConversation() ? getConversationMessages(supportsMarkup) : m_contents.text;
 
     if (supportsMarkup) {
         ticker = ticker.toHtmlEscaped();
@@ -95,15 +94,15 @@ void Notification::createKNotification(const NetworkPacket &np)
     }
 
     if (NotificationServerInfo::instance().supportedHints().testFlag(NotificationServerInfo::X_KDE_DISPLAY_APPNAME)) {
-        m_notification->setTitle(m_title);
+        m_notification->setTitle(m_contents.title);
         m_notification->setText(text);
-        m_notification->setHint(QStringLiteral("x-kde-display-appname"), m_appName);
+        m_notification->setHint(QStringLiteral("x-kde-display-appname"), m_contents.appName);
     } else {
-        m_notification->setTitle(m_appName);
+        m_notification->setTitle(m_contents.appName);
 
         if (title.isEmpty() && text.isEmpty()) {
             m_notification->setText(ticker);
-        } else if (m_appName == m_title || title.isEmpty()) {
+        } else if (m_contents.appName == m_contents.title || title.isEmpty()) {
             m_notification->setText(text);
         } else if (text.isEmpty()) {
             m_notification->setText(title);
@@ -116,13 +115,13 @@ void Notification::createKNotification(const NetworkPacket &np)
     // Mark this notification so sendnotifications can filter it out and not echo it back to the device
     m_notification->setHint(QStringLiteral("x-kdeconnect-source-device"), m_device->name());
 
-    if (!m_requestReplyId.isEmpty()) {
+    if (!m_contents.requestReplyId.isEmpty()) {
         auto replyAction = std::make_unique<KNotificationReplyAction>(i18nc("@action:button", "Reply"));
 
         if (isGroupConversation()) {
-            replyAction->setPlaceholderText(i18nc("@info:placeholder %1 is the name of a group chat", "Reply in %1…", m_groupName));
+            replyAction->setPlaceholderText(i18nc("@info:placeholder %1 is the name of a group chat", "Reply in %1…", m_contents.groupName));
         } else {
-            replyAction->setPlaceholderText(i18nc("@info:placeholder", "Reply to %1…", isConversation() ? m_title : m_appName));
+            replyAction->setPlaceholderText(i18nc("@info:placeholder", "Reply to %1…", isConversation() ? m_contents.title : m_contents.appName));
         }
 
         replyAction->setFallbackBehavior(KNotificationReplyAction::FallbackBehavior::UseRegularAction);
@@ -134,7 +133,7 @@ void Notification::createKNotification(const NetworkPacket &np)
     }
 
     m_notification->clearActions();
-    for (const QString &actionId : std::as_const(m_actions)) {
+    for (const QString &actionId : std::as_const(m_contents.actions)) {
         KNotificationAction *action = m_notification->addAction(actionId);
 
         connect(action, &KNotificationAction::activated, this, [this, actionId] {
@@ -142,69 +141,16 @@ void Notification::createKNotification(const NetworkPacket &np)
         });
     }
 
-    m_notification->setPixmap({});
-    if (!m_hasIcon) {
-        show();
-        return;
-    }
-
-    const QString dir = QDir::cleanPath(m_imagesDir.absolutePath());
-    const QString filePath = QDir::cleanPath(m_imagesDir.absoluteFilePath(m_payloadHash));
-    if (!filePath.startsWith(dir + QStringLiteral("/"))) {
-        qCWarning(KDECONNECT_PLUGIN_NOTIFICATIONS) << "Directory traversal detected";
-        m_iconPath.clear();
-        show();
-        return;
-    }
-
-    m_iconPath = filePath;
-    loadIcon(np);
-}
-
-void Notification::loadIcon(const NetworkPacket &np)
-{
-    m_ready = false;
-
-    if (QFileInfo::exists(m_iconPath)) {
-        applyIcon();
-        show();
-    } else {
-        FileTransferJob *fileTransferJob = s_downloadsInProgress.value(m_iconPath);
-        if (!fileTransferJob) {
-            fileTransferJob = np.createPayloadTransferJob(QUrl::fromLocalFile(m_iconPath));
-            fileTransferJob->start();
-            s_downloadsInProgress[m_iconPath] = fileTransferJob;
-        }
-
-        connect(fileTransferJob, &FileTransferJob::result, this, [this, fileTransferJob] {
-            s_downloadsInProgress.remove(m_iconPath);
-            if (fileTransferJob->error()) {
-                qCDebug(KDECONNECT_PLUGIN_NOTIFICATIONS) << "Error in FileTransferJob: " << fileTransferJob->errorString();
-            } else {
-                applyIcon();
-            }
-            show();
-        });
-    }
-}
-
-void Notification::applyIcon()
-{
-    if (!m_notification) {
-        return;
-    }
-
-    QPixmap icon(m_iconPath, "PNG");
-    m_notification->setPixmap(icon);
+    m_notification->setPixmap(m_contents.iconPath.isEmpty() ? QPixmap() : QPixmap(m_contents.iconPath, "PNG"));
 }
 
 QString Notification::getConversationMessages(bool supportsMarkup) const
 {
     QString conversation;
     // To avoid showing the sender of the first message twice (in title and text) at the start of the conversation.
-    QString prevSender = m_title;
+    QString prevSender = m_contents.title;
 
-    for (const QJsonValue &messageElement : m_conversation) {
+    for (const QJsonValue &messageElement : m_contents.conversation) {
         const Message message = Message::fromObject(messageElement.toObject());
         if (message.sender != prevSender) {
             if (supportsMarkup) {
@@ -234,33 +180,75 @@ void Notification::sendReply(const QString &message)
     Q_EMIT replied(message);
 }
 
-void Notification::parseNetworkPacket(const NetworkPacket &np)
+void Notification::update(const NetworkPacket &np)
 {
     m_internalId = np.get<QString>(QStringLiteral("id"));
-    m_appName = np.get<QString>(QStringLiteral("appName"));
-    m_ticker = np.get<QString>(QStringLiteral("ticker"));
-    m_title = np.get<QString>(QStringLiteral("title"));
-    m_text = np.get<QString>(QStringLiteral("text"));
-    m_groupName = np.get<QString>(QStringLiteral("groupName"), QString());
-    m_dismissable = np.get<bool>(QStringLiteral("isClearable"));
     m_silent = np.get<bool>(QStringLiteral("silent"));
-    m_payloadHash = np.get<QString>(QStringLiteral("payloadHash"));
-    m_requestReplyId = np.get<QString>(QStringLiteral("requestReplyId"), QString());
-    m_conversation = np.get<QJsonArray>(QStringLiteral("conversation"), QJsonArray());
 
-    if (isConversation()) {
-        m_title = isGroupConversation() ? m_groupName : Message::fromObject(m_conversation.at(0).toObject()).sender;
+    m_contents.appName = np.get<QString>(QStringLiteral("appName"));
+    m_contents.ticker = np.get<QString>(QStringLiteral("ticker"));
+    m_contents.title = np.get<QString>(QStringLiteral("title"));
+    m_contents.text = np.get<QString>(QStringLiteral("text"));
+    m_contents.groupName = np.get<QString>(QStringLiteral("groupName"), QString());
+    m_contents.dismissable = np.get<bool>(QStringLiteral("isClearable"));
+    m_payloadHash = np.get<QString>(QStringLiteral("payloadHash"));
+    m_contents.requestReplyId = np.get<QString>(QStringLiteral("requestReplyId"), QString());
+
+    m_contents.conversation = np.get<QJsonArray>(QStringLiteral("conversation"), QJsonArray());
+    if (!m_contents.conversation.isEmpty()) {
+        m_contents.title = isGroupConversation() ? m_contents.groupName : Message::fromObject(m_contents.conversation.at(0).toObject()).sender;
         bool supportsMarkup = true; // The QML app and plasmoid, which query this via D-Bus, support HTML.
-        m_text = getConversationMessages(supportsMarkup);
+        m_contents.text = getConversationMessages(supportsMarkup);
     }
 
-    m_hasIcon = !m_payloadHash.isEmpty();
-    m_actions.clear();
-
+    m_contents.actions.clear();
     const auto actions = np.get<QJsonArray>(QStringLiteral("actions"));
     for (const QJsonValue &value : actions) {
-        m_actions.append(value.toString());
+        m_contents.actions.append(value.toString());
     }
+
+    m_contents.iconPath.clear();
+    if (!m_payloadHash.isEmpty()) {
+        const QString dir = QDir::cleanPath(m_imagesDir.absolutePath());
+        const QString filePath = QDir::cleanPath(m_imagesDir.absoluteFilePath(m_payloadHash));
+        if (filePath.startsWith(dir + QStringLiteral("/"))) {
+            m_contents.iconPath = filePath;
+        } else {
+            qCWarning(KDECONNECT_PLUGIN_NOTIFICATIONS) << "Directory traversal detected";
+        }
+    }
+
+    // The file already exists while it's being downloaded, so check for a download in progress before QFileInfo::exists
+    FileTransferJob *fileTransferJob = s_downloadsInProgress.value(m_contents.iconPath);
+    if (m_contents.iconPath.isEmpty() || (!fileTransferJob && QFileInfo::exists(m_contents.iconPath))) {
+        show();
+    } else {
+        if (!fileTransferJob) {
+            fileTransferJob = np.createPayloadTransferJob(QUrl::fromLocalFile(m_contents.iconPath));
+            s_downloadsInProgress[m_contents.iconPath] = fileTransferJob;
+            // Use the job as context, so the entry is removed even if no Notification is waiting for it anymore
+            connect(fileTransferJob, &KJob::result, fileTransferJob, [path = m_contents.iconPath] {
+                s_downloadsInProgress.remove(path);
+            });
+            fileTransferJob->start();
+        }
+
+        // Unique, since update() can call this again while the same icon is still downloading
+        connect(fileTransferJob, &FileTransferJob::result, this, &Notification::iconDownloaded, Qt::UniqueConnection);
+    }
+}
+
+void Notification::iconDownloaded(KJob *job)
+{
+    // Ignore downloads of an icon that a later update replaced
+    if (static_cast<FileTransferJob *>(job)->destination() != QUrl::fromLocalFile(m_contents.iconPath)) {
+        return;
+    }
+    if (job->error()) {
+        qCDebug(KDECONNECT_PLUGIN_NOTIFICATIONS) << "Error in FileTransferJob: " << job->errorString();
+        m_contents.iconPath.clear();
+    }
+    show();
 }
 
 #include "moc_notification.cpp"

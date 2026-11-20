@@ -58,6 +58,7 @@ class KDECONNECTDBUSINTERFACES_EXPORT DeviceDbusInterface : public OrgKdeKdeconn
     Q_PROPERTY(bool isReachable READ isReachable NOTIFY reachableChangedProxy)
     Q_PROPERTY(QStringList reachableAddresses READ reachableAddresses NOTIFY linksChangedProxy)
     Q_PROPERTY(QStringList activeProviderNames READ activeProviderNames NOTIFY linksChangedProxy)
+    Q_PROPERTY(QString connectionDescription READ connectionDescription NOTIFY linksChangedProxy)
     Q_PROPERTY(bool isPaired READ isPaired NOTIFY pairStateChangedProxy)
     Q_PROPERTY(bool isPairRequested READ isPairRequested NOTIFY pairStateChangedProxy)
     Q_PROPERTY(bool isPairRequestedByPeer READ isPairRequestedByPeer NOTIFY pairStateChangedProxy)
@@ -151,6 +152,7 @@ class KDECONNECTDBUSINTERFACES_EXPORT MprisDbusInterface : public OrgKdeKdeconne
     Q_OBJECT
     // Workaround because qdbusxml2cpp is not generating NOTIFY for properties
     Q_PROPERTY(bool isPlaying READ isPlaying NOTIFY propertiesChangedProxy)
+    Q_PROPERTY(double rate READ rate NOTIFY rateChangedProxy)
     Q_PROPERTY(int length READ length NOTIFY propertiesChangedProxy)
     Q_PROPERTY(QString title READ title NOTIFY propertiesChangedProxy)
     Q_PROPERTY(QString artist READ artist NOTIFY propertiesChangedProxy)
@@ -161,11 +163,14 @@ class KDECONNECTDBUSINTERFACES_EXPORT MprisDbusInterface : public OrgKdeKdeconne
     Q_PROPERTY(int volume READ volume WRITE setVolume NOTIFY propertiesChangedProxy)
     Q_PROPERTY(int position READ position WRITE setPosition NOTIFY propertiesChangedProxy)
     Q_PROPERTY(bool canSeek READ canSeek NOTIFY propertiesChangedProxy)
+    Q_PROPERTY(bool canFastForward READ canFastForward NOTIFY propertiesChangedProxy)
+    Q_PROPERTY(bool canRewind READ canRewind NOTIFY propertiesChangedProxy)
 public:
     explicit MprisDbusInterface(const QString &deviceId, QObject *parent = nullptr);
 
 Q_SIGNALS:
     void propertiesChangedProxy();
+    void rateChangedProxy(double rate);
 };
 
 class KDECONNECTDBUSINTERFACES_EXPORT RemoteControlDbusInterface : public OrgKdeKdeconnectDeviceRemotecontrolInterface

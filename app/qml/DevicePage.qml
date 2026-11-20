@@ -112,7 +112,7 @@ Kirigami.ScrollablePage {
                 Accessible.name: Kirigami.MnemonicData.plainTextLabel ?? modelData.name // fallback needed for KF < 6.12
                 Accessible.role: modelData.clickable ? Accessible.Button : Accessible.StaticText
                 icon.name: modelData.iconName
-                highlighted: false
+                highlighted: modelData === sharePlugin && dropArea.containsDrag
                 icon.color: "transparent"
                 width: pluginsListView.width
                 enabled: true
@@ -227,6 +227,7 @@ Kirigami.ScrollablePage {
                 device: root.currentDevice
             },
             PluginItem {
+                id: sharePlugin
                 pluginName: "share"
                 name: i18nd("kdeconnect-app", "Share File")
                 onClick: () => fileDialog.open()
@@ -275,16 +276,26 @@ Kirigami.ScrollablePage {
                 device: root.currentDevice
             },
             PluginItem {
-                name: i18nd("kdeconnect-app", "Address: %1 via %2", root.currentDevice.reachableAddresses, root.currentDevice.activeProviderNames)
+                name: i18nd("kdeconnect-app", "Address: %1", root.currentDevice.connectionDescription)
                 hidden: !root.currentDevice.isReachable
                 section: "info"
                 device: root.currentDevice
             }
         ]
 
+        DropArea {
+            id: dropArea
+            parent: pluginsListView
+            anchors.fill: parent
+            enabled: sharePlugin.loaded
+            onEntered: drag => drag.accepted = drag.hasUrls
+            onDropped: drop => {
+                fileDialog.shareIface.shareUrls(drop.urls)
+                drop.accept(Qt.CopyAction)
+            }
+        }
+
         Kirigami.PlaceholderMessage {
-            // FIXME: not accessible. screen readers won't read this. Idem for the other PlaceholderMessages
-            //        https://invent.kde.org/frameworks/kirigami/-/merge_requests/1482
             text: i18nd("kdeconnect-app", "This device is not paired.")
             anchors.centerIn: parent
             visible: root.currentDevice && root.currentDevice.isReachable && !root.currentDevice.isPaired && !root.currentDevice.isPairRequestedByPeer && !root.currentDevice.isPairRequested
@@ -325,8 +336,6 @@ Kirigami.ScrollablePage {
         }
 
         Kirigami.PlaceholderMessage {
-            // FIXME: not accessible. screen readers won't read this.
-            //        https://invent.kde.org/frameworks/kirigami/-/merge_requests/1482
             visible: root.currentDevice && !root.currentDevice.isReachable
             text: i18nd("kdeconnect-app", "This device is not reachable")
             anchors.centerIn: parent

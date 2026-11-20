@@ -59,8 +59,8 @@ Q_SIGNALS:
 private:
     void addLink(BluetoothDeviceLink *deviceLink, const QString &deviceId);
     bool isCertificateValid(const DeviceInfo &deviceInfo);
-    QList<QBluetoothAddress> getPairedDevices();
     void tryToInitialise();
+    void handleIncomingSocket(QBluetoothSocket *socket);
 
     QBluetoothUuid mServiceUuid;
     QPointer<QBluetoothServer> mBluetoothServer;

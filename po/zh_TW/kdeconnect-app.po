@@ -11,8 +11,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: kdeconnect-kde\n"
 "Report-Msgid-Bugs-To: https://bugs.kde.org\n"
-"POT-Creation-Date: 2026-10-25 00:50+0000\n"
-"PO-Revision-Date: 2026-09-15 14:29+0900\n"
+"POT-Creation-Date: 2026-11-14 01:03+0000\n"
+"PO-Revision-Date: 2026-11-12 19:31+0900\n"
 "Last-Translator: Kisaragi Hiu <mail@kisaragi-hiu.com>\n"
 "Language-Team: Traditional Chinese <zh-l10n@lists.slat.org>\n"
 "Language: zh_TW\n"
@@ -22,57 +22,57 @@ msgstr ""
 "Plural-Forms: nplurals=1; plural=0;\n"
 "X-Generator: Lokalize 26.11.70\n"
 
-#: main.cpp:45 main.cpp:47
+#: main.cpp:32 main.cpp:34
 #, kde-format
 msgid "KDE Connect"
 msgstr "KDE Connect"
 
-#: main.cpp:49
+#: main.cpp:36
 #, kde-format
 msgid "© 2015–2025 KDE Connect Team"
 msgstr "© 2015–2025 KDE Connect 團隊"
 
-#: main.cpp:50
+#: main.cpp:37
 #, kde-format
 msgid "Aleix Pol Gonzalez"
 msgstr "Aleix Pol Gonzalez"
 
-#: main.cpp:51
+#: main.cpp:38
 #, kde-format
 msgid "Albert Vaca Cintora"
 msgstr "Albert Vaca Cintora"
 
-#: main.cpp:52
+#: main.cpp:39
 #, kde-format
 msgctxt "NAME OF TRANSLATORS"
 msgid "Your names"
 msgstr "pan93412, Chaoting Liu, Kisaragi Hiu"
 
-#: main.cpp:52
+#: main.cpp:39
 #, kde-format
 msgctxt "EMAIL OF TRANSLATORS"
 msgid "Your emails"
 msgstr "pan93412@gmail.com, brli@chakralinux.org, mail@kisaragi-hiu.com"
 
-#: main.cpp:83
+#: main.cpp:70
 #, kde-format
 msgctxt "@info:shell"
 msgid "Device id to open the app in"
 msgstr "要開啟應用程式的裝置 ID"
 
-#: main.cpp:86
+#: main.cpp:73
 #, kde-format
 msgctxt "@info:shell"
 msgid "Configuration module to show, requires --device to be set."
 msgstr "要顯示的設定模組，需要設定 --device。"
 
-#: main.cpp:90
+#: main.cpp:77
 #, kde-format
 msgctxt "command line description"
 msgid "Replace an existing instance"
 msgstr "取代現存實體"
 
-#: main.cpp:93
+#: main.cpp:80
 #, kde-format
 msgid "URL to share"
 msgstr "要分享的網址"
@@ -195,43 +195,43 @@ msgstr "尋找裝置"
 msgid "Send Clipboard"
 msgstr "傳送剪貼簿"
 
-#: qml/DevicePage.qml:231
+#: qml/DevicePage.qml:232
 #, kde-format
 msgid "Share File"
 msgstr "分享檔案"
 
-#: qml/DevicePage.qml:239
+#: qml/DevicePage.qml:240
 #, kde-format
 msgid "Browse this device"
 msgstr "瀏覽此裝置"
 
-#: qml/DevicePage.qml:247
+#: qml/DevicePage.qml:248
 #, kde-format
 msgid "Stop virtual monitor session"
 msgstr "停止虛擬螢幕工作階段"
 
-#: qml/DevicePage.qml:247
+#: qml/DevicePage.qml:248
 #, kde-format
 msgid "Use device as an external monitor"
 msgstr "將裝置作為外部螢幕使用"
 
-#: qml/DevicePage.qml:278
+#: qml/DevicePage.qml:279
 #, kde-format
-msgid "Address: %1 via %2"
-msgstr "位址：%1 透過 %2"
+msgid "Address: %1"
+msgstr "位址：%1"
 
-#: qml/DevicePage.qml:288
+#: qml/DevicePage.qml:299
 #, kde-format
 msgid "This device is not paired."
 msgstr "此裝置未配對。"
 
-#: qml/DevicePage.qml:292
+#: qml/DevicePage.qml:303
 #, kde-format
 msgctxt "Request pairing with a given device"
 msgid "Pair"
 msgstr "配對"
 
-#: qml/DevicePage.qml:299 qml/DevicePage.qml:308
+#: qml/DevicePage.qml:310 qml/DevicePage.qml:319
 #, kde-format
 msgid ""
 "Pair requested\n"
@@ -240,22 +240,22 @@ msgstr ""
 "配對請求已送出\n"
 "金鑰："
 
-#: qml/DevicePage.qml:314
+#: qml/DevicePage.qml:325
 #, kde-format
 msgid "Accept"
 msgstr "接受"
 
-#: qml/DevicePage.qml:320
+#: qml/DevicePage.qml:331
 #, kde-format
 msgid "Reject"
 msgstr "拒絕"
 
-#: qml/DevicePage.qml:331
+#: qml/DevicePage.qml:340
 #, kde-format
 msgid "This device is not reachable"
 msgstr "無法連線裝置"
 
-#: qml/DevicePage.qml:339
+#: qml/DevicePage.qml:348
 #, kde-format
 msgid "Please choose a file"
 msgstr "請選擇檔案"
@@ -264,13 +264,13 @@ msgstr "請選擇檔案"
 #, kde-format
 msgctxt "@action:button"
 msgid "Open device list"
-msgstr ""
+msgstr "開啟裝置列表"
 
 #: qml/Main.qml:94
 #, kde-format
 msgctxt "@action:button"
 msgid "Close device list"
-msgstr ""
+msgstr "關閉裝置列表"
 
 #: qml/Main.qml:113
 #, kde-format
@@ -353,12 +353,12 @@ msgstr "點擊滑鼠右鍵"
 msgid "Multimedia Controls"
 msgstr "多媒體控制"
 
-#: qml/mpris.qml:68
+#: qml/mpris.qml:66
 #, kde-format
 msgid "No players available"
 msgstr "無可用播放器"
 
-#: qml/mpris.qml:128
+#: qml/mpris.qml:126
 #, kde-format
 msgid "%1 - %2"
 msgstr "%1 - %2"
@@ -369,28 +369,34 @@ msgctxt "@title:window"
 msgid "Notifications"
 msgstr "通知"
 
-#: qml/NotificationPanel.qml:164
+#: qml/NotificationPanel.qml:33
+#, kde-format
+msgctxt "@info:placeholder"
+msgid "No notifications"
+msgstr "沒有通知"
+
+#: qml/NotificationPanel.qml:173
 #, kde-format
 msgid "Reply"
 msgstr "回覆"
 
-#: qml/NotificationPanel.qml:179
+#: qml/NotificationPanel.qml:188
 #, kde-format
 msgid "Dismiss"
 msgstr "忽略"
 
-#: qml/NotificationPanel.qml:206
+#: qml/NotificationPanel.qml:215
 #, kde-format
 msgid "Cancel"
 msgstr "取消"
 
-#: qml/NotificationPanel.qml:224
+#: qml/NotificationPanel.qml:233
 #, kde-format
 msgctxt "@info:placeholder"
 msgid "Reply to %1…"
 msgstr "回覆給 %1…"
 
-#: qml/NotificationPanel.qml:243
+#: qml/NotificationPanel.qml:252
 #, kde-format
 msgid "Send"
 msgstr "傳送"
@@ -422,7 +428,7 @@ msgstr "編輯指令"
 msgid "You can edit commands on the connected device"
 msgstr "您可以在已連線的裝置上編輯指令"
 
-#: qml/runcommand.qml:53
+#: qml/runcommand.qml:51
 #, kde-format
 msgid "No commands defined"
 msgstr "未定義指令"
@@ -496,10 +502,9 @@ msgid "KDE Connect iOS App"
 msgstr "KDE Connect iOS 應用程式"
 
 #: qml/WelcomePage.qml:69
-#, fuzzy, kde-format
-#| msgid "Apple Store"
+#, kde-format
 msgid "App Store"
-msgstr "Apple Store"
+msgstr "App Store"
 
 #~ msgid "Configure plugin"
 #~ msgstr "設定外掛程式"

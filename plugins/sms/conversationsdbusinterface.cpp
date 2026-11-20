@@ -47,7 +47,7 @@ QVariantList ConversationsDbusInterface::activeConversations()
             // This should really never happen because we create a conversation at the same time
             // as adding a message, but better safe than sorry
             qCWarning(KDECONNECT_CONVERSATIONS) << "Conversation with ID" << it.key() << "is unexpectedly empty";
-            break;
+            continue;
         }
         const QVariant &message = QVariant::fromValue<ConversationMessage>(*conversation.crbegin());
         toReturn.append(message);
@@ -101,7 +101,7 @@ void ConversationsDbusInterface::addMessages(const QList<ConversationMessage> &m
 
         // Store the Message in the list corresponding to its thread
         bool newConversation = !m_conversations.contains(threadId);
-        const auto &threadPosition = m_conversations[threadId].insert(message.date(), message);
+        const auto &threadPosition = m_conversations[threadId].insert({message.date(), message.uID()}, message);
         m_known_messages[threadId].insert(message.uID());
 
         // If this message was inserted at the end of the list, it is the latest message in the conversation
@@ -174,9 +174,10 @@ void ConversationsDbusInterface::updateConversation(const qint64 &conversationID
     // Request a window of messages
     qint64 rangeStartTimestamp;
     qint64 numberToRequest;
-    if (m_conversations.contains(conversationID) && m_conversations[conversationID].count() > 0) {
-        rangeStartTimestamp = m_conversations[conversationID].first().date(); // Request starting from the oldest-available message
-        numberToRequest = m_conversations[conversationID].count(); // Request an increasing number of messages by requesting more equal to the amount we have
+    const auto conversation = m_conversations.constFind(conversationID);
+    if (conversation != m_conversations.cend() && !conversation->isEmpty()) {
+        rangeStartTimestamp = conversation->first().date(); // Request starting from the oldest-available message
+        numberToRequest = conversation->count(); // Request an increasing number of messages by requesting more equal to the amount we have
     } else {
         rangeStartTimestamp = -1; // Value < 0 indicates to return the newest messages
         numberToRequest = MIN_NUMBER_TO_REQUEST; // Start off with a small batch
@@ -184,8 +185,14 @@ void ConversationsDbusInterface::updateConversation(const qint64 &conversationID
     if (numberToRequest < MIN_NUMBER_TO_REQUEST) {
         numberToRequest = MIN_NUMBER_TO_REQUEST;
     }
+    waitingForMessagesLock.unlock();
+
+    // Must not hold the lock here: this is a loopback D-Bus call to an object on the main thread,
+    // which blocks until the main thread handles it, and the main thread may be waiting for this
+    // lock in addMessages()
     m_smsInterface.requestConversation(conversationID, rangeStartTimestamp, numberToRequest);
 
+    waitingForMessagesLock.lockForRead();
     while (conversationsWaitingForMessages.contains(conversationID)) {
         waitingForMessages.wait(&waitingForMessagesLock);
     }
@@ -206,7 +213,7 @@ void ConversationsDbusInterface::sendSmsForConversation(const ConversationMessag
 
 void ConversationsDbusInterface::replyToConversation(const qint64 &conversationID, const QString &message, const QVariantList &attachmentUrls)
 {
-    const auto messagesList = m_conversations[conversationID];
+    const auto messagesList = m_conversations.value(conversationID);
     if (!messagesList.isEmpty()) {
         sendSmsForConversation(messagesList.first(), message, attachmentUrls);
         return;
@@ -223,11 +230,11 @@ void ConversationsDbusInterface::replyToConversation(const qint64 &conversationI
         // Retry a few times as a safety net in case the phone responds before
         // the cache is populated. The first request should normally succeed.
         const int maxRetries = 3;
-        for (int attempt = 0; attempt < maxRetries && m_conversations[conversationID].isEmpty(); ++attempt) {
+        for (int attempt = 0; attempt < maxRetries && m_conversations.value(conversationID).isEmpty(); ++attempt) {
             updateConversation(conversationID);
         }
 
-        const auto updatedMessages = m_conversations[conversationID];
+        const auto updatedMessages = m_conversations.value(conversationID);
         if (updatedMessages.isEmpty()) {
             qCWarning(KDECONNECT_CONVERSATIONS) << "Conversation" << conversationID << "still empty after requesting from phone, cannot send";
             return;

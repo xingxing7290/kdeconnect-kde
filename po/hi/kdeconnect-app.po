@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: kdeconnect-kde\n"
 "Report-Msgid-Bugs-To: https://bugs.kde.org\n"
-"POT-Creation-Date: 2026-10-25 00:50+0000\n"
+"POT-Creation-Date: 2026-11-14 01:03+0000\n"
 "PO-Revision-Date: 2024-06-08 20:36+0530\n"
 "Last-Translator: Raghavendra Kamath <raghu@raghukamath.com>\n"
 "Language-Team: Hindi <kde-i18n-doc@kde.org>\n"
@@ -17,57 +17,57 @@ msgstr ""
 "Plural-Forms: nplurals=2; plural=(n!=1);\n"
 "X-Generator: Lokalize 22.12.3\n"
 
-#: main.cpp:45 main.cpp:47
+#: main.cpp:32 main.cpp:34
 #, kde-format
 msgid "KDE Connect"
 msgstr "केडीई कनेक्ट"
 
-#: main.cpp:49
+#: main.cpp:36
 #, kde-format
 msgid "© 2015–2025 KDE Connect Team"
 msgstr ""
 
-#: main.cpp:50
+#: main.cpp:37
 #, kde-format
 msgid "Aleix Pol Gonzalez"
 msgstr "एलेक्स पोल गोंजालेज"
 
-#: main.cpp:51
+#: main.cpp:38
 #, kde-format
 msgid "Albert Vaca Cintora"
 msgstr ""
 
-#: main.cpp:52
+#: main.cpp:39
 #, kde-format
 msgctxt "NAME OF TRANSLATORS"
 msgid "Your names"
 msgstr "आसीश कुमार, राघवेंद्र कामत"
 
-#: main.cpp:52
+#: main.cpp:39
 #, kde-format
 msgctxt "EMAIL OF TRANSLATORS"
 msgid "Your emails"
 msgstr "officialasishkumar@gmail.com, raghu@raghukamath.com"
 
-#: main.cpp:83
+#: main.cpp:70
 #, kde-format
 msgctxt "@info:shell"
 msgid "Device id to open the app in"
 msgstr ""
 
-#: main.cpp:86
+#: main.cpp:73
 #, kde-format
 msgctxt "@info:shell"
 msgid "Configuration module to show, requires --device to be set."
 msgstr ""
 
-#: main.cpp:90
+#: main.cpp:77
 #, kde-format
 msgctxt "command line description"
 msgid "Replace an existing instance"
 msgstr ""
 
-#: main.cpp:93
+#: main.cpp:80
 #, kde-format
 msgid "URL to share"
 msgstr "साझा करने के लिए URL"
@@ -191,32 +191,32 @@ msgstr "उपकरण ढूंढें"
 msgid "Send Clipboard"
 msgstr "क्लिपबोर्ड भेजें"
 
-#: qml/DevicePage.qml:231
+#: qml/DevicePage.qml:232
 #, kde-format
 msgid "Share File"
 msgstr "फ़ाइल साझा करें"
 
-#: qml/DevicePage.qml:239
+#: qml/DevicePage.qml:240
 #, kde-format
 msgid "Browse this device"
 msgstr ""
 
-#: qml/DevicePage.qml:247
+#: qml/DevicePage.qml:248
 #, kde-format
 msgid "Stop virtual monitor session"
 msgstr ""
 
-#: qml/DevicePage.qml:247
+#: qml/DevicePage.qml:248
 #, kde-format
 msgid "Use device as an external monitor"
 msgstr ""
 
-#: qml/DevicePage.qml:278
+#: qml/DevicePage.qml:279
 #, kde-format
-msgid "Address: %1 via %2"
+msgid "Address: %1"
 msgstr ""
 
-#: qml/DevicePage.qml:288
+#: qml/DevicePage.qml:299
 #, fuzzy, kde-format
 #| msgid ""
 #| "This device is not paired.\n"
@@ -226,13 +226,13 @@ msgstr ""
 "यह उपकरण युग्मित नहीं है । \n"
 "कुंजी : %1"
 
-#: qml/DevicePage.qml:292
+#: qml/DevicePage.qml:303
 #, kde-format
 msgctxt "Request pairing with a given device"
 msgid "Pair"
 msgstr "जोड़ा"
 
-#: qml/DevicePage.qml:299 qml/DevicePage.qml:308
+#: qml/DevicePage.qml:310 qml/DevicePage.qml:319
 #, kde-format
 msgid ""
 "Pair requested\n"
@@ -241,22 +241,22 @@ msgstr ""
 "जुडने का अनुरोध किया गया\n"
 "कुंजी : "
 
-#: qml/DevicePage.qml:314
+#: qml/DevicePage.qml:325
 #, kde-format
 msgid "Accept"
 msgstr "स्वीकार करें"
 
-#: qml/DevicePage.qml:320
+#: qml/DevicePage.qml:331
 #, kde-format
 msgid "Reject"
 msgstr "अस्वीकार करें"
 
-#: qml/DevicePage.qml:331
+#: qml/DevicePage.qml:340
 #, kde-format
 msgid "This device is not reachable"
 msgstr "उपकरण पहुंच योग्य नहीं"
 
-#: qml/DevicePage.qml:339
+#: qml/DevicePage.qml:348
 #, kde-format
 msgid "Please choose a file"
 msgstr "कृपया एक फ़ाइल चुनें"
@@ -359,12 +359,12 @@ msgstr ""
 msgid "Multimedia Controls"
 msgstr "मल्टिमीडिया नियंत्रण"
 
-#: qml/mpris.qml:68
+#: qml/mpris.qml:66
 #, kde-format
 msgid "No players available"
 msgstr "कोई वादक उपलब्ध नहीं"
 
-#: qml/mpris.qml:128
+#: qml/mpris.qml:126
 #, kde-format
 msgid "%1 - %2"
 msgstr "%1 - %2"
@@ -375,28 +375,34 @@ msgctxt "@title:window"
 msgid "Notifications"
 msgstr ""
 
-#: qml/NotificationPanel.qml:164
+#: qml/NotificationPanel.qml:33
+#, kde-format
+msgctxt "@info:placeholder"
+msgid "No notifications"
+msgstr ""
+
+#: qml/NotificationPanel.qml:173
 #, kde-format
 msgid "Reply"
 msgstr ""
 
-#: qml/NotificationPanel.qml:179
+#: qml/NotificationPanel.qml:188
 #, kde-format
 msgid "Dismiss"
 msgstr ""
 
-#: qml/NotificationPanel.qml:206
+#: qml/NotificationPanel.qml:215
 #, kde-format
 msgid "Cancel"
 msgstr ""
 
-#: qml/NotificationPanel.qml:224
+#: qml/NotificationPanel.qml:233
 #, kde-format
 msgctxt "@info:placeholder"
 msgid "Reply to %1…"
 msgstr ""
 
-#: qml/NotificationPanel.qml:243
+#: qml/NotificationPanel.qml:252
 #, fuzzy, kde-format
 #| msgid "Send Ping"
 msgid "Send"
@@ -429,7 +435,7 @@ msgstr "समादेश संपादित करें"
 msgid "You can edit commands on the connected device"
 msgstr "आप जुड़ा हुआ उपकरण पर समादेश संपादित कर सकते हैं"
 
-#: qml/runcommand.qml:53
+#: qml/runcommand.qml:51
 #, kde-format
 msgid "No commands defined"
 msgstr "कोई समादेश परिभाषित नहीं"

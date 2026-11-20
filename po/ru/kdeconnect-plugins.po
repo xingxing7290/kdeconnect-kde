@@ -11,9 +11,9 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: https://bugs.kde.org\n"
-"POT-Creation-Date: 2026-10-28 01:00+0000\n"
-"PO-Revision-Date: 2026-09-22 22:06+0200\n"
-"Last-Translator: Alexander Yavorskiy <kekcuha@gmail.com>\n"
+"POT-Creation-Date: 2026-11-18 01:09+0000\n"
+"PO-Revision-Date: 2026-11-11 22:59+0200\n"
+"Last-Translator: Alexander Yavorsky <kekcuha@gmail.com>\n"
 "Language-Team: Russian <kde-russian@lists.kde.ru>\n"
 "Language: ru\n"
 "MIME-Version: 1.0\n"
@@ -32,7 +32,7 @@ msgstr "%1: низкий уровень заряда батареи"
 #: battery/batteryplugin.cpp:107
 #, kde-format
 msgid "Battery at %1%"
-msgstr "Заряд батареи %1%"
+msgstr "Заряд батареи %1 %"
 
 #: clipboard/kdeconnect_clipboard_config.qml:34
 #, kde-format
@@ -124,19 +124,19 @@ msgstr "Текущий проигрыватель"
 msgid "N/A"
 msgstr "Недоступно"
 
-#: notifications/notification.cpp:120
+#: notifications/notification.cpp:119
 #, kde-format
 msgctxt "@action:button"
 msgid "Reply"
 msgstr "Ответить"
 
-#: notifications/notification.cpp:123
+#: notifications/notification.cpp:122
 #, kde-format
 msgctxt "@info:placeholder %1 is the name of a group chat"
 msgid "Reply in %1…"
 msgstr "Ответить в %1…"
 
-#: notifications/notification.cpp:125
+#: notifications/notification.cpp:124
 #, kde-format
 msgctxt "@info:placeholder"
 msgid "Reply to %1…"
@@ -456,17 +456,17 @@ msgctxt "@action:button Open URL with default app"
 msgid "Open Link"
 msgstr "Открыть ссылку"
 
-#: share/shareplugin.cpp:262 share/shareplugin.cpp:267
+#: share/shareplugin.cpp:263 share/shareplugin.cpp:268
 #, kde-format
 msgid "Could not share file"
 msgstr "Не удалось поделиться файлом"
 
-#: share/shareplugin.cpp:262
+#: share/shareplugin.cpp:263
 #, kde-format
 msgid "%1 does not exist"
 msgstr "Файл «%1» не существует"
 
-#: share/shareplugin.cpp:267
+#: share/shareplugin.cpp:268
 #, kde-format
 msgid "Permission denied: %1"
 msgstr "Доступ запрещён: %1"

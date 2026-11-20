@@ -101,12 +101,6 @@ public Q_SLOTS:
 Q_SIGNALS:
 
     /**
-     * This signal is never emitted, but if it's not here then qdbuscpp2xml in Qt6
-     * will not generate all the signals that use QDBusVariant in the output XML
-     */
-    Q_SCRIPTABLE void veryHackyWorkaround(const QVariant &);
-
-    /**
      * Emitted whenever a conversation with no cached messages is added, either because the cache
      * is being populated or because a new conversation has been created
      */
@@ -150,10 +144,12 @@ private: // attributes
     /**
      * Mapping of threadID to the messages which make up that thread
      *
-     * The messages are stored as a QMap of the timestamp to the actual message object so that
-     * we can use .values() to get a sorted list of messages from least- to most-recent
+     * The messages are stored as a QMap of (timestamp, uID) to the actual message object so that
+     * we can use .values() to get a sorted list of messages from least- to most-recent.
+     * The uID is part of the key because several messages can share a timestamp (eg: MMS dates
+     * only have one-second precision), and they must not overwrite each other (BUG 528719)
      */
-    QHash<qint64, QMap<qint64, ConversationMessage>> m_conversations;
+    QHash<qint64, QMap<std::pair<qint64, qint32>, ConversationMessage>> m_conversations;
 
     /**
      * Mapping of threadID to the set of uIDs known in the corresponding conversation

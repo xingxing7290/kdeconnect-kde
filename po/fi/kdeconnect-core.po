@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: https://bugs.kde.org\n"
-"POT-Creation-Date: 2026-10-25 00:50+0000\n"
-"PO-Revision-Date: 2026-08-25 20:04+0300\n"
+"POT-Creation-Date: 2026-11-16 22:00+0000\n"
+"PO-Revision-Date: 2026-10-06 09:47+0300\n"
 "Last-Translator: Tommi Nieminen <translator@legisign.org>\n"
 "Language-Team: Finnish <kde-i18n-doc@kde.org>\n"
 "Language: fi\n"
@@ -44,10 +44,9 @@ msgid "File"
 msgstr "Tiedosto"
 
 #: backends/lan/uploadjob.cpp:102
-#, fuzzy, kde-format
-#| msgid "Could not store certificate file: %1"
+#, kde-format
 msgid "Could not open source file: %1"
-msgstr "Ei voitu tallentaa vamennetiedostoa: %1"
+msgstr "Lähdetiedostoa ei voitu avata: %1"
 
 #: backends/pairinghandler.cpp:57
 #, kde-format
@@ -82,7 +81,7 @@ msgstr "Aikakatkaisu"
 #: backends/pairinghandler.cpp:191
 #, kde-format
 msgid "Pairing is not in progress"
-msgstr ""
+msgstr "Paritus ei ole meneillään"
 
 #: compositefiletransferjob.cpp:47
 #, kde-format
@@ -104,32 +103,32 @@ msgctxt "The destination of a file operation"
 msgid "Destination"
 msgstr "Kohde"
 
-#: device.cpp:496
+#: device.cpp:505
 #, kde-format
 msgid "SHA256 fingerprint of your device certificate is: %1\n"
 msgstr "Laitteen varmenteen SHA256-sormenjälki on: %1\n"
 
-#: device.cpp:502
+#: device.cpp:511
 #, kde-format
 msgid "SHA256 fingerprint of remote device certificate is: %1\n"
 msgstr "Etälaitteen varmenteen SHA256-sormenjälki on: %1\n"
 
-#: device.cpp:504
+#: device.cpp:513
 #, kde-format
 msgid "Protocol version: %1\n"
 msgstr "Yhteyskäytäntöversio: %1\n"
 
-#: filetransferjob.cpp:54
+#: filetransferjob.cpp:55
 #, kde-format
 msgid "Filename already present"
 msgstr "Tiedostonimi on jo olemassa"
 
-#: filetransferjob.cpp:70
+#: filetransferjob.cpp:71
 #, kde-format
 msgid "Could not create destination file: %1"
 msgstr "Kohdetiedostoa ei voitu luoda: %1"
 
-#: filetransferjob.cpp:129
+#: filetransferjob.cpp:146
 #, kde-format
 msgid "Received incomplete file from: %1"
 msgstr "Vastaanotettiin epätäydellinen lähettäjältä: %1"

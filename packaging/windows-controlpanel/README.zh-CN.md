@@ -7,9 +7,9 @@
 本次应用发行选择 GPLv3，FFmpeg 8.1.1 为 GPLv3-or-later 构建，未启用 --enable-nonfree。原有开源组件保留各自许可证；Microsoft CRT/SDK 可再分发文件保留微软许可。安装器未做发行者代码签名，可能显示未知发布者，不应为此关闭安全保护。
 
 THIRD-PARTY-NOTICES.txt、source-index.json 和 licenses 目录包含通知、准确版本和来源。完整对应源码、Craft 配方/补丁、FFmpeg 构建脚本以及应用源码在同一公开 Release：
-https://github.com/xingxing7290/kdeconnect-kde/releases/tag/controlpanel-release-v0.1.0-alpha.4
+https://github.com/xingxing7290/kdeconnect-kde/releases/tag/controlpanel-release-v0.1.0-alpha.6
 
-源码主附件名为 kdeconnect-controlpanel-0.1.0-alpha.4-third-party-sources.zip；请同时下载全部 third-party-sources-part-N.zip 并解压到同一目录，无需拼接二进制文件。动态库可替换、重链接，不附加逆向工程限制。不要把本包的通知和许可证删除后再分发，也不要把用户私钥夹进再打包文件。
+第三方源码主附件及全部 third-party-sources-part-N.zip 均需下载并解压到同一目录，无需拼接二进制文件。动态库可替换、重链接，不附加逆向工程限制。不要把本包的通知和许可证删除后再分发，也不要把用户私钥夹进再打包文件。
 
 ## 启动与数据
 

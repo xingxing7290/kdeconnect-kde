@@ -161,6 +161,12 @@ private Q_SLOTS:
     }
     void cleanup()
     {
+        // Close test-owned popups before destroying their native parent window.
+        for (auto *window : QGuiApplication::topLevelWindows()) {
+            if (window != view.get() && window->inherits("QQuickPopupWindow"))
+                window->close();
+        }
+        QCoreApplication::processEvents();
         if (view)
             view->setSource(QUrl());
         QCoreApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete);
@@ -528,6 +534,61 @@ private Q_SLOTS:
         data.clear();
         data.setData(QStringLiteral("application/x-kdeconnect-preset"), "{broken");
         QCOMPARE(drop(5, data, Qt::CopyAction), Qt::IgnoreAction);
+    }
+    void staleDropErrorCanBeDismissedAndEditingContinues_data()
+    {
+        QTest::addColumn<int>("input");
+        QTest::newRow("keyboard-space") << 1;
+        QTest::newRow("keyboard-return") << 2;
+        QTest::newRow("keyboard-enter") << 3;
+        QTest::newRow("mouse") << 0;
+    }
+    void staleDropErrorCanBeDismissedAndEditingContinues()
+    {
+        QFETCH(int, input);
+        auto *shortcut = view->rootObject()->findChild<QObject *>(QStringLiteral("panelErrorConfirmShortcut"));
+        QVERIFY(shortcut);
+        QVERIFY(!shortcut->property("enabled").toBool());
+        QVERIFY(editor->setButton(0, website(QStringLiteral("Source"))));
+        QMimeData data;
+        const QString format = QStringLiteral("application/x-kdeconnect-slot");
+        data.setData(format, QJsonDocument::fromVariant(editor->editContext(0)).toJson(QJsonDocument::Compact));
+        QCOMPARE(drop(17, data, Qt::MoveAction), Qt::MoveAction);
+        const auto saved = editor->config();
+        QCOMPARE(drop(5, data, Qt::MoveAction), Qt::IgnoreAction);
+        QCOMPARE(editor->config(), saved);
+
+        auto *message = view->rootObject()->findChild<QObject *>(QStringLiteral("panelErrorMessage"));
+        QVERIFY(message);
+        QTRY_VERIFY(message->property("visible").toBool());
+        QTRY_VERIFY(shortcut->property("enabled").toBool());
+        QTRY_VERIFY(QGuiApplication::focusWindow());
+        QTRY_VERIFY(QGuiApplication::focusWindow() != view.get());
+        auto *popupWindow = qobject_cast<QQuickWindow *>(QGuiApplication::focusWindow());
+        QVERIFY(popupWindow);
+        const auto findButton = [](auto &&self, QQuickItem *item) -> QQuickItem * {
+            if (item->inherits("QQuickAbstractButton") && item->isVisible())
+                return item;
+            for (auto *child : item->childItems())
+                if (auto *found = self(self, child))
+                    return found;
+            return nullptr;
+        };
+        if (input == 1) {
+            QTest::keyClick(popupWindow, Qt::Key_Tab);
+            QTest::keyClick(popupWindow, Qt::Key_Space);
+        } else if (input == 2 || input == 3) {
+            QTest::keyClick(popupWindow, input == 2 ? Qt::Key_Return : Qt::Key_Enter);
+        } else {
+            auto *button = findButton(findButton, popupWindow->contentItem());
+            QVERIFY(button);
+            const QPoint center = button->mapToScene(QPointF(button->width() / 2, button->height() / 2)).toPoint();
+            QTest::mouseClick(popupWindow, Qt::LeftButton, Qt::NoModifier, center);
+        }
+        QTRY_VERIFY(!message->property("visible").toBool());
+        QTRY_VERIFY(!shortcut->property("enabled").toBool());
+        QVERIFY(editor->setButton(0, website(QStringLiteral("After error"))));
+        QCOMPARE(button().value(QStringLiteral("name")).toString(), QStringLiteral("After error"));
     }
     void libraryDropCreatesIndependentButtonAndLeavesLibraryIntact()
     {

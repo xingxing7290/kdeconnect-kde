@@ -735,7 +735,14 @@ Item {
             else { errorMessage.text = root.configurationError(editor.error); errorMessage.open(); }
         } }
     }
-    MessageDialog { id: errorMessage; title: qsTr("配置需要检查"); buttons: MessageDialog.Ok }
+    MessageDialog { id: errorMessage; objectName: "panelErrorMessage"; title: qsTr("配置需要检查"); buttons: MessageDialog.Ok }
+    Shortcut {
+        objectName: "panelErrorConfirmShortcut"
+        sequences: ["Return", "Enter"]
+        context: Qt.ApplicationShortcut
+        enabled: errorMessage.visible
+        onActivated: errorMessage.close()
+    }
     MessageDialog { id: bundleResult; title: qsTr("配置导出 / 导入"); buttons: MessageDialog.Ok }
 
     FileDialog {

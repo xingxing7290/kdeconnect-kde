@@ -142,7 +142,8 @@ try {
     }
     if (!$address -or !$address.StartsWith('nonce-tcp:')) { throw "Private D-Bus did not start; inspect $profileRoot/logs" }
     $env:DBUS_SESSION_BUS_ADDRESS = $address.Trim()
-    $daemon = Start-PackageProcess 'kdeconnectd'
+    # On Windows, upstream runs the daemon inside the indicator process.
+    $daemon = Start-PackageProcess 'kdeconnect-indicator'
     $ready = $false
     $daemonDeadline = (Get-Date).AddSeconds(20)
     while ((Get-Date) -lt $daemonDeadline -and !$daemon.HasExited) {

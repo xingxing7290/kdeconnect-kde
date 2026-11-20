@@ -32,7 +32,7 @@ public static class PackageWindowTest {
             if (owner != processId) return true;
             var title = new StringBuilder(512);
             GetWindowText(window, title, title.Capacity);
-            if (title.ToString().Contains("Control Panel")) { found = window; return false; }
+            if (title.ToString().Contains("KDE Connect")) { found = window; return false; }
             return true;
         }, IntPtr.Zero);
         return found;

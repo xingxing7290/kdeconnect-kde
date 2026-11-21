@@ -59,6 +59,13 @@ $env:QML2_IMPORT_PATH = $env:QML_IMPORT_PATH
 $env:QT_QUICK_CONTROLS_STYLE = 'Basic'
 $env:QT_QPA_PLATFORM = if ($Offscreen) { 'offscreen' } else { 'windows' }
 $env:QT_QPA_FONTDIR = Join-Path $env:SystemRoot 'Fonts'
+# Inherited LANG/LC_ALL (for example from a terminal session) take precedence over the
+# system UI language, which makes ki18n/gettext load the wrong catalogue and leaves the
+# whole interface in English on a Chinese system. Pin them to the system UI language.
+$uiLocale = (Get-UICulture).Name -replace '-', '_'
+$env:LANG = "$uiLocale.UTF-8"
+$env:LC_ALL = "$uiLocale.UTF-8"
+$env:LANGUAGE = $uiLocale
 Remove-Item Env:DBUS_SESSION_BUS_ADDRESS -ErrorAction SilentlyContinue
 Remove-Item Env:QT_LOGGING_RULES -ErrorAction SilentlyContinue
 $pathHash = [Security.Cryptography.SHA256]::Create().ComputeHash([Text.Encoding]::UTF8.GetBytes($profileRoot.ToLowerInvariant()))
@@ -95,7 +102,8 @@ function Start-PackageProcess([string]$Name, [string[]]$Arguments = @()) {
         FilePath = Join-Path $packageBin "$Name.exe"
         WorkingDirectory = $packageBin
         PassThru = $true
-        WindowStyle = 'Hidden'
+        # The main window must be visible; only helper processes stay hidden.
+        WindowStyle = if ($Name -eq 'kdeconnect-app') { 'Normal' } else { 'Hidden' }
         RedirectStandardOutput = Join-Path $profileRoot "logs/$Name-output.log"
         RedirectStandardError = Join-Path $profileRoot "logs/$Name-error.log"
     }

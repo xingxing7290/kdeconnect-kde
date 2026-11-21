@@ -210,6 +210,11 @@ void ControlPanelPlugin::receivePacket(const NetworkPacket &packet)
         if (command.value(QStringLiteral("protocolVersion")).toInt() != 1) {
             return;
         }
+        // The command drives real hardware, so it must belong to the live session: without this
+        // a replay from an old session (or another paired device) could throw the switches.
+        if (!m_peer->acceptsSession(command.value(QStringLiteral("sessionId")).toString())) {
+            return;
+        }
         const QString entityId = command.value(QStringLiteral("entityId")).toString();
         const QString action = command.value(QStringLiteral("action")).toString();
         const int brightness = command.value(QStringLiteral("brightness")).toInt(-1);

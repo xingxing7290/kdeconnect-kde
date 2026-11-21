@@ -285,6 +285,25 @@ std::optional<Bundle> loadBundle(const QUrl &url, const PanelAssets &assets, QSt
     }
     return parseBundle(*bytes, assets, error);
 }
+
+/**
+ * A bundle is a shareable document, so it must never carry Home Assistant credentials.
+ * The entity list is kept (it describes what to show); the address and the long-lived token are
+ * blanked so a shared file cannot grant control of someone's household.
+ */
+QJsonObject portableConfig(const QJsonObject &config)
+{
+    const QJsonValue hassValue = config.value(QStringLiteral("hass"));
+    if (!hassValue.isObject())
+        return config;
+    QJsonObject result = config;
+    result.insert(QStringLiteral("hass"),
+                  QJsonObject{{QStringLiteral("enabled"), false},
+                              {QStringLiteral("url"), QString()},
+                              {QStringLiteral("token"), QString()},
+                              {QStringLiteral("entities"), hassValue.toObject().value(QStringLiteral("entities")).toArray()}});
+    return result;
+}
 }
 
 QVariantMap PanelPortable::inspect(const QUrl &url, const PanelAssets &assets, QString *error)
@@ -304,7 +323,7 @@ QVariantMap PanelPortable::exportTo(const QUrl &url, const PanelStore &store, co
 {
     if (!store.isUsable())
         return fail(error, QStringLiteral("store_unavailable"));
-    const QJsonObject config = store.document().privateConfig();
+    const QJsonObject config = portableConfig(store.document().privateConfig());
 
     QStringList iconIds;
     QSet<QString> seen;
@@ -413,6 +432,20 @@ QVariantMap PanelPortable::importFrom(const QUrl &url, PanelStore &store, const 
     }
 
     QJsonObject config = bundle->config;
+    // Credentials are machine-local: a bundle may reorder or replace the entity list, but the
+    // address and token always come from this machine, never from the file.
+    const QJsonObject localHass = store.document().privateConfig().value(QStringLiteral("hass")).toObject();
+    if (!localHass.isEmpty()) {
+        const QJsonObject bundleHass = config.value(QStringLiteral("hass")).toObject();
+        config.insert(QStringLiteral("hass"),
+                      QJsonObject{{QStringLiteral("enabled"), localHass.value(QStringLiteral("enabled")).toBool(false)},
+                                  {QStringLiteral("url"), localHass.value(QStringLiteral("url")).toString()},
+                                  {QStringLiteral("token"), localHass.value(QStringLiteral("token")).toString()},
+                                  {QStringLiteral("entities"),
+                                   bundleHass.contains(QStringLiteral("entities"))
+                                       ? bundleHass.value(QStringLiteral("entities")).toArray()
+                                       : localHass.value(QStringLiteral("entities")).toArray()}});
+    }
     const qint64 current = store.document().revision();
     config.insert(QStringLiteral("revision"), current);
     if (!store.save(config, current))

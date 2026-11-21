@@ -39,6 +39,8 @@
 | kdeconnect.controlpanel.asset | sessionId, revision, assetId, mime, size, error + payload | 256 x 256 PNG，接收端校验哈希与实际解码；错误响应无附件 |
 | kdeconnect.controlpanel.dial | revision, city, source, status；可选 resolvedCity, observedAt, fetchedAt, temperature, weatherCode | 当前配置的模型天气快照；不得以伪造数据代替网络失败 |
 | kdeconnect.controlpanel.progress | revision, source, status, title, stage, detail；可选 percent, sequence, updatedAt, fetchedAt | WorkBuddy 工作进度快照；实时状态，不写配置、不改 revision |
+| kdeconnect.controlpanel.hass | revision, status, error, fetchedAt, entities[]；可选 sessionId, lastCommand | 智能家居快照；状态变化即时推送，200 毫秒内的连续变化合并为一包；不含地址与令牌 |
+| kdeconnect.controlpanel.hass_command | protocolVersion=1, sessionId, entityId, action；可选 brightness | 请求桌面端调用 HA 服务；会话不匹配或已退休时丢弃，不执行 |
 
 sessionId、requestId 使用小写 UUID。Android 每次重新建立插件会话生成新的 sessionId，配置重取沿用当前 sessionId；sequence 从 1 单调递增，最大为安全 JSON 整数上限。同一会话最近 256 个动作请求保留原始请求和结果：相同请求返回原结果，ID 冲突返回 invalid_request。结果缓存淘汰后仍保留最高 sequence，更早或乱序请求返回 request_expired，不能重新执行。每个连接最多记录 4096 个已退休会话 ID，退休会话不能通过重复握手复活。
 

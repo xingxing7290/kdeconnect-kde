@@ -66,6 +66,13 @@ QString PanelPeer::sessionId() const
     return m_sessionId;
 }
 
+bool PanelPeer::acceptsSession(const QString &session) const
+{
+    // A retired session is never equal to m_sessionId, so matching the live id also rejects
+    // replays from a previous connection.
+    return !session.isEmpty() && session == m_sessionId && !m_retiredSessions.contains(session);
+}
+
 void PanelPeer::sendResult(const QString &id, const QString &error, const QString &session)
 {
     QJsonObject body{{QStringLiteral("protocolVersion"), 1},

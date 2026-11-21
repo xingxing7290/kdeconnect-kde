@@ -21,6 +21,11 @@ public:
     void receive(const QJsonObject &request);
     void sendConfiguration();
     QString sessionId() const;
+    /**
+     * True only for the live session. Commands that do not go through receive() must still be
+     * bound to a session, otherwise a stale or replayed packet could drive the desktop.
+     */
+    bool acceptsSession(const QString &session) const;
 
 Q_SIGNALS:
     void packetReady(const QString &type, const QJsonObject &body);

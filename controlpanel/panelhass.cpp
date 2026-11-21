@@ -19,7 +19,12 @@ namespace
 {
 constexpr int ReconnectMinMs = 3000;
 constexpr int ReconnectMaxMs = 60000;
-constexpr int PollIntervalMs = 120000;
+/**
+ * Home Assistant only pushes when a value changes, so a quiet house produces no traffic at all.
+ * This poll doubles as the keep-alive that lets the phone tell "nothing changed" from "the link
+ * died": every successful read refreshes fetchedAt and is pushed with the unchanged entity list.
+ */
+constexpr int PollIntervalMs = 30000;
 constexpr qsizetype MaxMessage = 8 * 1024 * 1024;
 
 bool finite(const QJsonValue &value, double minimum, double maximum)
@@ -32,6 +37,23 @@ QString domainOf(const QString &entityId)
 {
     const auto dot = entityId.indexOf(QLatin1Char('.'));
     return dot > 0 ? entityId.left(dot) : QString();
+}
+
+/**
+ * The phone rejects strings that carry control characters or exceed its length limits, and one
+ * rejected field would drop the whole snapshot. Trim and flatten here so untrusted friendly names
+ * and socket error texts can never invalidate a reading.
+ */
+QString cleaned(const QString &value, int maximum)
+{
+    QString result;
+    result.reserve(qMin(value.size(), maximum));
+    for (const QChar character : value) {
+        if (result.size() >= maximum)
+            break;
+        result.append(character.isPrint() ? character : QLatin1Char(' '));
+    }
+    return result;
 }
 }
 
@@ -54,7 +76,9 @@ PanelHass::PanelHass(QObject *parent)
     connect(m_socket, &QWebSocket::disconnected, this, [this] {
         m_authenticated = false;
         m_subscribed = false;
-        if (m_desired) {
+        // A permanent failure already reported its own reason; a socket error text would replace
+        // the actionable message (e.g. "invalid token") with a generic "connection closed".
+        if (m_desired && !m_fatal) {
             setStatus(QStringLiteral("error"), m_socket->errorString().isEmpty() ? QStringLiteral("disconnected") : m_socket->errorString());
             scheduleReconnect();
         }
@@ -68,11 +92,13 @@ PanelHass::PanelHass(QObject *parent)
         if (!m_authenticated)
             return;
         // Fallback full refresh in case a subscription was dropped silently.
-        QJsonObject request{
-            {QStringLiteral("id"), m_messageId++},
-            {QStringLiteral("type"), QStringLiteral("get_states")},
-        };
-        sendJson(request);
+        requestStates();
+    });
+
+    m_notify.setSingleShot(true);
+    m_notify.setInterval(200);
+    connect(&m_notify, &QTimer::timeout, this, [this] {
+        Q_EMIT changed();
     });
 
     recompose();
@@ -149,26 +175,35 @@ void PanelHass::configure(const QJsonObject &hass)
     if (connectionChanged) {
         closeSocket();
         m_attempt = 0;
+        m_fatal = false;
         m_entities.clear();
         connectSocket();
     }
     recompose();
 }
 
-void PanelHass::refresh()
+void PanelHass::requestStates()
 {
-    if (!m_enabled || m_url.isEmpty() || m_token.isEmpty())
-        return;
-    if (!m_authenticated) {
-        if (m_socket->state() == QAbstractSocket::UnconnectedState)
-            connectSocket();
-        return;
-    }
+    m_stateRequestId = m_messageId;
     QJsonObject request{
         {QStringLiteral("id"), m_messageId++},
         {QStringLiteral("type"), QStringLiteral("get_states")},
     };
     sendJson(request);
+}
+
+void PanelHass::refresh()
+{
+    if (!m_enabled || m_url.isEmpty() || m_token.isEmpty())
+        return;
+    // An explicit retry clears a permanent failure so the user can fix the token and reconnect.
+    m_fatal = false;
+    if (!m_authenticated) {
+        if (m_socket->state() == QAbstractSocket::UnconnectedState)
+            connectSocket();
+        return;
+    }
+    requestStates();
 }
 
 QString PanelHass::callService(const QString &entityId, const QString &action, int brightness)
@@ -219,13 +254,14 @@ bool PanelHass::wanted(const QString &entityId) const
 
 void PanelHass::connectSocket()
 {
-    if (!m_desired)
+    if (!m_desired || m_fatal)
         return;
     m_reconnect.stop();
 
     QUrl base(m_url);
     const QString scheme = base.scheme().toLower();
     if (!base.isValid() || base.host().isEmpty() || (scheme != QLatin1String("http") && scheme != QLatin1String("https"))) {
+        m_fatal = true;
         setStatus(QStringLiteral("error"), QStringLiteral("hass_invalid_url"));
         return;
     }
@@ -255,7 +291,7 @@ void PanelHass::closeSocket()
 
 void PanelHass::scheduleReconnect()
 {
-    if (!m_desired)
+    if (!m_desired || m_fatal)
         return;
     const int delay = qMin(ReconnectMaxMs, ReconnectMinMs * (1 << qMin(m_attempt, 4)));
     ++m_attempt;
@@ -271,9 +307,10 @@ void PanelHass::sendJson(const QJsonObject &message)
 
 void PanelHass::setStatus(const QString &status, const QString &error)
 {
-    const bool statusChanged = status != m_status || error != m_error;
+    const QString message = cleaned(error, 160);
+    const bool statusChanged = status != m_status || message != m_error;
     m_status = status;
-    m_error = error;
+    m_error = message;
     if (statusChanged)
         recompose();
 }
@@ -295,6 +332,8 @@ void PanelHass::handleMessage(const QString &text)
         return;
     }
     if (type == QLatin1String("auth_invalid")) {
+        // Retrying with the same rejected token only spams the server and never recovers.
+        m_fatal = true;
         setStatus(QStringLiteral("error"), QStringLiteral("hass_auth_invalid"));
         closeSocket();
         return;
@@ -302,12 +341,9 @@ void PanelHass::handleMessage(const QString &text)
     if (type == QLatin1String("auth_ok")) {
         m_authenticated = true;
         m_attempt = 0;
+        m_fatal = false;
         setStatus(QStringLiteral("ready"));
-        QJsonObject states{
-            {QStringLiteral("id"), m_messageId++},
-            {QStringLiteral("type"), QStringLiteral("get_states")},
-        };
-        sendJson(states);
+        requestStates();
         if (!m_subscribed) {
             QJsonObject subscribe{
                 {QStringLiteral("id"), m_messageId++},
@@ -330,17 +366,34 @@ void PanelHass::handleMessage(const QString &text)
 
 void PanelHass::handleResult(const QJsonObject &message)
 {
+    const QJsonValue id = message.value(QStringLiteral("id"));
+    const bool isStates = id.isDouble() && qint64(id.toDouble()) == m_stateRequestId;
+
     if (!message.value(QStringLiteral("success")).toBool(false)) {
         const QJsonObject error = message.value(QStringLiteral("error")).toObject();
-        setStatus(QStringLiteral("error"), error.value(QStringLiteral("code")).toString(QStringLiteral("hass_request_failed")));
+        const QString code = cleaned(error.value(QStringLiteral("code")).toString(QStringLiteral("hass_request_failed")), 160);
+        if (isStates) {
+            setStatus(QStringLiteral("error"), code);
+            return;
+        }
+        // A rejected service call or subscription says nothing about the connection itself:
+        // keep the reading usable and report the failure against the command that caused it.
+        m_lastCommandError = code;
+        recompose();
         return;
     }
+
+    if (!isStates)
+        return;
     const QJsonValue result = message.value(QStringLiteral("result"));
-    if (result.isArray()) {
-        applyStates(result.toArray());
-        m_fetchedAt = QDateTime::currentSecsSinceEpoch();
-        recompose();
-    }
+    if (!result.isArray())
+        return;
+    applyStates(result.toArray());
+    m_fetchedAt = QDateTime::currentSecsSinceEpoch();
+    // A successful full read clears a transient transport error; otherwise the dial would stay
+    // stuck on "disconnected" until the next authentication.
+    setStatus(QStringLiteral("ready"));
+    recompose();
 }
 
 void PanelHass::handleEvent(const QJsonObject &message)
@@ -350,8 +403,15 @@ void PanelHass::handleEvent(const QJsonObject &message)
         return;
     const QJsonObject data = event.value(QStringLiteral("data")).toObject();
     const QJsonObject newState = data.value(QStringLiteral("new_state")).toObject();
-    if (newState.isEmpty())
+    if (newState.isEmpty()) {
+        // The entity was deleted in Home Assistant; dropping it avoids showing a frozen reading.
+        const QString removed = data.value(QStringLiteral("old_state")).toObject().value(QStringLiteral("entity_id")).toString();
+        if (!removed.isEmpty() && m_entities.remove(removed) > 0) {
+            m_fetchedAt = QDateTime::currentSecsSinceEpoch();
+            recompose();
+        }
         return;
+    }
     const QString entityId = newState.value(QStringLiteral("entity_id")).toString();
     if (!wanted(entityId))
         return;
@@ -412,15 +472,17 @@ QJsonObject PanelHass::trimmedEntity(const QJsonValue &raw) const
     const QJsonObject attributes = object.value(QStringLiteral("attributes")).toObject();
     const QString type = config.value(QStringLiteral("type")).toString();
     const QString configuredName = config.value(QStringLiteral("name")).toString().trimmed();
+    const QString state = cleaned(object.value(QStringLiteral("state")).toString(), 64);
 
     QJsonObject result{
         {QStringLiteral("id"), id},
         {QStringLiteral("type"), type},
-        {QStringLiteral("state"), object.value(QStringLiteral("state")).toString()},
-        {QStringLiteral("name"), configuredName.isEmpty() ? attributes.value(QStringLiteral("friendly_name")).toString() : configuredName},
-        {QStringLiteral("available"), !object.value(QStringLiteral("state")).toString().isEmpty()},
+        {QStringLiteral("state"), state},
+        {QStringLiteral("name"),
+         cleaned(configuredName.isEmpty() ? attributes.value(QStringLiteral("friendly_name")).toString() : configuredName, MaxNameLength)},
+        {QStringLiteral("available"), !state.isEmpty()},
     };
-    const QString group = config.value(QStringLiteral("group")).toString().trimmed();
+    const QString group = cleaned(config.value(QStringLiteral("group")).toString().trimmed(), 60);
     if (!group.isEmpty())
         result.insert(QStringLiteral("group"), group);
     const auto order = config.value(QStringLiteral("order"));
@@ -433,8 +495,8 @@ QJsonObject PanelHass::trimmedEntity(const QJsonValue &raw) const
             result.insert(QStringLiteral("brightness"), brightness.toInt());
     }
     if (type == QLatin1String("sensor")) {
-        const QString unit = attributes.value(QStringLiteral("unit_of_measurement")).toString();
-        if (!unit.isEmpty() && unit.size() <= 16)
+        const QString unit = cleaned(attributes.value(QStringLiteral("unit_of_measurement")).toString(), 16);
+        if (!unit.isEmpty())
             result.insert(QStringLiteral("unit"), unit);
     }
     return result;
@@ -474,7 +536,10 @@ void PanelHass::recompose()
     }
     if (snapshot != m_snapshot) {
         m_snapshot = snapshot;
-        Q_EMIT changed();
+        // Bursts (a power sensor reporting several times per second) collapse into one push.
+        // The timer is deliberately not restarted, so a continuous stream still emits every 200 ms.
+        if (!m_notify.isActive())
+            m_notify.start();
     }
 }
 }

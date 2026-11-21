@@ -144,6 +144,10 @@ Item {
         const state = root.hassState();
         return state.entities ? state.entities : [];
     }
+    function hassConfiguredCount() {
+        const source = (root.editor && root.editor.hass) ? root.editor.hass : ({});
+        return source.entities ? source.entities.length : 0;
+    }
     function hassError() {
         return root.hassState().status === "error";
     }
@@ -674,7 +678,8 @@ Item {
                     id: hassList
                     anchors.fill: parent; anchors.margins: 16; spacing: 8
                     C.Label { text: qsTr("当前显示的设备"); font.bold: true; color: ui.text }
-                    C.Label { visible: !root.hassEntityList().length; text: qsTr("还没有添加设备。点击上方「配置」选择要显示的开关、灯和读数。"); color: ui.textSubtle; wrapMode: Text.WordWrap; Layout.fillWidth: true }
+                    C.Label { visible: root.hassConfiguredCount() === 0; text: qsTr("还没有添加设备。点击上方「配置」选择要显示的开关、灯和读数。"); color: ui.textSubtle; wrapMode: Text.WordWrap; Layout.fillWidth: true }
+                    C.Label { visible: root.hassConfiguredCount() > 0 && root.hassEntityList().length === 0; text: qsTr("已添加 %1 个设备，正在等待 Home Assistant 的状态。").arg(root.hassConfiguredCount()); color: ui.textSubtle; wrapMode: Text.WordWrap; Layout.fillWidth: true }
                     Repeater {
                         model: root.hassEntityList()
                         delegate: RowLayout {

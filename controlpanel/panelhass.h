@@ -59,6 +59,7 @@ private:
     void connectSocket();
     void closeSocket();
     void scheduleReconnect();
+    void requestStates();
     void sendJson(const QJsonObject &message);
     void handleMessage(const QString &text);
     void handleResult(const QJsonObject &message);
@@ -73,6 +74,8 @@ private:
     QWebSocket *m_socket = nullptr;
     QTimer m_reconnect;
     QTimer m_poll;
+    /** Coalesces bursts of state changes into one push instead of one packet per event. */
+    QTimer m_notify;
     QJsonObject m_snapshot;
     QHash<QString, QJsonObject> m_entities;
     QJsonArray m_available;
@@ -87,9 +90,11 @@ private:
     bool m_subscribed = false;
     bool m_enabled = false;
     bool m_desired = false;
+    /** Set for errors that retrying cannot fix (bad token, malformed address); cleared by the user. */
+    bool m_fatal = false;
     int m_messageId = 1;
     int m_attempt = 0;
-    int m_pollIndex = 0;
+    qint64 m_stateRequestId = -1;
     qint64 m_fetchedAt = 0;
 };
 }

@@ -38,6 +38,11 @@ AppDialog {
         validationError = "";
         showPicker = false;
         open();
+        // Editing a field breaks its binding, so re-seed the inputs from the fresh draft.
+        Qt.callLater(function() {
+            urlField.text = draft.url;
+            tokenField.text = draft.token;
+        });
     }
     function has(entityId) {
         return draft.entities.some(item => item.id === entityId);
@@ -52,10 +57,16 @@ AppDialog {
         const next = draft.entities.filter(item => item.id !== entityId);
         draft = { enabled: draft.enabled, url: draft.url, token: draft.token, entities: next };
     }
+    // Renames mutate the entry in place: replacing the array would rebuild the Repeater and the
+    // editor would lose focus after every keystroke. save() reads the same array, so it still sees
+    // the new text.
     function renameEntity(entityId, value) {
-        const next = draft.entities.map(item => item.id === entityId
-            ? { id: item.id, name: value, type: item.type, group: item.group, order: item.order } : item);
-        draft = { enabled: draft.enabled, url: draft.url, token: draft.token, entities: next };
+        const item = draft.entities.find(entry => entry.id === entityId);
+        if (item) item.name = value;
+    }
+    function renameGroup(entityId, value) {
+        const item = draft.entities.find(entry => entry.id === entityId);
+        if (item) item.group = value;
     }
     function move(entityId, delta) {
         const list = draft.entities.slice();
@@ -110,6 +121,7 @@ AppDialog {
             }
             C.Label { text: qsTr("地址（例如 http://192.168.1.5:8123）"); Layout.fillWidth: true }
             C.TextField {
+                id: urlField
                 objectName: "panelHassUrl"
                 text: dialog.draft.url
                 placeholderText: "http://192.168.1.5:8123"
@@ -119,6 +131,7 @@ AppDialog {
             }
             C.Label { text: qsTr("长期访问令牌（在 HA 的「用户资料 → 长期访问令牌」中创建）"); Layout.fillWidth: true; wrapMode: Text.WordWrap }
             C.TextField {
+                id: tokenField
                 objectName: "panelHassToken"
                 text: dialog.draft.token
                 echoMode: TextInput.Password
@@ -188,6 +201,13 @@ AppDialog {
                             maximumLength: 120
                             Layout.fillWidth: true
                             onTextEdited: dialog.renameEntity(modelData.id, text)
+                        }
+                        C.TextField {
+                            text: modelData.group || ""
+                            placeholderText: qsTr("分组（可选，例如「客厅」，表盘和手机端会按分组显示）")
+                            maximumLength: 60
+                            Layout.fillWidth: true
+                            onTextEdited: dialog.renameGroup(modelData.id, text)
                         }
                     }
                 }

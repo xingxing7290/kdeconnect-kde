@@ -12,7 +12,7 @@ Item {
     signal openConnections()
     property int section: 1
     AppTheme { id: ui }
-    readonly property var navigationIcons: ["\u25c9", "\u25a6", "\u21c4", "\u24d8"]
+    readonly property var navigationIcons: ["\u25c9", "\u25a6", "\u21c4", "\u2302", "\u24d8"]
     readonly property var editor: panelEditor
     readonly property var config: editor.config
     readonly property var page: editor.currentPage
@@ -137,6 +137,30 @@ Item {
         };
         return messages[code] || qsTr("操作未完成：%1").arg(code);
     }
+    function hassState() {
+        return root.editor && root.editor.hassState ? root.editor.hassState : ({});
+    }
+    function hassEntityList() {
+        const state = root.hassState();
+        return state.entities ? state.entities : [];
+    }
+    function hassError() {
+        return root.hassState().status === "error";
+    }
+    function hassStatusText() {
+        const state = root.hassState();
+        const status = state.status || "disabled";
+        if (status === "ready") return qsTr("已连接 Home Assistant，正在实时同步。");
+        if (status === "connecting") return qsTr("正在连接 Home Assistant…");
+        if (status === "authenticating") return qsTr("正在验证长期访问令牌…");
+        if (status === "error") return qsTr("连接失败：%1").arg(state.error || qsTr("未知错误"));
+        return qsTr("尚未启用智能家居，点击「配置」填写地址和令牌。");
+    }
+    function hassEntityValue(entity) {
+        if (!entity) return "";
+        if (entity.type === "sensor") return (entity.state || "") + (entity.unit ? " " + entity.unit : "");
+        return entity.state === "on" ? qsTr("开") : qsTr("关");
+    }
     function foregroundErrorText() {
         if (editor.foregroundError === "hosted_application_unavailable") return qsTr("未识别出此宿主窗口中的实际程序，请切到目标应用后稍等，或手工填写程序名。");
         if (editor.foregroundError) return qsTr("暂时无法读取目标程序，可能受权限限制。仅保留上次稳定结果，不会自动提权；请重新切到可识别的窗口。");
@@ -248,7 +272,7 @@ Item {
         }
 
         Repeater {
-            model: [qsTr("表盘选择"), qsTr("桌面控制"), qsTr("开启连接"), qsTr("关于")]
+            model: [qsTr("表盘选择"), qsTr("桌面控制"), qsTr("开启连接"), qsTr("智能家居"), qsTr("关于")]
             delegate: C.ItemDelegate {
                 id: navigation
                 objectName: "panelNavigation-" + index
@@ -626,6 +650,49 @@ Item {
             RowLayout {
                 Layout.fillWidth: true; spacing: 14
                 Rectangle { Layout.preferredWidth: 4; Layout.preferredHeight: 34; radius: 2; color: ui.accent }
+                C.Label { text: qsTr("智能家居"); font.pixelSize: 24; font.bold: true; color: ui.text; Layout.fillWidth: true }
+            }
+            AppCard {
+                Layout.fillWidth: true
+                implicitHeight: hassColumn.implicitHeight + 32
+                ColumnLayout {
+                    id: hassColumn
+                    anchors.fill: parent; anchors.margins: 16; spacing: 12
+                    C.Label { text: qsTr("由这台电脑连接 Home Assistant，实体状态会实时同步到平板的智能家居表盘。地址和长期令牌只保存在本机，不会同步到手机。"); color: ui.textMuted; wrapMode: Text.WordWrap; Layout.fillWidth: true; lineHeight: 1.6 }
+                    RowLayout {
+                        spacing: 10
+                        C.Label { text: root.hassStatusText(); color: root.hassError() ? ui.danger : ui.textMuted; Layout.fillWidth: true; wrapMode: Text.WordWrap }
+                        AppButton { objectName: "panelHassRefreshButton"; text: qsTr("重新连接"); onClicked: root.editor.refreshHass() }
+                        AppButton { objectName: "panelHassConfigureButton"; text: qsTr("配置"); primary: true; onClicked: hassPageDialog.openEditor() }
+                    }
+                }
+            }
+            AppCard {
+                Layout.fillWidth: true
+                implicitHeight: hassList.implicitHeight + 32
+                ColumnLayout {
+                    id: hassList
+                    anchors.fill: parent; anchors.margins: 16; spacing: 8
+                    C.Label { text: qsTr("当前显示的设备"); font.bold: true; color: ui.text }
+                    C.Label { visible: !root.hassEntityList().length; text: qsTr("还没有添加设备。点击上方「配置」选择要显示的开关、灯和读数。"); color: ui.textSubtle; wrapMode: Text.WordWrap; Layout.fillWidth: true }
+                    Repeater {
+                        model: root.hassEntityList()
+                        delegate: RowLayout {
+                            Layout.fillWidth: true
+                            spacing: 10
+                            C.Label { text: (modelData.name && modelData.name.length) ? modelData.name : modelData.id; color: ui.text; Layout.fillWidth: true; elide: Text.ElideRight }
+                            C.Label { text: root.hassEntityValue(modelData); color: ui.textMuted }
+                        }
+                    }
+                }
+            }
+            Item { Layout.fillHeight: true }
+        }
+        ColumnLayout {
+            spacing: ui.spacing
+            RowLayout {
+                Layout.fillWidth: true; spacing: 14
+                Rectangle { Layout.preferredWidth: 4; Layout.preferredHeight: 34; radius: 2; color: ui.accent }
                 C.Label { text: qsTr("关于"); font.pixelSize: 24; font.bold: true; color: ui.text; Layout.fillWidth: true }
             }
             AppCard {
@@ -648,6 +715,7 @@ Item {
         }
     }
     PanelButtonDialog { id: buttonDialog; editor: root.editor; systemPresets: root.systemPresets }
+    PanelHassDialog { id: hassPageDialog; editor: root.editor }
     ColorDialog { id: colorPicker; property double expectedRevision: -1; onAccepted: editor.setAppearanceChecked("background", selectedColor.toString(), expectedRevision) }
     AppDialog {
         id: deletePageDialog; parent: C.Overlay.overlay; anchors.centerIn: parent; modal: true; title: qsTr("删除页面？")

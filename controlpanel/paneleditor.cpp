@@ -20,6 +20,7 @@ PanelEditor::PanelEditor(const QString &directory, QObject *parent, bool network
     , m_assets(QFileInfo(m_store.filePath()).absolutePath())
     , m_weather(QFileInfo(m_store.filePath()).absolutePath(), this, nullptr, networking)
     , m_progress(this, nullptr, networking)
+    , m_hass(this)
     , m_favicon(QFileInfo(m_store.filePath()).absolutePath(), this, nullptr, networking)
 {
     connect(&m_store, &PanelStore::errorOccurred, this, [this](const QString &error) {
@@ -40,6 +41,7 @@ PanelEditor::PanelEditor(const QString &directory, QObject *parent, bool network
     connect(&m_foreground, &PanelForeground::errorChanged, this, &PanelEditor::foregroundChanged);
     connect(&m_weather, &PanelWeather::changed, this, &PanelEditor::weatherChanged);
     connect(&m_progress, &PanelProgress::changed, this, &PanelEditor::progressChanged);
+    connect(&m_hass, &PanelHass::changed, this, &PanelEditor::updateHass);
     const auto updateWeather = [this] {
         m_weather.configure(m_store.isUsable() ? m_store.document().privateConfig().value(QStringLiteral("idle")).toObject() : QJsonObject());
     };
@@ -51,9 +53,15 @@ PanelEditor::PanelEditor(const QString &directory, QObject *parent, bool network
     connect(&m_store, &PanelStore::errorOccurred, this, updateWeather);
     connect(&m_store, &PanelStore::changed, this, updateProgress);
     connect(&m_store, &PanelStore::errorOccurred, this, updateProgress);
+    const auto updateHassConfig = [this] {
+        m_hass.configure(m_store.isUsable() ? m_store.document().privateConfig().value(QStringLiteral("hass")).toObject() : QJsonObject());
+    };
+    connect(&m_store, &PanelStore::changed, this, updateHassConfig);
+    connect(&m_store, &PanelStore::errorOccurred, this, updateHassConfig);
     m_store.load();
     updateWeather();
     updateProgress();
+    updateHassConfig();
     if (m_currentPageId.isEmpty())
         m_currentPageId = m_store.document().privateConfig().value(QStringLiteral("homePageId")).toString();
 }
@@ -66,6 +74,21 @@ QVariantMap PanelEditor::weather() const
 QVariantMap PanelEditor::progress() const
 {
     return m_progress.state().toVariantMap();
+}
+
+QVariantMap PanelEditor::hass() const
+{
+    return m_store.document().privateConfig().value(QStringLiteral("hass")).toObject().toVariantMap();
+}
+
+QVariantList PanelEditor::hassEntities() const
+{
+    return m_hass.availableEntities().toVariantList();
+}
+
+QVariantMap PanelEditor::hassState() const
+{
+    return m_hass.state().toVariantMap();
 }
 
 QVariantMap PanelEditor::config() const
@@ -624,6 +647,37 @@ bool PanelEditor::setIdleOptions(const QVariantMap &values)
 bool PanelEditor::setIdleOptionsChecked(const QVariantMap &values, double expectedRevision)
 {
     return expectedRevision == double(m_store.document().revision()) ? setIdleOptions(values) : fail(QStringLiteral("edit_conflict"));
+}
+
+bool PanelEditor::setHass(const QVariantMap &values)
+{
+    auto config = m_store.document().privateConfig();
+    QJsonObject hass = config.value(QStringLiteral("hass")).toObject();
+    static const QStringList keys{QStringLiteral("enabled"), QStringLiteral("url"), QStringLiteral("token"), QStringLiteral("entities")};
+    for (auto it = values.constBegin(); it != values.constEnd(); ++it) {
+        if (!keys.contains(it.key())) {
+            return fail(QStringLiteral("invalid_option"));
+        }
+        hass.insert(it.key(), QJsonValue::fromVariant(it.value()));
+    }
+    config.insert(QStringLiteral("hass"), hass);
+    return save(config);
+}
+
+bool PanelEditor::setHassChecked(const QVariantMap &values, double expectedRevision)
+{
+    return expectedRevision == double(m_store.document().revision()) ? setHass(values) : fail(QStringLiteral("edit_conflict"));
+}
+
+void PanelEditor::refreshHass()
+{
+    m_hass.refresh();
+}
+
+void PanelEditor::updateHass()
+{
+    Q_EMIT hassChanged();
+    Q_EMIT hassEntitiesChanged();
 }
 
 bool PanelEditor::restoreBackup()

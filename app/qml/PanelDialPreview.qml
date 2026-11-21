@@ -70,6 +70,31 @@ Rectangle {
             Connections { target: root; function onNowChanged() { clock.requestPaint(); } function onDialIdChanged() { clock.requestPaint(); } }
         }
         Text { visible: root.dialId === "analog"; anchors.bottom: parent.bottom; anchors.horizontalCenter: parent.horizontalCenter; text: root.dateText; color: root.ink; font.pixelSize: 10 }
+        Column {
+            visible: root.dialId === "hass"
+            anchors.centerIn: parent
+            spacing: 5
+            Text {
+                anchors.horizontalCenter: parent.horizontalCenter
+                text: Qt.formatTime(root.now, "hh:mm")
+                color: root.ink; font.pixelSize: 11; font.family: "monospace"
+            }
+            Repeater {
+                model: 3
+                delegate: Rectangle {
+                    width: 54; height: 13; radius: 3
+                    color: "transparent"
+                    border.width: 1
+                    border.color: root.ink
+                    opacity: 0.55
+                }
+            }
+            Text {
+                anchors.horizontalCenter: parent.horizontalCenter
+                text: qsTr("智能家居")
+                color: root.ink; font.pixelSize: 10; opacity: 0.75
+            }
+        }
         Text {
             visible: root.dialId === "digital"
             anchors.left: parent.left; anchors.verticalCenter: parent.verticalCenter

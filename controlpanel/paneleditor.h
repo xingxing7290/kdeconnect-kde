@@ -5,6 +5,7 @@
 #include "panelassets.h"
 #include "panelfavicon.h"
 #include "panelforeground.h"
+#include "panelhass.h"
 #include "panelportable.h"
 #include "panelprogress.h"
 #include "panelstore.h"
@@ -28,12 +29,19 @@ class PanelEditor : public QObject
     Q_PROPERTY(QString foregroundError READ foregroundError NOTIFY foregroundChanged)
     Q_PROPERTY(QVariantMap weather READ weather NOTIFY weatherChanged)
     Q_PROPERTY(QVariantMap progress READ progress NOTIFY progressChanged)
+    Q_PROPERTY(QVariantMap hass READ hass NOTIFY hassChanged)
+    Q_PROPERTY(QVariantList hassEntities READ hassEntities NOTIFY hassEntitiesChanged)
+    Q_PROPERTY(QVariantMap hassState READ hassState NOTIFY hassChanged)
     Q_PROPERTY(QString websiteIconStatus READ websiteIconStatus NOTIFY websiteIconStatusChanged)
 public:
     /** Weather, website icons and the WorkBuddy progress source all use this switch; tests keep networking off. */
     explicit PanelEditor(const QString &directory = {}, QObject *parent = nullptr, bool networking = false);
     QVariantMap weather() const;
     QVariantMap progress() const;
+    /** Home Assistant block as stored privately (includes the token, so it can be edited). */
+    QVariantMap hass() const;
+    QVariantList hassEntities() const;
+    QVariantMap hassState() const;
     QVariantMap config() const;
     QVariantMap currentPage() const;
     QString currentPageId() const;
@@ -71,6 +79,9 @@ public:
     Q_INVOKABLE bool setIdle(const QString &key, const QVariant &value);
     Q_INVOKABLE bool setIdleOptions(const QVariantMap &values);
     Q_INVOKABLE bool setIdleOptionsChecked(const QVariantMap &values, double expectedRevision);
+    Q_INVOKABLE bool setHass(const QVariantMap &values);
+    Q_INVOKABLE bool setHassChecked(const QVariantMap &values, double expectedRevision);
+    Q_INVOKABLE void refreshHass();
     Q_INVOKABLE bool fillMissingIcons();
     Q_INVOKABLE bool restoreBackup();
     /** Portable bundles: result maps carry ok/error and a human-readable summary. */
@@ -85,6 +96,8 @@ Q_SIGNALS:
     void foregroundChanged();
     void weatherChanged();
     void progressChanged();
+    void hassChanged();
+    void hassEntitiesChanged();
     void websiteIconStatusChanged();
     void websiteIconReady(const QString &url, const QString &iconId);
 
@@ -92,6 +105,7 @@ private:
     bool save(const QJsonObject &config);
     bool fail(const QString &error);
     void setWebsiteIconStatus(const QString &status);
+    void updateHass();
     void startWebsiteIcon(const QString &address,
                           const QUrl &url,
                           const QString &pageId,
@@ -109,6 +123,7 @@ private:
     PanelAssets m_assets;
     PanelWeather m_weather;
     PanelProgress m_progress;
+    PanelHass m_hass;
     PanelFavicon m_favicon;
     QString m_currentPageId;
     QString m_error;

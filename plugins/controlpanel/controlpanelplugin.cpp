@@ -11,6 +11,7 @@
 #include <panelactions.h>
 #include <panelassets.h>
 #include <panelforeground.h>
+#include <panelhass.h>
 #include <panelprogress.h>
 #include <panelweather.h>
 
@@ -71,6 +72,24 @@ ControlPanel::PanelProgress *progressSource()
     }
     return shared;
 }
+ControlPanel::PanelHass *hassSource()
+{
+    static QPointer<ControlPanel::PanelHass> shared;
+    if (!shared) {
+        auto *store = runtime()->store();
+        shared = new ControlPanel::PanelHass(nullptr);
+        auto *service = shared.data();
+        const auto configure = [store, service] {
+            // The URL and token are desktop-private; they are read here and never forwarded.
+            const QJsonObject hass = store->isUsable() ? store->document().privateConfig().value(QStringLiteral("hass")).toObject() : QJsonObject();
+            service->configure(hass);
+        };
+        QObject::connect(store, &ControlPanel::PanelStore::changed, service, configure);
+        QObject::connect(store, &ControlPanel::PanelStore::errorOccurred, service, configure);
+        configure();
+    }
+    return shared;
+}
 }
 
 ControlPanelPlugin::ControlPanelPlugin(QObject *parent, const QVariantList &args)
@@ -84,12 +103,14 @@ ControlPanelPlugin::ControlPanelPlugin(QObject *parent, const QVariantList &args
 {
     connect(weather(), &ControlPanel::PanelWeather::changed, this, &ControlPanelPlugin::publishWeather);
     connect(progressSource(), &ControlPanel::PanelProgress::changed, this, &ControlPanelPlugin::publishProgress);
+    connect(hassSource(), &ControlPanel::PanelHass::changed, this, &ControlPanelPlugin::publishHass);
     connect(m_peer, &ControlPanel::PanelPeer::packetReady, this, [this](const QString &type, const QJsonObject &body) {
         if (device()->isPaired() && device()->isReachable()) {
             NetworkPacket packet(type, body.toVariantMap());
             if (sendPacket(packet) && type == QLatin1String("kdeconnect.controlpanel.config")) {
                 publishWeather();
                 publishProgress();
+                publishHass();
             }
         }
     });
@@ -156,10 +177,44 @@ void ControlPanelPlugin::publishProgress()
     sendPacket(packet);
 }
 
+void ControlPanelPlugin::publishHass()
+{
+    auto *store = runtime()->store();
+    if (!device()->isPaired() || !device()->isReachable() || !store->isUsable()) {
+        return;
+    }
+    auto data = hassSource()->state();
+    if (data.isEmpty()) {
+        return;
+    }
+    data.insert(QStringLiteral("protocolVersion"), 1);
+    data.insert(QStringLiteral("revision"), store->document().revision());
+    if (!m_peer->sessionId().isEmpty()) {
+        data.insert(QStringLiteral("sessionId"), m_peer->sessionId());
+    }
+    NetworkPacket packet(QStringLiteral("kdeconnect.controlpanel.hass"), data.toVariantMap());
+    sendPacket(packet);
+}
+
 void ControlPanelPlugin::receivePacket(const NetworkPacket &packet)
 {
-    if (device()->isPaired() && device()->isReachable() && packet.type() == QLatin1String("kdeconnect.controlpanel.request") && !packet.hasPayload()) {
+    if (!device()->isPaired() || !device()->isReachable()) {
+        return;
+    }
+    if (packet.type() == QLatin1String("kdeconnect.controlpanel.request") && !packet.hasPayload()) {
         m_peer->receive(QJsonObject::fromVariantMap(packet.body()));
+        return;
+    }
+    if (packet.type() == QLatin1String("kdeconnect.controlpanel.hass_command") && !packet.hasPayload()) {
+        const QJsonObject command = QJsonObject::fromVariantMap(packet.body());
+        if (command.value(QStringLiteral("protocolVersion")).toInt() != 1) {
+            return;
+        }
+        const QString entityId = command.value(QStringLiteral("entityId")).toString();
+        const QString action = command.value(QStringLiteral("action")).toString();
+        const int brightness = command.value(QStringLiteral("brightness")).toInt(-1);
+        // PanelHass::callService emits changed(), which triggers publishHass().
+        hassSource()->callService(entityId, action, brightness);
     }
 }
 

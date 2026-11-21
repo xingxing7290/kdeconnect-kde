@@ -16,6 +16,7 @@ public:
 private:
     void publishWeather();
     void publishProgress();
+    void publishHass();
     QString executeButton(const QJsonObject &button);
     ControlPanel::PanelPeer *m_peer;
 };

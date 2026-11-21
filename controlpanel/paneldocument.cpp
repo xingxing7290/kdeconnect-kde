@@ -65,6 +65,65 @@ QJsonObject project(const QJsonObject &source, const QStringList &keys)
     return result;
 }
 
+/** Home Assistant block: url and token are desktop-private and never leave this machine. */
+bool hassEntityValid(const QJsonObject &entity)
+{
+    static const QRegularExpression entityPattern(QStringLiteral("\\A[a-z_]{1,32}\\.[a-z0-9_]{1,96}\\z"));
+    const QJsonValue id = entity.value(QStringLiteral("id"));
+    if (!id.isString() || id.toString().size() > 128 || !entityPattern.match(id.toString()).hasMatch()) {
+        return false;
+    }
+    if (!text(entity.value(QStringLiteral("name")), 120)) {
+        return false;
+    }
+    const QString type = entity.value(QStringLiteral("type")).toString();
+    if (type != QLatin1String("switch") && type != QLatin1String("light") && type != QLatin1String("sensor")) {
+        return false;
+    }
+    if (!text(entity.value(QStringLiteral("group")), 60)) {
+        return false;
+    }
+    if (!entity.value(QStringLiteral("order")).isUndefined() && !integer(entity.value(QStringLiteral("order")), 0, 120)) {
+        return false;
+    }
+    return true;
+}
+
+bool hassValid(const QJsonObject &hass)
+{
+    if (!text(hass.value(QStringLiteral("url")), 200) || !text(hass.value(QStringLiteral("token")), 512)) {
+        return false;
+    }
+    const QJsonValue enabled = hass.value(QStringLiteral("enabled"));
+    if (!enabled.isBool()) {
+        return false;
+    }
+    if (enabled.toBool()
+        && (hass.value(QStringLiteral("url")).toString().trimmed().isEmpty() || hass.value(QStringLiteral("token")).toString().trimmed().isEmpty())) {
+        return false;
+    }
+    const QJsonValue entities = hass.value(QStringLiteral("entities"));
+    if (!entities.isArray()) {
+        return false;
+    }
+    const QJsonArray list = entities.toArray();
+    if (list.size() > 120) {
+        return false;
+    }
+    QSet<QString> ids;
+    for (const QJsonValue &value : list) {
+        if (!value.isObject() || !hassEntityValid(value.toObject())) {
+            return false;
+        }
+        const QString id = value.toObject().value(QStringLiteral("id")).toString();
+        if (ids.contains(id)) {
+            return false;
+        }
+        ids.insert(id);
+    }
+    return true;
+}
+
 /** idle.info mixes public display options with desktop-private progress source settings. */
 bool infoValid(const QJsonObject &info)
 {
@@ -169,7 +228,8 @@ bool PanelDocument::validate(const QJsonObject &config, QString *error)
                                         QStringLiteral("analog"),
                                         QStringLiteral("weather"),
                                         QStringLiteral("info"),
-                                        QStringLiteral("car")};
+                                        QStringLiteral("car"),
+                                        QStringLiteral("hass")};
 
     if (!integer(config.value(QStringLiteral("schemaVersion")), 1, 1)) {
         return fail(QStringLiteral("unsupported_version"));
@@ -255,6 +315,10 @@ bool PanelDocument::validate(const QJsonObject &config, QString *error)
     if (!info.isUndefined() && (!info.isObject() || !infoValid(info.toObject()))) {
         return fail(QStringLiteral("invalid_dial_text"));
     }
+    const QJsonValue hass = config.value(QStringLiteral("hass"));
+    if (!hass.isUndefined() && (!hass.isObject() || !hassValid(hass.toObject()))) {
+        return fail(QStringLiteral("invalid_hass"));
+    }
     return true;
 }
 
@@ -296,6 +360,11 @@ PanelDocument PanelDocument::empty()
                                   {QStringLiteral("path"), QString()},
                                   {QStringLiteral("url"), QString()},
                                   {QStringLiteral("intervalMs"), 2000}}}}},
+        {QStringLiteral("hass"),
+         QJsonObject{{QStringLiteral("enabled"), false},
+                     {QStringLiteral("url"), QString()},
+                     {QStringLiteral("token"), QString()},
+                     {QStringLiteral("entities"), QJsonArray()}}},
     });
 }
 
@@ -341,6 +410,23 @@ QJsonObject PanelDocument::publicConfig() const
         idle.insert(QStringLiteral("info"), publicInfo);
     }
     result.insert(QStringLiteral("idle"), idle);
+    // The HA address and long-lived token are desktop-private; the phone only needs the list.
+    const QJsonObject sourceHass = m_config.value(QStringLiteral("hass")).toObject();
+    if (!sourceHass.isEmpty()) {
+        QJsonArray publicEntities;
+        for (const QJsonValue &value : sourceHass.value(QStringLiteral("entities")).toArray()) {
+            const QJsonObject entity = project(value.toObject(),
+                                               {QStringLiteral("id"),
+                                                QStringLiteral("name"),
+                                                QStringLiteral("type"),
+                                                QStringLiteral("group"),
+                                                QStringLiteral("order")});
+            if (!entity.isEmpty()) {
+                publicEntities.append(entity);
+            }
+        }
+        result.insert(QStringLiteral("hass"), QJsonObject{{QStringLiteral("entities"), publicEntities}});
+    }
     return result;
 }
 

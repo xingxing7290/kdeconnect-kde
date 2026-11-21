@@ -6,8 +6,8 @@ if(WIN32)
     target_link_libraries(kdeconnectpanel PRIVATE user32)
 endif()
 
-add_library(kdeconnectpanelweather STATIC panelweather.cpp panelprogress.cpp)
-target_link_libraries(kdeconnectpanelweather PUBLIC Qt::Core Qt::Network)
+add_library(kdeconnectpanelweather STATIC panelweather.cpp panelprogress.cpp panelhass.cpp)
+target_link_libraries(kdeconnectpanelweather PUBLIC Qt::Core Qt::Network Qt::WebSockets)
 target_include_directories(kdeconnectpanelweather PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 set_target_properties(kdeconnectpanelweather PROPERTIES POSITION_INDEPENDENT_CODE ON AUTOMOC ON)
 

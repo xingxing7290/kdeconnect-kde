@@ -472,17 +472,19 @@ QJsonObject PanelHass::trimmedEntity(const QJsonValue &raw) const
     const QJsonObject attributes = object.value(QStringLiteral("attributes")).toObject();
     const QString type = config.value(QStringLiteral("type")).toString();
     const QString configuredName = config.value(QStringLiteral("name")).toString().trimmed();
-    const QString state = cleaned(object.value(QStringLiteral("state")).toString(), 64);
+    // Everything that leaves here is trimmed too: the phone rejects a group or unit that is only
+    // whitespace, which would drop the whole entity.
+    const QString state = cleaned(object.value(QStringLiteral("state")).toString(), 64).trimmed();
 
     QJsonObject result{
         {QStringLiteral("id"), id},
         {QStringLiteral("type"), type},
         {QStringLiteral("state"), state},
         {QStringLiteral("name"),
-         cleaned(configuredName.isEmpty() ? attributes.value(QStringLiteral("friendly_name")).toString() : configuredName, MaxNameLength)},
+         cleaned(configuredName.isEmpty() ? attributes.value(QStringLiteral("friendly_name")).toString() : configuredName, MaxNameLength).trimmed()},
         {QStringLiteral("available"), !state.isEmpty()},
     };
-    const QString group = cleaned(config.value(QStringLiteral("group")).toString().trimmed(), 60);
+    const QString group = cleaned(config.value(QStringLiteral("group")).toString(), 60).trimmed();
     if (!group.isEmpty())
         result.insert(QStringLiteral("group"), group);
     const auto order = config.value(QStringLiteral("order"));
@@ -495,7 +497,7 @@ QJsonObject PanelHass::trimmedEntity(const QJsonValue &raw) const
             result.insert(QStringLiteral("brightness"), brightness.toInt());
     }
     if (type == QLatin1String("sensor")) {
-        const QString unit = cleaned(attributes.value(QStringLiteral("unit_of_measurement")).toString(), 16);
+        const QString unit = cleaned(attributes.value(QStringLiteral("unit_of_measurement")).toString(), 16).trimmed();
         if (!unit.isEmpty())
             result.insert(QStringLiteral("unit"), unit);
     }

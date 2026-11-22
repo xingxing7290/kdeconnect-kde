@@ -10,6 +10,7 @@
 #include "panelprogress.h"
 #include "panelstore.h"
 #include "panelweather.h"
+#include <QFileSystemWatcher>
 #include <QUrl>
 #include <QVariantList>
 #include <QVariantMap>
@@ -32,6 +33,7 @@ class PanelEditor : public QObject
     Q_PROPERTY(QVariantMap hass READ hass NOTIFY hassChanged)
     Q_PROPERTY(QVariantList hassEntities READ hassEntities NOTIFY hassEntitiesChanged)
     Q_PROPERTY(QVariantMap hassState READ hassState NOTIFY hassChanged)
+    Q_PROPERTY(QString hassCompatNote READ hassCompatNote NOTIFY hassCompatChanged)
     Q_PROPERTY(QString websiteIconStatus READ websiteIconStatus NOTIFY websiteIconStatusChanged)
 public:
     /** Weather, website icons and the WorkBuddy progress source all use this switch; tests keep networking off. */
@@ -42,6 +44,8 @@ public:
     QVariantMap hass() const;
     QVariantList hassEntities() const;
     QVariantMap hassState() const;
+    /** Non-empty when the connected peer is too old to understand the smart-home dial. */
+    QString hassCompatNote() const;
     QVariantMap config() const;
     QVariantMap currentPage() const;
     QString currentPageId() const;
@@ -82,6 +86,8 @@ public:
     Q_INVOKABLE bool setHass(const QVariantMap &values);
     Q_INVOKABLE bool setHassChecked(const QVariantMap &values, double expectedRevision);
     Q_INVOKABLE void refreshHass();
+    /** Controls Home Assistant directly from the desktop; returns an empty string on success. */
+    Q_INVOKABLE QString hassCommand(const QString &entityId, const QString &action, int brightness);
     Q_INVOKABLE bool fillMissingIcons();
     Q_INVOKABLE bool restoreBackup();
     /** Portable bundles: result maps carry ok/error and a human-readable summary. */
@@ -98,6 +104,7 @@ Q_SIGNALS:
     void progressChanged();
     void hassChanged();
     void hassEntitiesChanged();
+    void hassCompatChanged();
     void websiteIconStatusChanged();
     void websiteIconReady(const QString &url, const QString &iconId);
 
@@ -106,6 +113,7 @@ private:
     bool fail(const QString &error);
     void setWebsiteIconStatus(const QString &status);
     void updateHass();
+    void updateHassCompat();
     void startWebsiteIcon(const QString &address,
                           const QUrl &url,
                           const QString &pageId,
@@ -125,6 +133,8 @@ private:
     PanelProgress m_progress;
     PanelHass m_hass;
     PanelFavicon m_favicon;
+    QString m_hassCompatPath;
+    QFileSystemWatcher m_hassCompatWatcher;
     QString m_currentPageId;
     QString m_error;
     QString m_websiteIconStatus = QStringLiteral("idle");

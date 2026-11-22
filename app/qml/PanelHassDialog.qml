@@ -8,10 +8,12 @@ import QtQuick.Layouts
 AppDialog {
     id: dialog
     AppTheme { id: ui }
+    HassTexts { id: hassTexts }
     objectName: "panelHassDialog"
     property var editor
     property string validationError: ""
     property bool showPicker: false
+    property string entityFilter: ""
     property var draft: ({ enabled: false, url: "", token: "", entities: [] })
     parent: C.Overlay.overlay
     anchors.centerIn: parent
@@ -37,12 +39,20 @@ AppDialog {
         };
         validationError = "";
         showPicker = false;
+        entityFilter = "";
         open();
         // Editing a field breaks its binding, so re-seed the inputs from the fresh draft.
         Qt.callLater(function() {
             urlField.text = draft.url;
             tokenField.text = draft.token;
         });
+    }
+    function filteredEntities() {
+        const all = editor.hassEntities || [];
+        const needle = entityFilter.trim().toLowerCase();
+        if (!needle) return all;
+        return all.filter(item =>
+            ((item.name || "") + " " + (item.id || "")).toLowerCase().indexOf(needle) >= 0);
     }
     function has(entityId) {
         return draft.entities.some(item => item.id === entityId);
@@ -81,12 +91,7 @@ AppDialog {
     }
     function statusText() {
         const state = editor.hassState || ({});
-        const status = state.status || "disabled";
-        if (status === "ready") return qsTr("已连接，实体状态实时更新");
-        if (status === "connecting") return qsTr("正在连接…");
-        if (status === "authenticating") return qsTr("正在验证令牌…");
-        if (status === "error") return qsTr("连接失败：%1").arg(state.error || qsTr("未知错误"));
-        return qsTr("未启用");
+        return hassTexts.statusText(state.status || "disabled", state.error);
     }
     function save() {
         validationError = "";
@@ -159,12 +164,27 @@ AppDialog {
                 color: ui.warning; wrapMode: Text.WordWrap; Layout.fillWidth: true
             }
 
+            C.TextField {
+                objectName: "panelHassEntityFilter"
+                visible: dialog.showPicker && (editor.hassEntities || []).length > 0
+                placeholderText: qsTr("搜索设备（名称或实体 ID）")
+                maximumLength: 120
+                Layout.fillWidth: true
+                text: dialog.entityFilter
+                onTextEdited: dialog.entityFilter = text
+            }
+            C.Label {
+                visible: dialog.showPicker && dialog.entityFilter.length > 0 && dialog.filteredEntities().length === 0
+                text: qsTr("没有匹配的实体，换个关键词试试。")
+                color: ui.warning; wrapMode: Text.WordWrap; Layout.fillWidth: true
+            }
+
             ColumnLayout {
                 visible: dialog.showPicker
                 Layout.fillWidth: true
                 spacing: 4
                 Repeater {
-                    model: dialog.showPicker ? (editor.hassEntities || []) : []
+                    model: dialog.showPicker ? dialog.filteredEntities() : []
                     delegate: C.CheckBox {
                         text: (modelData.name && modelData.name.length ? modelData.name : modelData.id) + "  ·  " + modelData.id
                         checked: dialog.has(modelData.id)

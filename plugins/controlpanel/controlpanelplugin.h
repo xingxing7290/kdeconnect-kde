@@ -17,6 +17,9 @@ private:
     void publishWeather();
     void publishProgress();
     void publishHass();
+    /** Older peers reject an unknown dialId, so the config is downgraded for them before sending. */
+    QJsonObject configForPeer(const QJsonObject &body) const;
+    void recordPeerCompatibility(bool supportsHass) const;
     QString executeButton(const QJsonObject &button);
     ControlPanel::PanelPeer *m_peer;
 };

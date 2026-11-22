@@ -4,11 +4,13 @@
 #include "paneleditor.h"
 #include "panelactions.h"
 #include <QClipboard>
+#include <QFile>
 #include <QFileInfo>
 #include <QGuiApplication>
 #include <QHash>
 #include <QIcon>
 #include <QJsonArray>
+#include <QJsonDocument>
 #include <QUrl>
 #include <QUuid>
 
@@ -22,6 +24,7 @@ PanelEditor::PanelEditor(const QString &directory, QObject *parent, bool network
     , m_progress(this, nullptr, networking)
     , m_hass(this)
     , m_favicon(QFileInfo(m_store.filePath()).absolutePath(), this, nullptr, networking)
+    , m_hassCompatPath(QFileInfo(m_store.filePath()).absolutePath() + QStringLiteral("/hass-peer-compat.json"))
 {
     connect(&m_store, &PanelStore::errorOccurred, this, [this](const QString &error) {
         fail(error);
@@ -58,6 +61,9 @@ PanelEditor::PanelEditor(const QString &directory, QObject *parent, bool network
     };
     connect(&m_store, &PanelStore::changed, this, updateHassConfig);
     connect(&m_store, &PanelStore::errorOccurred, this, updateHassConfig);
+    if (QFile::exists(m_hassCompatPath))
+        m_hassCompatWatcher.addPath(m_hassCompatPath);
+    connect(&m_hassCompatWatcher, &QFileSystemWatcher::fileChanged, this, &PanelEditor::updateHassCompat);
     m_store.load();
     updateWeather();
     updateProgress();
@@ -89,6 +95,25 @@ QVariantList PanelEditor::hassEntities() const
 QVariantMap PanelEditor::hassState() const
 {
     return m_hass.state().toVariantMap();
+}
+
+QString PanelEditor::hassCompatNote() const
+{
+    QFile marker(m_hassCompatPath);
+    if (!marker.open(QIODevice::ReadOnly))
+        return {};
+    const QJsonObject value = QJsonDocument::fromJson(marker.readAll()).object();
+    if (!value.contains(QLatin1String("supportsHass")) || value.value(QLatin1String("supportsHass")).toBool(true))
+        return {};
+    return tr("平板上的控制面板版本过旧，无法识别「智能家居」表盘。下发时已临时改用数字时钟；请升级平板上的 APK 后再切换。");
+}
+
+void PanelEditor::updateHassCompat()
+{
+    // Some tools replace the marker instead of editing it in place, which drops the watch.
+    if (!m_hassCompatWatcher.files().contains(m_hassCompatPath) && QFile::exists(m_hassCompatPath))
+        m_hassCompatWatcher.addPath(m_hassCompatPath);
+    Q_EMIT hassCompatChanged();
 }
 
 QVariantMap PanelEditor::config() const
@@ -672,6 +697,14 @@ bool PanelEditor::setHassChecked(const QVariantMap &values, double expectedRevis
 void PanelEditor::refreshHass()
 {
     m_hass.refresh();
+}
+
+QString PanelEditor::hassCommand(const QString &entityId, const QString &action, int brightness)
+{
+    // The GUI holds its own HA connection; issuing the service call here avoids a round trip
+    // through the daemon and the phone. The resulting state_changed is seen by both processes,
+    // so the daemon still pushes the fresh snapshot to the tablet.
+    return m_hass.callService(entityId, action, brightness);
 }
 
 void PanelEditor::updateHass()

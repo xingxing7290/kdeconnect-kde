@@ -12,6 +12,7 @@ Item {
     signal openConnections()
     property int section: 1
     AppTheme { id: ui }
+    HassTexts { id: hassTexts }
     readonly property var navigationIcons: ["\u25c9", "\u25a6", "\u21c4", "\u2302", "\u24d8"]
     readonly property var editor: panelEditor
     readonly property var config: editor.config
@@ -153,17 +154,32 @@ Item {
     }
     function hassStatusText() {
         const state = root.hassState();
-        const status = state.status || "disabled";
-        if (status === "ready") return qsTr("已连接 Home Assistant，正在实时同步。");
-        if (status === "connecting") return qsTr("正在连接 Home Assistant…");
-        if (status === "authenticating") return qsTr("正在验证长期访问令牌…");
-        if (status === "error") return qsTr("连接失败：%1").arg(state.error || qsTr("未知错误"));
-        return qsTr("尚未启用智能家居，点击「配置」填写地址和令牌。");
+        return hassTexts.statusText(state.status || "disabled", state.error);
     }
     function hassEntityValue(entity) {
         if (!entity) return "";
         if (entity.type === "sensor") return (entity.state || "") + (entity.unit ? " " + entity.unit : "");
         return entity.state === "on" ? qsTr("开") : qsTr("关");
+    }
+    function hassEntityName(id) {
+        const item = root.hassEntityList().find(entity => entity.id === id);
+        return item && item.name ? item.name : id;
+    }
+    function hassCommandFailed() {
+        const command = root.hassState().lastCommand;
+        return !!(command && command.error);
+    }
+    function hassCommandText() {
+        const command = root.hassState().lastCommand;
+        if (!command || !command.entityId) return "";
+        const name = root.hassEntityName(command.entityId);
+        return command.error
+            ? qsTr("控制「%1」失败：%2").arg(name).arg(hassTexts.errorText(command.error))
+            : qsTr("已控制「%1」").arg(name);
+    }
+    function hassSend(entityId, action, brightness) {
+        if (!root.editor) return;
+        root.editor.hassCommand(entityId, action, brightness);
     }
     function foregroundErrorText() {
         if (editor.foregroundError === "hosted_application_unavailable") return qsTr("未识别出此宿主窗口中的实际程序，请切到目标应用后稍等，或手工填写程序名。");
@@ -663,12 +679,14 @@ Item {
                     id: hassColumn
                     anchors.fill: parent; anchors.margins: 16; spacing: 12
                     C.Label { text: qsTr("由这台电脑连接 Home Assistant，实体状态会实时同步到平板的智能家居表盘。地址和长期令牌只保存在本机，不会同步到手机。"); color: ui.textMuted; wrapMode: Text.WordWrap; Layout.fillWidth: true; lineHeight: 1.6 }
+                    C.Label { visible: !!root.editor && !!root.editor.hassCompatNote; text: root.editor ? root.editor.hassCompatNote : ""; color: ui.warning; wrapMode: Text.WordWrap; Layout.fillWidth: true }
                     RowLayout {
                         spacing: 10
                         C.Label { text: root.hassStatusText(); color: root.hassError() ? ui.danger : ui.textMuted; Layout.fillWidth: true; wrapMode: Text.WordWrap }
                         AppButton { objectName: "panelHassRefreshButton"; text: qsTr("重新连接"); onClicked: root.editor.refreshHass() }
                         AppButton { objectName: "panelHassConfigureButton"; text: qsTr("配置"); primary: true; onClicked: hassPageDialog.openEditor() }
                     }
+                    C.Label { visible: !!root.hassCommandText(); text: root.hassCommandText(); color: root.hassCommandFailed() ? ui.danger : ui.textMuted; wrapMode: Text.WordWrap; Layout.fillWidth: true }
                 }
             }
             AppCard {
@@ -687,6 +705,27 @@ Item {
                             spacing: 10
                             C.Label { text: (modelData.name && modelData.name.length) ? modelData.name : modelData.id; color: ui.text; Layout.fillWidth: true; elide: Text.ElideRight }
                             C.Label { text: root.hassEntityValue(modelData); color: ui.textMuted }
+                            AppButton {
+                                objectName: "panelHassToggle"
+                                visible: modelData.type === "switch" || modelData.type === "light"
+                                text: modelData.state === "on" ? qsTr("关闭") : qsTr("打开")
+                                enabled: root.hassState().status === "ready"
+                                onClicked: root.hassSend(modelData.id, modelData.state === "on" ? "turn_off" : "turn_on", -1)
+                            }
+                            AppButton {
+                                objectName: "panelHassDim"
+                                visible: modelData.type === "light" && modelData.state === "on"
+                                text: "－"
+                                enabled: root.hassState().status === "ready"
+                                onClicked: root.hassSend(modelData.id, "turn_on", Math.max(0, (modelData.brightness || 128) - 26))
+                            }
+                            AppButton {
+                                objectName: "panelHassBrighten"
+                                visible: modelData.type === "light" && modelData.state === "on"
+                                text: "＋"
+                                enabled: root.hassState().status === "ready"
+                                onClicked: root.hassSend(modelData.id, "turn_on", Math.min(255, (modelData.brightness || 128) + 26))
+                            }
                         }
                     }
                 }

@@ -5,8 +5,10 @@
 #include <KPluginFactory>
 #include <QBuffer>
 #include <QCoreApplication>
+#include <QFile>
 #include <QFileInfo>
 #include <QJsonDocument>
+#include <QJsonObject>
 #include <QPointer>
 #include <panelactions.h>
 #include <panelassets.h>
@@ -106,8 +108,9 @@ ControlPanelPlugin::ControlPanelPlugin(QObject *parent, const QVariantList &args
     connect(hassSource(), &ControlPanel::PanelHass::changed, this, &ControlPanelPlugin::publishHass);
     connect(m_peer, &ControlPanel::PanelPeer::packetReady, this, [this](const QString &type, const QJsonObject &body) {
         if (device()->isPaired() && device()->isReachable()) {
-            NetworkPacket packet(type, body.toVariantMap());
-            if (sendPacket(packet) && type == QLatin1String("kdeconnect.controlpanel.config")) {
+            const bool isConfig = type == QLatin1String("kdeconnect.controlpanel.config");
+            NetworkPacket packet(type, (isConfig ? configForPeer(body) : body).toVariantMap());
+            if (sendPacket(packet) && isConfig) {
                 publishWeather();
                 publishProgress();
                 publishHass();
@@ -194,6 +197,50 @@ void ControlPanelPlugin::publishHass()
     }
     NetworkPacket packet(QStringLiteral("kdeconnect.controlpanel.hass"), data.toVariantMap());
     sendPacket(packet);
+}
+
+QJsonObject ControlPanelPlugin::configForPeer(const QJsonObject &body) const
+{
+    // The peer advertises HASS through its supportedPacketTypes. An older APK does not know the
+    // "hass" dial id at all: sending it would fail the whole PanelConfig validation on the phone
+    // and leave the control panel unusable, not just the dial. Downgrade only the dial id; the
+    // rest of the configuration stays byte-for-byte identical.
+    const bool supportsHass = device()->incomingCapabilities().contains(QStringLiteral("kdeconnect.controlpanel.hass"));
+    recordPeerCompatibility(supportsHass);
+    if (supportsHass)
+        return body;
+
+    QJsonObject adapted = body;
+    QJsonObject config = adapted.value(QStringLiteral("config")).toObject();
+    QJsonObject idle = config.value(QStringLiteral("idle")).toObject();
+    if (idle.value(QStringLiteral("dialId")).toString() == QLatin1String("hass")) {
+        idle.insert(QStringLiteral("dialId"), QStringLiteral("digital"));
+        config.insert(QStringLiteral("idle"), idle);
+        adapted.insert(QStringLiteral("config"), config);
+    }
+    return adapted;
+}
+
+void ControlPanelPlugin::recordPeerCompatibility(bool supportsHass) const
+{
+    // The daemon (which sends config) and the GUI (which renders the hint) are separate
+    // processes, but share the panel profile directory. A tiny marker file is the cheapest
+    // reliable channel between them; it carries no credentials.
+    auto *store = runtime()->store();
+    if (!store->isUsable())
+        return;
+    const QString path = QFileInfo(store->filePath()).absolutePath() + QStringLiteral("/hass-peer-compat.json");
+    QFile marker(path);
+    if (marker.open(QIODevice::ReadOnly)) {
+        const QJsonObject previous = QJsonDocument::fromJson(marker.readAll()).object();
+        marker.close();
+        if (previous.contains(QStringLiteral("supportsHass")) && previous.value(QStringLiteral("supportsHass")).toBool() == supportsHass)
+            return;
+    }
+    if (marker.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
+        const QJsonObject value{{QStringLiteral("supportsHass"), supportsHass}};
+        marker.write(QJsonDocument(value).toJson(QJsonDocument::Compact));
+    }
 }
 
 void ControlPanelPlugin::receivePacket(const NetworkPacket &packet)

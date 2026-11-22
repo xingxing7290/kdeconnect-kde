@@ -32,7 +32,7 @@ public:
 
     static constexpr int MinIntervalMs = 1000;
     static constexpr int MaxIntervalMs = 30000;
-    static constexpr int DefaultIntervalMs = 2000;
+    static constexpr int DefaultIntervalMs = 5000;
 
     /** Settings validation shared with the document validator and tests. */
     static bool validSettings(const QJsonObject &settings);

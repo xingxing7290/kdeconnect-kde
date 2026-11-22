@@ -384,7 +384,7 @@ PanelDocument PanelDocument::empty()
                      {QStringLiteral("entities"), QJsonArray()}}},
         {QStringLiteral("sysinfo"),
          QJsonObject{{QStringLiteral("enabled"), false},
-                     {QStringLiteral("intervalMs"), 2000}}},
+                     {QStringLiteral("intervalMs"), 5000}}},
     });
 }
 

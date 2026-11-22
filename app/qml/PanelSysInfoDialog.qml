@@ -18,9 +18,9 @@ AppDialog {
 
     function openEditor() {
         enabledBox.checked = !!editor.sysInfoEnabled;
-        const interval = editor.sysInfo ? (editor.sysInfo.intervalMs || 2000) : 2000;
+        const interval = editor.sysInfo ? (editor.sysInfo.intervalMs || 5000) : 5000;
         intervalCombo.currentIndex = [1000, 2000, 5000, 10000, 30000].indexOf(interval);
-        if (intervalCombo.currentIndex < 0) intervalCombo.currentIndex = 1;
+        if (intervalCombo.currentIndex < 0) intervalCombo.currentIndex = 2;
         validationError = "";
         open();
     }
@@ -47,7 +47,7 @@ AppDialog {
             Layout.fillWidth: true
         }
         C.Label {
-            text: qsTr("间隔越短数据越及时，但会产生更多流量。默认 2 秒。")
+            text: qsTr("间隔越短数据越及时，但会产生更多流量。默认 5 秒。")
             wrapMode: Text.WordWrap; color: ui.textSubtle; Layout.fillWidth: true
         }
         C.Label {

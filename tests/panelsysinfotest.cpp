@@ -49,6 +49,7 @@ private Q_SLOTS:
 
     void validSettingsAreChecked()
     {
+        QCOMPARE(PanelSysInfo::DefaultIntervalMs, 5000);
         QVERIFY(PanelSysInfo::validSettings(QJsonObject{{QStringLiteral("enabled"), true}}));
         QVERIFY(PanelSysInfo::validSettings(QJsonObject{{QStringLiteral("enabled"), false},
                                                         {QStringLiteral("intervalMs"), 2000}}));

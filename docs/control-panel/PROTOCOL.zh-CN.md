@@ -41,7 +41,7 @@
 | kdeconnect.controlpanel.progress | revision, source, status, title, stage, detail；可选 percent, sequence, updatedAt, fetchedAt | WorkBuddy 工作进度快照；实时状态，不写配置、不改 revision |
 | kdeconnect.controlpanel.hass | revision, status, error, fetchedAt, entities[]；可选 sessionId, lastCommand | 智能家居快照；状态变化即时推送，200 毫秒内的连续变化合并为一包；不含地址与令牌 |
 | kdeconnect.controlpanel.hass_command | protocolVersion=1, sessionId, entityId, action；可选 brightness | 请求桌面端调用 HA 服务；会话不匹配或已退休时丢弃，不执行 |
-| kdeconnect.controlpanel.sysinfo | protocolVersion=1, sessionId, revision, status, error, fetchedAt；可选 cores, cpu, memory, disk, network, uptimeSeconds, processCount | 电脑硬件状态快照；只读聚合数值，不含路径/机器名/磁盘卷标/进程列表；采样间隔默认 2 秒，5 秒心跳保活 |
+| kdeconnect.controlpanel.sysinfo | protocolVersion=1, sessionId, revision, status, error, fetchedAt；可选 cores, cpu, memory, disk, network, uptimeSeconds, processCount | 电脑硬件状态快照；只读聚合数值，不含路径/机器名/磁盘卷标/进程列表；采样间隔默认 5 秒，5 秒心跳保活 |
 
 智能家居快照的共用样本：`fixtures/hass-snapshot.json`，两端测试读取同一内容。`error` 与 `lastCommand.error` 只使用稳定机器码（`hass_auth_invalid`、`hass_request_failed` 等），翻译成可读文案是 UI 的职责；未知码由 UI 原样显示。
 

@@ -230,3 +230,15 @@ C 盘剩余空间仍紧张，项目目录迁移不能控制操作系统和其他
 - **测试（已写，未运行）**：`tests/panelhasstest.cpp`（QWebSocketServer 假 HA，覆盖鉴权、全量/增量、字段清洗、指令校验与失败降级、鉴权失败停止重连、共用样本）与 `src/test/java/.../PanelHomeAssistantTest.kt`（解析容错、逐条跳过坏实体、新鲜度、lastCommand 容错、共用样本）。两端读取同一 `docs/control-panel/fixtures/hass-snapshot.json`。
 - **未验证风险**：HA WebSocket 消息格式按官方文档实现，未与真实 HA 实例联调；Compose 新组件与字符串键需构建验证；双进程各连一条 HA WebSocket（已在 HOME-ASSISTANT 文档记为已知限制）。
 - **下一步**：构建后运行 `ctest -R panelhass` 与 `./gradlew :test --tests '*PanelHomeAssistantTest'`；确认 windeployqt/runtime-dependencies 把 `Qt6WebSockets.dll` 打进安装包；在有 HA 的环境做端到端联调。
+
+## 阶段记录：电脑状态表盘 — 源码完成，未编译未运行
+
+同样遵循用户「只改源码、不编译运行」的要求。
+
+- **需求**：新表盘显示电脑硬件数据；用户选定核心六项（CPU、内存、磁盘、网络速率、运行时间、进程数）、数据为主+角落时间布局、只看当前值不做趋势。
+- **修改模块**：桌面 `controlpanel/panelsysinfo.*`（Windows API 采集、`normalize()` 纯函数、状态机与心跳）、`paneldocument.cpp`（sysinfo 校验+白名单+默认段）、`controlpanelplugin.*`（单例、publishSysInfo、包声明、P0 兼容降级）、`paneleditor.*`、`app/qml/{PanelSysInfoDialog,PanelDialPreview,PanelDialGallery,ControlDashboard}`、`app/CMakeLists.txt`、`controlpanel/CMakeLists.txt`（Windows 链接 iphlpapi）；Android `PanelSystemInfo.kt`、`PanelSystemDial.kt`、`PanelSession`、`ControlPanelPlugin`、`PanelConfig`、`PanelDialScreen`、`ControlPanelActivity`、中英字符串、协议文档。
+- **隐私**：只发聚合数值；无路径、机器名、磁盘卷标、进程列表；桌面私有配置只存开关与间隔。
+- **静态检查（已做）**：所有 C++/QML/Kotlin 改动文件括号平衡；插件 JSON 有效；Android 11 个 sys 字符串引用两端齐全；fixture 两端哈希一致；新增 QML 已登记进构建清单。
+- **测试（已写，未运行）**：`tests/panelsysinfotest.cpp`（normalize 边界、字段独立丢弃、设置校验、共用样本）与 `PanelSystemInfoTest.kt`（解析、格式化、异常字段隔离、新鲜度、共用样本）。
+- **未验证风险**：Windows API 调用（GetIfTable2/GetSystemTimes 等）需实际构建验证；Compose 表盘渲染与字符串键需构建验证；非 Windows 平台返回空快照，表盘显示不可用。
+- **下一步**：构建后运行 `ctest -R panelsysinfo` 与 `./gradlew :test --tests '*PanelSystemInfoTest'`；在 Windows 真机确认采集数值正确、平板表盘实时刷新。

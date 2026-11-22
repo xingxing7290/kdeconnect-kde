@@ -41,8 +41,11 @@
 | kdeconnect.controlpanel.progress | revision, source, status, title, stage, detail；可选 percent, sequence, updatedAt, fetchedAt | WorkBuddy 工作进度快照；实时状态，不写配置、不改 revision |
 | kdeconnect.controlpanel.hass | revision, status, error, fetchedAt, entities[]；可选 sessionId, lastCommand | 智能家居快照；状态变化即时推送，200 毫秒内的连续变化合并为一包；不含地址与令牌 |
 | kdeconnect.controlpanel.hass_command | protocolVersion=1, sessionId, entityId, action；可选 brightness | 请求桌面端调用 HA 服务；会话不匹配或已退休时丢弃，不执行 |
+| kdeconnect.controlpanel.sysinfo | protocolVersion=1, sessionId, revision, status, error, fetchedAt；可选 cores, cpu, memory, disk, network, uptimeSeconds, processCount | 电脑硬件状态快照；只读聚合数值，不含路径/机器名/磁盘卷标/进程列表；采样间隔默认 2 秒，5 秒心跳保活 |
 
 智能家居快照的共用样本：`fixtures/hass-snapshot.json`，两端测试读取同一内容。`error` 与 `lastCommand.error` 只使用稳定机器码（`hass_auth_invalid`、`hass_request_failed` 等），翻译成可读文案是 UI 的职责；未知码由 UI 原样显示。
+
+电脑状态快照的共用样本：`fixtures/sysinfo-snapshot.json`。`cpu`/`memory`/`disk`/`network` 各自是可选对象，字段缺失表示该指标不可用，手机端只显示 `--`，不得用旧值伪造。`status` 为 `ready`/`unavailable`/`error`/`disabled` 之一；手机端新鲜度窗口 20 秒，与桌面 5 秒心跳对齐。
 
 sessionId、requestId 使用小写 UUID。Android 每次重新建立插件会话生成新的 sessionId，配置重取沿用当前 sessionId；sequence 从 1 单调递增，最大为安全 JSON 整数上限。同一会话最近 256 个动作请求保留原始请求和结果：相同请求返回原结果，ID 冲突返回 invalid_request。结果缓存淘汰后仍保留最高 sequence，更早或乱序请求返回 request_expired，不能重新执行。每个连接最多记录 4096 个已退休会话 ID，退休会话不能通过重复握手复活。
 

@@ -1,0 +1,27 @@
+{
+  "protocolVersion": 1,
+  "revision": 7,
+  "status": "ready",
+  "error": "",
+  "fetchedAt": 1763200005,
+  "cores": 8,
+  "cpu": {
+    "usage": 23.5
+  },
+  "memory": {
+    "usedBytes": 8589934592,
+    "totalBytes": 17179869184,
+    "usage": 50.0
+  },
+  "disk": {
+    "usedBytes": 214748364800,
+    "totalBytes": 536870912000,
+    "usage": 40.0
+  },
+  "network": {
+    "rxBytesPerSec": 12800,
+    "txBytesPerSec": 3200
+  },
+  "uptimeSeconds": 345600,
+  "processCount": 214
+}

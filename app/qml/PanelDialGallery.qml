@@ -13,7 +13,7 @@ ColumnLayout {
     property var editor
     property var now: new Date()
     readonly property var config: editor.config
-    readonly property var dials: [{id: "digital", name: qsTr("数字时钟")}, {id: "analog", name: qsTr("经典指针")}, {id: "weather", name: qsTr("时钟与天气")}, {id: "info", name: qsTr("信息表盘")}, {id: "car", name: qsTr("汽车视觉")}, {id: "hass", name: qsTr("智能家居")}]
+    readonly property var dials: [{id: "digital", name: qsTr("数字时钟")}, {id: "analog", name: qsTr("经典指针")}, {id: "weather", name: qsTr("时钟与天气")}, {id: "info", name: qsTr("信息表盘")}, {id: "car", name: qsTr("汽车视觉")}, {id: "hass", name: qsTr("智能家居")}, {id: "sysinfo", name: qsTr("电脑状态")}]
     spacing: ui.spacing
     function saveError(code) {
         if (code === "edit_conflict" || code === "stale_revision") return qsTr("配置已被修改，请关闭窗口后重新打开，避免覆盖新的设置。");
@@ -115,6 +115,7 @@ ColumnLayout {
         C.SpinBox { objectName: "panelIdleTimeout"; from: 1000; to: 86400000; stepSize: 1000; editable: true; value: config.idle.timeoutMs; onValueModified: editor.setIdle("timeoutMs", value) }
         AppButton { objectName: "panelDialSettingsButton"; text: qsTr("城市与文本"); onClicked: settings.openForCurrent() }
         AppButton { objectName: "panelHassSettingsButton"; text: qsTr("智能家居"); onClicked: hassEditor.openEditor() }
+        AppButton { objectName: "panelSysInfoSettingsButton"; text: qsTr("电脑状态"); onClicked: sysInfoEditor.openEditor() }
     }
     AppDialog {
         id: confirmation
@@ -249,4 +250,5 @@ ColumnLayout {
         }
     }
     PanelHassDialog { id: hassEditor; editor: root.editor }
+    PanelSysInfoDialog { id: sysInfoEditor; editor: root.editor }
 }

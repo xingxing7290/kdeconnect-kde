@@ -133,6 +133,31 @@ Rectangle {
             onHeightChanged: requestPaint()
         }
         Column {
+            visible: root.dialId === "sysinfo"
+            anchors.centerIn: parent
+            spacing: 5
+            Text {
+                anchors.horizontalCenter: parent.horizontalCenter
+                text: Qt.formatTime(root.now, "hh:mm")
+                color: root.ink; font.pixelSize: 11; font.family: "monospace"
+            }
+            Repeater {
+                model: 3
+                delegate: Rectangle {
+                    width: 58; height: 13; radius: 3
+                    color: "transparent"
+                    border.width: 1
+                    border.color: root.ink
+                    opacity: 0.55
+                }
+            }
+            Text {
+                anchors.horizontalCenter: parent.horizontalCenter
+                text: qsTr("电脑状态")
+                color: root.ink; font.pixelSize: 10; opacity: 0.75
+            }
+        }
+        Column {
             visible: root.dialId === "car"; anchors.right: parent.right; anchors.verticalCenter: parent.verticalCenter; width: parent.width * 0.4; spacing: 8
             Text { text: Qt.formatTime(root.now, "hh:mm"); color: "#85b4ff"; font.pixelSize: Math.max(12, root.height * 0.22); font.family: "monospace" }
             Text { width: parent.width; text: root.dateText; color: root.ink; font.pixelSize: 10; wrapMode: Text.WordWrap }

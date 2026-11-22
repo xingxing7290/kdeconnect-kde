@@ -15,6 +15,7 @@
 #include <panelforeground.h>
 #include <panelhass.h>
 #include <panelprogress.h>
+#include <panelsysinfo.h>
 #include <panelweather.h>
 
 K_PLUGIN_CLASS_WITH_JSON(ControlPanelPlugin, "kdeconnect_controlpanel.json")
@@ -92,6 +93,23 @@ ControlPanel::PanelHass *hassSource()
     }
     return shared;
 }
+ControlPanel::PanelSysInfo *sysInfoSource()
+{
+    static QPointer<ControlPanel::PanelSysInfo> shared;
+    if (!shared) {
+        auto *store = runtime()->store();
+        shared = new ControlPanel::PanelSysInfo(nullptr);
+        auto *service = shared.data();
+        const auto configure = [store, service] {
+            const QJsonObject settings = store->isUsable() ? store->document().privateConfig().value(QStringLiteral("sysinfo")).toObject() : QJsonObject();
+            service->configure(settings);
+        };
+        QObject::connect(store, &ControlPanel::PanelStore::changed, service, configure);
+        QObject::connect(store, &ControlPanel::PanelStore::errorOccurred, service, configure);
+        configure();
+    }
+    return shared;
+}
 }
 
 ControlPanelPlugin::ControlPanelPlugin(QObject *parent, const QVariantList &args)
@@ -106,6 +124,7 @@ ControlPanelPlugin::ControlPanelPlugin(QObject *parent, const QVariantList &args
     connect(weather(), &ControlPanel::PanelWeather::changed, this, &ControlPanelPlugin::publishWeather);
     connect(progressSource(), &ControlPanel::PanelProgress::changed, this, &ControlPanelPlugin::publishProgress);
     connect(hassSource(), &ControlPanel::PanelHass::changed, this, &ControlPanelPlugin::publishHass);
+    connect(sysInfoSource(), &ControlPanel::PanelSysInfo::changed, this, &ControlPanelPlugin::publishSysInfo);
     connect(m_peer, &ControlPanel::PanelPeer::packetReady, this, [this](const QString &type, const QJsonObject &body) {
         if (device()->isPaired() && device()->isReachable()) {
             const bool isConfig = type == QLatin1String("kdeconnect.controlpanel.config");
@@ -114,6 +133,7 @@ ControlPanelPlugin::ControlPanelPlugin(QObject *parent, const QVariantList &args
                 publishWeather();
                 publishProgress();
                 publishHass();
+                publishSysInfo();
             }
         }
     });
@@ -199,6 +219,32 @@ void ControlPanelPlugin::publishHass()
     sendPacket(packet);
 }
 
+void ControlPanelPlugin::publishSysInfo()
+{
+    auto *store = runtime()->store();
+    if (!device()->isPaired() || !device()->isReachable() || !store->isUsable()) {
+        return;
+    }
+    // Only send when enabled; a disabled/unavailable snapshot carries no useful data and would
+    // make an old phone render a stale dial instead of its own "not configured" hint.
+    const bool enabled = store->document().privateConfig().value(QStringLiteral("sysinfo")).toObject()
+                             .value(QStringLiteral("enabled")).toBool(false);
+    if (!enabled) {
+        return;
+    }
+    auto data = sysInfoSource()->state();
+    if (data.isEmpty()) {
+        return;
+    }
+    data.insert(QStringLiteral("protocolVersion"), 1);
+    data.insert(QStringLiteral("revision"), store->document().revision());
+    if (!m_peer->sessionId().isEmpty()) {
+        data.insert(QStringLiteral("sessionId"), m_peer->sessionId());
+    }
+    NetworkPacket packet(QStringLiteral("kdeconnect.controlpanel.sysinfo"), data.toVariantMap());
+    sendPacket(packet);
+}
+
 QJsonObject ControlPanelPlugin::configForPeer(const QJsonObject &body) const
 {
     // The peer advertises HASS through its supportedPacketTypes. An older APK does not know the
@@ -206,14 +252,16 @@ QJsonObject ControlPanelPlugin::configForPeer(const QJsonObject &body) const
     // and leave the control panel unusable, not just the dial. Downgrade only the dial id; the
     // rest of the configuration stays byte-for-byte identical.
     const bool supportsHass = device()->incomingCapabilities().contains(QStringLiteral("kdeconnect.controlpanel.hass"));
+    const bool supportsSysInfo = device()->incomingCapabilities().contains(QStringLiteral("kdeconnect.controlpanel.sysinfo"));
     recordPeerCompatibility(supportsHass);
-    if (supportsHass)
+    if (supportsHass && supportsSysInfo)
         return body;
 
     QJsonObject adapted = body;
     QJsonObject config = adapted.value(QStringLiteral("config")).toObject();
     QJsonObject idle = config.value(QStringLiteral("idle")).toObject();
-    if (idle.value(QStringLiteral("dialId")).toString() == QLatin1String("hass")) {
+    const QString dial = idle.value(QStringLiteral("dialId")).toString();
+    if ((!supportsHass && dial == QLatin1String("hass")) || (!supportsSysInfo && dial == QLatin1String("sysinfo"))) {
         idle.insert(QStringLiteral("dialId"), QStringLiteral("digital"));
         config.insert(QStringLiteral("idle"), idle);
         adapted.insert(QStringLiteral("config"), config);

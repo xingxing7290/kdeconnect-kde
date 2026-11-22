@@ -124,6 +124,18 @@ bool hassValid(const QJsonObject &hass)
     return true;
 }
 
+/** sysinfo is desktop-private: only the sampling switch lives here, never any machine data. */
+bool sysInfoValid(const QJsonObject &sysinfo)
+{
+    const QJsonValue enabled = sysinfo.value(QStringLiteral("enabled"));
+    if (!enabled.isBool())
+        return false;
+    const QJsonValue interval = sysinfo.value(QStringLiteral("intervalMs"));
+    const auto number = interval.toDouble(-1);
+    return interval.isUndefined()
+        || (interval.isDouble() && std::isfinite(number) && number >= 1000 && number <= 30000);
+}
+
 /** idle.info mixes public display options with desktop-private progress source settings. */
 bool infoValid(const QJsonObject &info)
 {
@@ -229,7 +241,8 @@ bool PanelDocument::validate(const QJsonObject &config, QString *error)
                                         QStringLiteral("weather"),
                                         QStringLiteral("info"),
                                         QStringLiteral("car"),
-                                        QStringLiteral("hass")};
+                                        QStringLiteral("hass"),
+                                        QStringLiteral("sysinfo")};
 
     if (!integer(config.value(QStringLiteral("schemaVersion")), 1, 1)) {
         return fail(QStringLiteral("unsupported_version"));
@@ -319,6 +332,10 @@ bool PanelDocument::validate(const QJsonObject &config, QString *error)
     if (!hass.isUndefined() && (!hass.isObject() || !hassValid(hass.toObject()))) {
         return fail(QStringLiteral("invalid_hass"));
     }
+    const QJsonValue sysinfo = config.value(QStringLiteral("sysinfo"));
+    if (!sysinfo.isUndefined() && (!sysinfo.isObject() || !sysInfoValid(sysinfo.toObject()))) {
+        return fail(QStringLiteral("invalid_sysinfo"));
+    }
     return true;
 }
 
@@ -365,6 +382,9 @@ PanelDocument PanelDocument::empty()
                      {QStringLiteral("url"), QString()},
                      {QStringLiteral("token"), QString()},
                      {QStringLiteral("entities"), QJsonArray()}}},
+        {QStringLiteral("sysinfo"),
+         QJsonObject{{QStringLiteral("enabled"), false},
+                     {QStringLiteral("intervalMs"), 2000}}},
     });
 }
 

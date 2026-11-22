@@ -6,8 +6,12 @@ if(WIN32)
     target_link_libraries(kdeconnectpanel PRIVATE user32)
 endif()
 
-add_library(kdeconnectpanelweather STATIC panelweather.cpp panelprogress.cpp panelhass.cpp)
+add_library(kdeconnectpanelweather STATIC panelweather.cpp panelprogress.cpp panelhass.cpp panelsysinfo.cpp)
 target_link_libraries(kdeconnectpanelweather PUBLIC Qt::Core Qt::Network Qt::WebSockets)
+if(WIN32)
+    # Hardware counters: GetIfTable2/FreeMibTable (iphlpapi), toolhelp snapshot and system APIs.
+    target_link_libraries(kdeconnectpanelweather PRIVATE iphlpapi)
+endif()
 target_include_directories(kdeconnectpanelweather PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 set_target_properties(kdeconnectpanelweather PROPERTIES POSITION_INDEPENDENT_CODE ON AUTOMOC ON)
 

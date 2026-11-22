@@ -17,6 +17,7 @@
         "kdeconnect.controlpanel.dial",
         "kdeconnect.controlpanel.progress",
         "kdeconnect.controlpanel.result",
-        "kdeconnect.controlpanel.hass"
+        "kdeconnect.controlpanel.hass",
+        "kdeconnect.controlpanel.sysinfo"
     ]
 }

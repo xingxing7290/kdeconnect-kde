@@ -6,6 +6,7 @@
 #include "panelfavicon.h"
 #include "panelforeground.h"
 #include "panelhass.h"
+#include "panelsysinfo.h"
 #include "panelportable.h"
 #include "panelprogress.h"
 #include "panelstore.h"
@@ -34,6 +35,8 @@ class PanelEditor : public QObject
     Q_PROPERTY(QVariantList hassEntities READ hassEntities NOTIFY hassEntitiesChanged)
     Q_PROPERTY(QVariantMap hassState READ hassState NOTIFY hassChanged)
     Q_PROPERTY(QString hassCompatNote READ hassCompatNote NOTIFY hassCompatChanged)
+    Q_PROPERTY(QVariantMap sysInfo READ sysInfo NOTIFY sysInfoChanged)
+    Q_PROPERTY(bool sysInfoEnabled READ sysInfoEnabled NOTIFY sysInfoChanged)
     Q_PROPERTY(QString websiteIconStatus READ websiteIconStatus NOTIFY websiteIconStatusChanged)
 public:
     /** Weather, website icons and the WorkBuddy progress source all use this switch; tests keep networking off. */
@@ -44,6 +47,8 @@ public:
     QVariantMap hass() const;
     QVariantList hassEntities() const;
     QVariantMap hassState() const;
+    QVariantMap sysInfo() const;
+    bool sysInfoEnabled() const;
     /** Non-empty when the connected peer is too old to understand the smart-home dial. */
     QString hassCompatNote() const;
     QVariantMap config() const;
@@ -86,6 +91,8 @@ public:
     Q_INVOKABLE bool setHass(const QVariantMap &values);
     Q_INVOKABLE bool setHassChecked(const QVariantMap &values, double expectedRevision);
     Q_INVOKABLE void refreshHass();
+    Q_INVOKABLE bool setSysInfoEnabled(bool enabled);
+    Q_INVOKABLE bool setSysInfoInterval(int intervalMs);
     /** Controls Home Assistant directly from the desktop; returns an empty string on success. */
     Q_INVOKABLE QString hassCommand(const QString &entityId, const QString &action, int brightness);
     Q_INVOKABLE bool fillMissingIcons();
@@ -105,6 +112,7 @@ Q_SIGNALS:
     void hassChanged();
     void hassEntitiesChanged();
     void hassCompatChanged();
+    void sysInfoChanged();
     void websiteIconStatusChanged();
     void websiteIconReady(const QString &url, const QString &iconId);
 
@@ -132,6 +140,7 @@ private:
     PanelWeather m_weather;
     PanelProgress m_progress;
     PanelHass m_hass;
+    PanelSysInfo m_sysInfo;
     PanelFavicon m_favicon;
     QString m_hassCompatPath;
     QFileSystemWatcher m_hassCompatWatcher;

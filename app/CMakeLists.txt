@@ -44,6 +44,7 @@ ecm_target_qml_sources(kdeconnect-app SOURCES
     qml/ControlDashboard.qml
     qml/HassTexts.qml
     qml/PanelHassDialog.qml
+    qml/PanelSysInfoDialog.qml
     qml/PanelButtonDialog.qml
     qml/PanelDialGallery.qml
     qml/PanelDialPreview.qml

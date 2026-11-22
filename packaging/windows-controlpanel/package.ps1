@@ -78,6 +78,13 @@ Invoke-Checked 'cmake' @("-DPACKAGE_ROOT=$packageRoot", "-DDEPENDENCY_ROOT=$Depe
     "-DFFMPEG_OVERRIDE_ROOT=$FFmpegRoot",
     "-DRUNTIME_OVERRIDE_ROOT=$RuntimeRoot",
     '-P', (Join-Path $PSScriptRoot 'runtime-dependencies.cmake'))
+# The smart-home client links Qt6::WebSockets. windeployqt only scans kdeconnect*.exe while the
+# daemon plugin is a DLL, so fail loudly if the runtime did not land in the package: otherwise the
+# plugin loads with an unresolved import and the whole control panel silently loses smart home.
+$webSocketRuntime = Join-Path $packageBin 'Qt6WebSockets.dll'
+if (!(Test-Path -LiteralPath $webSocketRuntime -PathType Leaf)) {
+    throw "Missing Qt6WebSockets.dll in package: the smart-home daemon plugin would fail to load"
+}
 Copy-Tree (Join-Path $sourceRoot 'LICENSES') (Join-Path $packageRoot 'licenses/kdeconnect')
 Copy-Tree (Join-Path $DependencyRoot 'licenses') (Join-Path $packageRoot 'licenses/dependencies')
 Copy-Tree (Join-Path $DistributionMaterialsRoot 'licenses/third-party') (Join-Path $packageRoot 'licenses/third-party')

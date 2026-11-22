@@ -217,3 +217,16 @@ C 盘剩余空间仍紧张，项目目录迁移不能控制操作系统和其他
 - Android Lint、真机安装/界面、横屏/生命周期/无障碍测试尚未完成。
 - 双端协议、真实动作、断网重连、音量、智能跟随、全部表盘及视觉对照尚未完成。
 - 最终包、完整 README 和需求逐项验收继续按 PLAN 执行。
+
+## 阶段记录：智能家居（Home Assistant）— 源码完成，未编译未运行
+
+用户明确要求本阶段只改程序、不编译运行、不占用 C 盘。以下状态按此约束记录，未运行项不得视为通过。
+
+- **需求**：由 Windows 端连接 HA（局域网地址 + 长期令牌，WebSocket），平板只显示与控制；实体限 `switch` / `light` / `sensor`；表盘数据为主、时间缩角落；只显示当前值不做趋势；COMPAT-01 要求对未升级的另一端给出可理解提示。
+- **修改模块**：桌面 `controlpanel/panelhass.*`、`paneldocument.cpp`、`paneleditor.*`、`panelpeer.*`、`plugins/controlpanel/*`、`app/qml/{HassTexts,PanelHassDialog,ControlDashboard,PanelDialGallery,PanelDialPreview}.qml`、`app/CMakeLists.txt`、`packaging/windows-controlpanel/package.ps1`、`docs/control-panel/*`；Android `plugins/controlpanel/{PanelHomeAssistant,PanelHomeAssistantDial,PanelHassSheet,ControlPanelPlugin,PanelSession,PanelDialScreen,ControlPanelActivity,PanelConfig}.kt`、中英字符串、协议文档。
+- **安全处理**：令牌与地址只存桌面私有配置；不进 `publicConfig()`；导出时从 bundle 清空 `url`/`token`，导入时凭据只取本机；`hass_command` 校验当前 sessionId。
+- **P0 兼容**：下发 config 前按对端 `incomingCapabilities()` 探测，旧 APK 不支持 hass 时把 `dialId` 降级为 `digital`，桌面通过共享 profile 的 `hass-peer-compat.json` 显示升级提示。
+- **静态检查（已做）**：所有改动 C++/QML/Kotlin 文件括号与方括号平衡；插件元数据 JSON 有效；Android 28 个 hass 字符串引用两端齐全；换行符一致；新增 QML 已登记进 `ecm_target_qml_sources`；package.ps1 增加 Qt6WebSockets.dll 存在性断言。
+- **测试（已写，未运行）**：`tests/panelhasstest.cpp`（QWebSocketServer 假 HA，覆盖鉴权、全量/增量、字段清洗、指令校验与失败降级、鉴权失败停止重连、共用样本）与 `src/test/java/.../PanelHomeAssistantTest.kt`（解析容错、逐条跳过坏实体、新鲜度、lastCommand 容错、共用样本）。两端读取同一 `docs/control-panel/fixtures/hass-snapshot.json`。
+- **未验证风险**：HA WebSocket 消息格式按官方文档实现，未与真实 HA 实例联调；Compose 新组件与字符串键需构建验证；双进程各连一条 HA WebSocket（已在 HOME-ASSISTANT 文档记为已知限制）。
+- **下一步**：构建后运行 `ctest -R panelhass` 与 `./gradlew :test --tests '*PanelHomeAssistantTest'`；确认 windeployqt/runtime-dependencies 把 `Qt6WebSockets.dll` 打进安装包；在有 HA 的环境做端到端联调。

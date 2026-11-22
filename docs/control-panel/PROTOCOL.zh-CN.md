@@ -42,6 +42,8 @@
 | kdeconnect.controlpanel.hass | revision, status, error, fetchedAt, entities[]；可选 sessionId, lastCommand | 智能家居快照；状态变化即时推送，200 毫秒内的连续变化合并为一包；不含地址与令牌 |
 | kdeconnect.controlpanel.hass_command | protocolVersion=1, sessionId, entityId, action；可选 brightness | 请求桌面端调用 HA 服务；会话不匹配或已退休时丢弃，不执行 |
 
+智能家居快照的共用样本：`fixtures/hass-snapshot.json`，两端测试读取同一内容。`error` 与 `lastCommand.error` 只使用稳定机器码（`hass_auth_invalid`、`hass_request_failed` 等），翻译成可读文案是 UI 的职责；未知码由 UI 原样显示。
+
 sessionId、requestId 使用小写 UUID。Android 每次重新建立插件会话生成新的 sessionId，配置重取沿用当前 sessionId；sequence 从 1 单调递增，最大为安全 JSON 整数上限。同一会话最近 256 个动作请求保留原始请求和结果：相同请求返回原结果，ID 冲突返回 invalid_request。结果缓存淘汰后仍保留最高 sequence，更早或乱序请求返回 request_expired，不能重新执行。每个连接最多记录 4096 个已退休会话 ID，退休会话不能通过重复握手复活。
 
 success 必须与 error 为空一致，矛盾结果不确认待处理动作。有效动作结果中的 invalid_session 和 stale_revision 只触发当前会话重新握手/同步，保持 sequence 递增，不重发原动作；握手本身被拒绝时进入可见错误，不递归无限重试。过期请求提示“未重新执行”，不能理解为原操作从未发生。手动同步或配置变化清掉过期动作反馈。

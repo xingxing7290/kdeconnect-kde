@@ -6,13 +6,17 @@
         "EnabledByDefault": true,
         "Icon": "view-grid"
     },
-    "X-KdeConnect-SupportedPacketType": ["kdeconnect.controlpanel.request"],
+    "X-KdeConnect-SupportedPacketType": [
+        "kdeconnect.controlpanel.request",
+        "kdeconnect.controlpanel.hass_command"
+    ],
     "X-KdeConnect-OutgoingPacketType": [
         "kdeconnect.controlpanel.config",
         "kdeconnect.controlpanel.state",
         "kdeconnect.controlpanel.asset",
         "kdeconnect.controlpanel.dial",
         "kdeconnect.controlpanel.progress",
-        "kdeconnect.controlpanel.result"
+        "kdeconnect.controlpanel.result",
+        "kdeconnect.controlpanel.hass"
     ]
 }
